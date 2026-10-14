@@ -38,7 +38,10 @@ export async function discover(browser, config, storageState) {
     const landed = clean(new URL(page.url()));
     if (landed !== url && seen.has(landed)) continue;
     seen.add(landed);
-    if (new URL(landed).host !== start.host) continue;
+    if (!sameSite(new URL(landed).host, start.host)) {
+      console.log(`  skip ${url} (it opened ${new URL(landed).host}, another site)`);
+      continue;
+    }
 
     const template = templateOf(landed);
     if (templates.has(template)) continue;
@@ -55,7 +58,7 @@ export async function discover(browser, config, storageState) {
       } catch {
         continue;
       }
-      if (u.host !== start.host || !/^https?:$/.test(u.protocol)) continue;
+      if (!sameSite(u.host, start.host) || !/^https?:$/.test(u.protocol)) continue;
       const c = clean(u);
       if (seen.has(c) || LOGOUT.test(c) || FILE.test(u.pathname)) continue;
       if (config.exclude.some((x) => c.includes(x))) continue;
@@ -72,6 +75,12 @@ export async function open(page, url) {
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
   await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
   await page.waitForTimeout(800);
+}
+
+/** google.com and www.google.com are the same site (sites often redirect from one to the other). */
+function sameSite(a, b) {
+  const bare = (h) => h.toLowerCase().replace(/^www\./, "");
+  return bare(a) === bare(b);
 }
 
 function clean(u) {
