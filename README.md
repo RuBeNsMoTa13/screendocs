@@ -34,6 +34,7 @@ Before each run it opens the page you were on when you logged in; if the site se
 
 ## What it does
 
+- **Checks the address** before starting: if the site does not open, it suggests what may be missing (`www.`, `.br`, a typo) and shows examples like `mysite.com`, `www.mysite.com` or `app.mysite.com/login`.
 - **Finds the pages by itself**: follows the site's own links from the start page, skips logout links and files, and treats `/posts/12` and `/posts/13` as one screen.
 - **One image per section**: `<header>`, `<section>`, `<footer>` and similar blocks; pages without them are cut into screen-sized slices. Also a full-page image.
 - **Desktop and mobile** (1440×900 and 390×844).
@@ -64,6 +65,7 @@ Before each run it opens the page you were on when you logged in; if the site se
 | `--lang <code>` | `en` | description language (`pt`, `es`...) |
 | `--config <file>` | `screendocs.config.json` | config file (see below) |
 | `--headed` | | show the browser |
+| `--no-url-check` | | skip checking that the address opens (sites only reachable on your network or VPN) |
 | `--open` | | open the report when done (the menu always does) |
 | `-v`, `--version` | | show the version |
 | `-h`, `--help` | | show the help |

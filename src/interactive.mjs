@@ -7,6 +7,7 @@ import { authFile } from "./paths.mjs";
 import { launch } from "./browser.mjs";
 import { sessionStatus } from "./session.mjs";
 import { AGENTS, PROVIDERS, installedAgents } from "./agents.mjs";
+import { checkUrl, EXAMPLES, URL_TEXT, short } from "./checkurl.mjs";
 
 const BIG = String.raw`
 ███████╗ ██████╗██████╗ ███████╗███████╗███╗   ██╗██████╗  ██████╗  ██████╗███████╗
@@ -173,12 +174,7 @@ export async function interactive() {
   banner(t);
   p.intro(pc.bold(bgCrimson(pc.white(" ScreenDocs "))));
 
-  const raw = await a(p.text({
-    message: t.url,
-    placeholder: "https://",
-    validate: (v) => (toUrl(v) ? undefined : t.urlBad),
-  }));
-  const url = toUrl(raw);
+  const url = await askUrl(t, a, lang);
   const host = new URL(url).host;
 
   if (fs.existsSync(authFile(host))) {
@@ -322,12 +318,51 @@ export async function chooseDescriber({ t = T[uiLang()], a = ask(t), later = fal
   return { describe: "api", apiUrl, model };
 }
 
+/**
+ * Asks for the site and checks that it opens. When it does not, offers the close
+ * addresses that do (missing www, missing .br, a typo) and shows examples.
+ */
+async function askUrl(t, a, lang) {
+  const u = URL_TEXT[lang];
+  let typed = "";
+  for (;;) {
+    typed = await a(p.text({
+      message: t.url,
+      placeholder: "https://",
+      initialValue: typed,
+      validate: (v) => (toUrl(v) ? undefined : t.urlBad),
+    }));
+    const url = toUrl(typed);
+    const spin = p.spinner();
+    spin.start(u.checking);
+    const r = await checkUrl(url);
+    if (r.ok) {
+      const to = new URL(r.final).host;
+      spin.stop(to === new URL(url).host ? u.ok(short(url)) : u.moved(short(url), to));
+      return url;
+    }
+    spin.stop(pc.yellow(u.fail(short(url), r.reason)));
+    if (!r.suggestions.length) p.log.message(`${u.noneFound}\n${EXAMPLES[lang].map((e) => `  ${e}`).join("\n")}`);
+    const choice = await a(p.select({
+      message: r.suggestions.length ? u.pick : u.retype + "?",
+      options: [
+        ...r.suggestions.map((s) => ({ value: s, label: s.replace(/^https:\/\//, "").replace(/\/$/, "") })),
+        { value: "retype", label: u.retype },
+        { value: "anyway", label: u.anyway },
+      ],
+    }));
+    if (choice === "anyway") return url;
+    if (choice !== "retype") return choice;
+  }
+}
+
 function toUrl(v) {
   const s = String(v ?? "").trim();
   if (!s || /\s/.test(s)) return null;
   try {
     const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
-    return u.hostname.includes(".") || u.hostname === "localhost" ? u.href : null;
+    // A single word (radiobraba) passes too: the check suggests the ending
+    return u.hostname.includes(".") || /^[a-z0-9-]+$/i.test(u.hostname) ? u.href : null;
   } catch {
     return null;
   }

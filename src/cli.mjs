@@ -9,8 +9,10 @@ import { findCapture } from "./answers.mjs";
 import { chatFlow } from "./chat.mjs";
 import { launch, ensureVideoEncoder } from "./browser.mjs";
 import { authFile, normalizeUrl } from "./paths.mjs";
+import { checkUrl, URL_TEXT, short } from "./checkurl.mjs";
 import { sessionStatus } from "./session.mjs";
-import { interactive, banner, chooseDescriber } from "./interactive.mjs";
+import { interactive, banner, chooseDescriber, uiLang } from "./interactive.mjs";
+import pc from "./theme.mjs";
 import * as p from "@clack/prompts";
 import fs from "node:fs";
 import path from "node:path";
@@ -48,6 +50,7 @@ Options
   --lang <code>         description language (default en)
   --config <file>       config file (default screendocs.config.json if present)
   --headed              show the browser while capturing
+  --no-url-check        do not check that the address opens before starting
   --open                open the report when done
   -v, --version         show the version
   -h, --help            show this help
@@ -61,7 +64,8 @@ export async function run(argv) {
     return startMcp(values);
   }
   // No arguments in a real terminal: show the menu instead of the help
-  if (argv.length === 0 && process.stdin.isTTY && process.stdout.isTTY) argv = await interactive();
+  const fromMenu = argv.length === 0 && process.stdin.isTTY && process.stdout.isTTY;
+  if (fromMenu) argv = await interactive();
   else if (process.stdout.isTTY && !argv.some((x) => ["-h", "--help", "-v", "--version"].includes(x))) banner();
   const { values, positionals } = parseArgs({
     args: argv,
@@ -78,6 +82,7 @@ export async function run(argv) {
       keep: { type: "boolean" },
       mask: { type: "string" },
       "no-auto-mask": { type: "boolean" },
+      "no-url-check": { type: "boolean" },
       describe: { type: "string" },
       docs: { type: "string" },
       "api-url": { type: "string" },
@@ -131,10 +136,14 @@ export async function run(argv) {
 
   if (positionals[0] === "login") {
     if (!positionals[1]) throw new Error("use: screendocs login <url>");
-    await login(normalizeUrl(positionals[1]));
+    const url = normalizeUrl(positionals[1]);
+    if (!values["no-url-check"]) await mustOpen(url);
+    await login(url);
     return;
   }
 
+  // The menu already checked the address (and may have picked a fix with the person)
+  if (!fromMenu && !values["no-url-check"]) await mustOpen(normalizeUrl(positionals[0]));
   const config = loadConfig(normalizeUrl(positionals[0]), values);
   const start = new URL(config.url);
   const auth = authFile(start.host);
@@ -200,4 +209,15 @@ function openFile(file) {
   const [cmd, args] =
     process.platform === "win32" ? ["cmd", ["/c", "start", "", file]] : [process.platform === "darwin" ? "open" : "xdg-open", [file]];
   spawn(cmd, args, { detached: true, stdio: "ignore" }).on("error", () => {}).unref();
+}
+
+/** Stops before opening the browser when the address does not answer, saying what may be missing. */
+async function mustOpen(url) {
+  const r = await checkUrl(url);
+  if (r.ok) {
+    const to = new URL(r.final).host;
+    if (to !== new URL(url).host) console.log(pc.dim(URL_TEXT[uiLang()].moved(short(url), to)));
+    return;
+  }
+  throw new Error(URL_TEXT[uiLang()].cliFail(short(url), r.reason, r.suggestions.map((s) => s.replace(/^https:\/\//, "").replace(/\/$/, ""))));
 }
