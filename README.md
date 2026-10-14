@@ -145,6 +145,8 @@ Pick a model that reads images (e.g. `gpt-4o-mini`, `gemini-2.5-flash`, `llama3.
 
 `screendocs mcp` turns screendocs into tools for AI clients that speak [MCP](https://modelcontextprotocol.io) (Claude Code, Cursor, VS Code, Claude Desktop, Codex...). You ask in plain words, for example *"document the screens of mysite.com in Portuguese"*, and the AI captures the site, looks at each screenshot and writes the descriptions itself, on your plan, with no API key.
 
+**Claude Desktop (one click).** Download [screendocs.mcpb](https://github.com/RuBeNsMoTa13/screendocs/releases/latest/download/screendocs.mcpb) and open it: Claude Desktop shows an Install button and asks which folder the captures go to. Nothing else to install; Claude Desktop brings its own Node.js.
+
 **Claude Code**
 
 ```bash
@@ -155,7 +157,7 @@ claude mcp add screendocs -- cmd /c npx -y screendocs mcp
 
 Add `--scope user` to have it in every project. Check it with `/mcp` inside Claude Code.
 
-**Cursor** (`.cursor/mcp.json`), **Claude Desktop** (`claude_desktop_config.json`) and most other clients:
+**Cursor** (`.cursor/mcp.json`), Claude Desktop without the installer (`claude_desktop_config.json`) and most other clients:
 
 ```json
 {
@@ -173,7 +175,7 @@ command = "npx"
 args = ["-y", "screendocs", "mcp"]
 ```
 
-Captures and saved logins go to the folder the client starts the server in (in Claude Code and Cursor, your project). `--dir <folder>` sets it, which is worth doing in Claude Desktop, where that folder is not yours. To use a copy of screendocs that is not on npm, replace `npx -y screendocs` with `node <path>/bin/screendocs.mjs`.
+Captures and saved logins go to the folder the client starts the server in (in Claude Code and Cursor, your project). `--dir <folder>` sets it, which is worth doing in Claude Desktop, where that folder is not yours (the installer asks for it). To use a copy of screendocs that is not on npm, replace `npx -y screendocs` with `node <path>/bin/screendocs.mjs`.
 
 | Tool | What it does |
 |---|---|

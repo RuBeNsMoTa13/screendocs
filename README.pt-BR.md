@@ -145,6 +145,8 @@ Escolha um modelo que leia imagens (ex.: `gpt-4o-mini`, `gemini-2.5-flash`, `lla
 
 `screendocs mcp` transforma o screendocs em ferramentas para clientes de IA que falam [MCP](https://modelcontextprotocol.io) (Claude Code, Cursor, VS Code, Claude Desktop, Codex...). Você pede com suas palavras, por exemplo *"documente as telas de meusite.com.br em português"*, e a IA captura o site, olha cada foto e escreve as descrições ela mesma, pelo seu plano, sem chave de API.
 
+**Claude Desktop (um clique).** Baixe o [screendocs.mcpb](https://github.com/RuBeNsMoTa13/screendocs/releases/latest/download/screendocs.mcpb) e abra: o Claude Desktop mostra um botão Instalar e pergunta em qual pasta ficam as capturas. Não precisa instalar mais nada; o Claude Desktop traz o próprio Node.js.
+
 **Claude Code**
 
 ```bash
@@ -155,7 +157,7 @@ claude mcp add screendocs -- cmd /c npx -y screendocs mcp
 
 Com `--scope user` ele fica disponível em todos os projetos. Confira com `/mcp` dentro do Claude Code.
 
-**Cursor** (`.cursor/mcp.json`), **Claude Desktop** (`claude_desktop_config.json`) e a maioria dos outros clientes:
+**Cursor** (`.cursor/mcp.json`), Claude Desktop sem o instalador (`claude_desktop_config.json`) e a maioria dos outros clientes:
 
 ```json
 {
@@ -173,7 +175,7 @@ command = "npx"
 args = ["-y", "screendocs", "mcp"]
 ```
 
-As capturas e os logins salvos ficam na pasta em que o cliente inicia o servidor (no Claude Code e no Cursor, o seu projeto). `--dir <pasta>` escolhe essa pasta, o que vale a pena no Claude Desktop, onde ela não é sua. Para usar uma cópia do screendocs que não está no npm, troque `npx -y screendocs` por `node <caminho>/bin/screendocs.mjs`.
+As capturas e os logins salvos ficam na pasta em que o cliente inicia o servidor (no Claude Code e no Cursor, o seu projeto). `--dir <pasta>` escolhe essa pasta, o que vale a pena no Claude Desktop, onde ela não é sua (o instalador pergunta). Para usar uma cópia do screendocs que não está no npm, troque `npx -y screendocs` por `node <caminho>/bin/screendocs.mjs`.
 
 | Ferramenta | O que faz |
 |---|---|

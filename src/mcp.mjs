@@ -32,7 +32,11 @@ const MAX_IMAGES = 10;
 
 export async function startMcp({ dir } = {}) {
   console.log = console.info = (...args) => console.error(...args);
-  if (dir) process.chdir(path.resolve(dir));
+  if (dir) {
+    // The Claude Desktop extension suggests a folder that may not exist yet
+    fs.mkdirSync(path.resolve(dir), { recursive: true });
+    process.chdir(path.resolve(dir));
+  }
 
   const pkg = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"));
   const server = new McpServer({ name: "screendocs", version: pkg.version }, { instructions: INSTRUCTIONS });
