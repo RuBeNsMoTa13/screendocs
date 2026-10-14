@@ -15,3 +15,9 @@ export function slugOf(url) {
     .slice(0, 80);
   return s || "home";
 }
+
+/** "mysite.com" -> "https://mysite.com/" */
+export function normalizeUrl(raw) {
+  const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  return new URL(withProto).href;
+}

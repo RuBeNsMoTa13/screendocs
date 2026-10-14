@@ -10,12 +10,20 @@
   "engines": {
     "node": ">=18"
   },
-  "keywords": ["screenshot", "documentation", "playwright", "portfolio", "crawler", "website"],
+  "keywords": ["mcp", "screenshot", "documentation", "playwright", "portfolio", "crawler", "website"],
   "author": "Rubens Mota",
   "license": "MIT",
+  "scripts": {
+    "build:mcpb": "node scripts/build-mcpb.mjs"
+  },
   "dependencies": {
     "@clack/prompts": "0.11.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "picocolors": "1.1.1",
-    "playwright-core": "1.56.1"
+    "playwright-core": "1.56.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@anthropic-ai/mcpb": "2.1.2"
   }
 }

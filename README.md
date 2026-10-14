@@ -141,6 +141,55 @@ npx screendocs https://your-site.com --describe api --api-url https://api.openai
 
 Pick a model that reads images (e.g. `gpt-4o-mini`, `gemini-2.5-flash`, `llama3.2-vision`); with one that doesn't, screendocs tells you. The menu asks for all of this and never shows the key.
 
+## Use it from an AI (MCP)
+
+`screendocs mcp` turns screendocs into tools for AI clients that speak [MCP](https://modelcontextprotocol.io) (Claude Code, Cursor, VS Code, Claude Desktop, Codex...). You ask in plain words, for example *"document the screens of mysite.com in Portuguese"*, and the AI captures the site, looks at each screenshot and writes the descriptions itself, on your plan, with no API key.
+
+**Claude Desktop (one click).** Download [screendocs.mcpb](https://github.com/RuBeNsMoTa13/screendocs/releases/latest/download/screendocs.mcpb) and open it: Claude Desktop shows an Install button and asks which folder the captures go to. Nothing else to install; Claude Desktop brings its own Node.js.
+
+**Claude Code**
+
+```bash
+claude mcp add screendocs -- npx -y screendocs mcp
+# Windows:
+claude mcp add screendocs -- cmd /c npx -y screendocs mcp
+```
+
+Add `--scope user` to have it in every project. Check it with `/mcp` inside Claude Code.
+
+**Cursor** (`.cursor/mcp.json`), Claude Desktop without the installer (`claude_desktop_config.json`) and most other clients:
+
+```json
+{
+  "mcpServers": {
+    "screendocs": { "command": "npx", "args": ["-y", "screendocs", "mcp", "--dir", "C:/Users/you/screendocs"] }
+  }
+}
+```
+
+**VS Code** (`.vscode/mcp.json`): the same, under `"servers"` with `"type": "stdio"`. **Codex** (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.screendocs]
+command = "npx"
+args = ["-y", "screendocs", "mcp"]
+```
+
+Captures and saved logins go to the folder the client starts the server in (in Claude Code and Cursor, your project). `--dir <folder>` sets it, which is worth doing in Claude Desktop, where that folder is not yours (the installer asks for it). To use a copy of screendocs that is not on npm, replace `npx -y screendocs` with `node <path>/bin/screendocs.mjs`.
+
+| Tool | What it does |
+|---|---|
+| `capture_site` | Captures a site (same options as the command line: `pages`, `exclude`, `viewports`, `maxPages`, `depth`, `video`, `keep`, `mask`, `lang`...) |
+| `list_captures` | The sites already captured |
+| `get_capture` | The screens of a capture, with the path of each image and its current description |
+| `view_screens` | Shows up to 10 screenshots to the AI |
+| `save_descriptions` | Saves titles and descriptions into `screens.json` and the report, marked with the AI's name |
+| `login`, `save_login` | Opens a browser window for you to log in, then saves the session for later captures |
+
+A capture takes one to several minutes; with `video: false` it is faster.
+
+> **Which AI apps work.** Any app that runs MCP servers on your computer: Claude Desktop, Claude Code, Cursor, VS Code (Copilot), Windsurf, Codex, Gemini CLI, Cline, LM Studio and others. AI chats that only run in the browser (ChatGPT, Claude.ai, Gemini on the web) cannot start a program on your computer, so they don't work. The model must also **read images**: it looks at each screenshot to describe it. A text-only model can capture the site but not describe the screens.
+
 ## Real data
 
 Logged-in areas often show real people's data. The automatic blur covers the common cases, not all of them: use a test account when you can and check the images before publishing.

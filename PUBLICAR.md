@@ -17,4 +17,18 @@ npm version patch
 npm publish
 ```
 
+## Instalador do Claude Desktop (.mcpb)
+
+A cada versão, crie a tag e envie para o GitHub:
+
+```
+git push --follow-tags
+```
+
+(`npm version patch` já cria a tag `v0.1.1`.) O GitHub Actions gera o `screendocs.mcpb` e cria o Release sozinho. O link para baixar a versão mais recente é sempre:
+
+https://github.com/RuBeNsMoTa13/screendocs/releases/latest/download/screendocs.mcpb
+
+Para gerar o arquivo no seu PC sem publicar: `npm run build:mcpb` (sai em `dist/screendocs.mcpb`).
+
 Antes de publicar, dá para testar localmente com `npm link` e depois `screendocs https://seu-site.com` em qualquer pasta.

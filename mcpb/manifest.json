@@ -1,0 +1,47 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-latest.schema.json",
+  "manifest_version": "0.3",
+  "name": "screendocs",
+  "display_name": "ScreenDocs",
+  "version": "set by scripts/build-mcpb.mjs from package.json",
+  "description": "Screenshots, videos and descriptions of every screen of a website, including pages behind a login.",
+  "long_description": "Ask Claude to document a website and it captures every page with the Chrome or Edge installed on your computer: one screenshot per section, on desktop and mobile, a full-page image and a video scrolling each page, with emails, phones and filled form fields blurred. Claude then looks at the screenshots and writes a title and description for each screen into an HTML report. Everything runs on your computer; no API key is needed. Requires Google Chrome or Microsoft Edge.",
+  "author": { "name": "Rubens Mota", "url": "https://github.com/RuBeNsMoTa13" },
+  "repository": { "type": "git", "url": "https://github.com/RuBeNsMoTa13/screendocs" },
+  "homepage": "https://github.com/RuBeNsMoTa13/screendocs",
+  "documentation": "https://github.com/RuBeNsMoTa13/screendocs#use-it-from-an-ai-mcp",
+  "support": "https://github.com/RuBeNsMoTa13/screendocs/issues",
+  "icon": "icon.png",
+  "license": "MIT",
+  "keywords": ["screenshot", "documentation", "website", "playwright", "portfolio"],
+  "server": {
+    "type": "node",
+    "entry_point": "bin/screendocs.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/bin/screendocs.mjs", "mcp", "--dir", "${user_config.folder}"]
+    }
+  },
+  "user_config": {
+    "folder": {
+      "type": "directory",
+      "title": "Folder for the captures",
+      "description": "Where the screenshots, videos, reports and saved logins go.",
+      "required": true,
+      "default": "${DOCUMENTS}/screendocs"
+    }
+  },
+  "tools": [
+    { "name": "capture_site", "description": "Captures every page of a website: screenshots per section, full page and video, on desktop and mobile" },
+    { "name": "list_captures", "description": "Lists the sites already captured" },
+    { "name": "get_capture", "description": "The screens of a capture, with their images and current descriptions" },
+    { "name": "view_screens", "description": "Shows up to 10 screenshots of a capture" },
+    { "name": "save_descriptions", "description": "Saves titles and descriptions of the screens into the report" },
+    { "name": "login", "description": "Opens a browser window for you to log in to a site" },
+    { "name": "save_login", "description": "Saves that login so later captures include the pages behind it" }
+  ],
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "runtimes": { "node": ">=18.0.0" }
+  }
+}

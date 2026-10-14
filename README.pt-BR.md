@@ -141,6 +141,55 @@ npx screendocs https://seu-site.com.br --describe api --api-url https://api.open
 
 Escolha um modelo que leia imagens (ex.: `gpt-4o-mini`, `gemini-2.5-flash`, `llama3.2-vision`); se escolher um que não lê, o screendocs avisa. O menu pergunta tudo isso e nunca mostra a chave.
 
+## Usar por uma IA (MCP)
+
+`screendocs mcp` transforma o screendocs em ferramentas para clientes de IA que falam [MCP](https://modelcontextprotocol.io) (Claude Code, Cursor, VS Code, Claude Desktop, Codex...). Você pede com suas palavras, por exemplo *"documente as telas de meusite.com.br em português"*, e a IA captura o site, olha cada foto e escreve as descrições ela mesma, pelo seu plano, sem chave de API.
+
+**Claude Desktop (um clique).** Baixe o [screendocs.mcpb](https://github.com/RuBeNsMoTa13/screendocs/releases/latest/download/screendocs.mcpb) e abra: o Claude Desktop mostra um botão Instalar e pergunta em qual pasta ficam as capturas. Não precisa instalar mais nada; o Claude Desktop traz o próprio Node.js.
+
+**Claude Code**
+
+```bash
+claude mcp add screendocs -- npx -y screendocs mcp
+# Windows:
+claude mcp add screendocs -- cmd /c npx -y screendocs mcp
+```
+
+Com `--scope user` ele fica disponível em todos os projetos. Confira com `/mcp` dentro do Claude Code.
+
+**Cursor** (`.cursor/mcp.json`), Claude Desktop sem o instalador (`claude_desktop_config.json`) e a maioria dos outros clientes:
+
+```json
+{
+  "mcpServers": {
+    "screendocs": { "command": "npx", "args": ["-y", "screendocs", "mcp", "--dir", "C:/Users/voce/screendocs"] }
+  }
+}
+```
+
+**VS Code** (`.vscode/mcp.json`): o mesmo, dentro de `"servers"` e com `"type": "stdio"`. **Codex** (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.screendocs]
+command = "npx"
+args = ["-y", "screendocs", "mcp"]
+```
+
+As capturas e os logins salvos ficam na pasta em que o cliente inicia o servidor (no Claude Code e no Cursor, o seu projeto). `--dir <pasta>` escolhe essa pasta, o que vale a pena no Claude Desktop, onde ela não é sua (o instalador pergunta). Para usar uma cópia do screendocs que não está no npm, troque `npx -y screendocs` por `node <caminho>/bin/screendocs.mjs`.
+
+| Ferramenta | O que faz |
+|---|---|
+| `capture_site` | Captura um site (mesmas opções da linha de comando: `pages`, `exclude`, `viewports`, `maxPages`, `depth`, `video`, `keep`, `mask`, `lang`...) |
+| `list_captures` | Os sites já capturados |
+| `get_capture` | As telas de uma captura, com o caminho de cada imagem e a descrição atual |
+| `view_screens` | Mostra até 10 fotos para a IA |
+| `save_descriptions` | Salva títulos e descrições no `screens.json` e no relatório, marcados com o nome da IA |
+| `login`, `save_login` | Abre uma janela do navegador para você fazer login e depois salva a sessão para as próximas capturas |
+
+Uma captura leva de um a vários minutos; com `video: false` é mais rápida.
+
+> **Quais IAs funcionam.** Qualquer app que roda servidores MCP no seu computador: Claude Desktop, Claude Code, Cursor, VS Code (Copilot), Windsurf, Codex, Gemini CLI, Cline, LM Studio e outros. Chats de IA que rodam só no navegador (ChatGPT, Claude.ai, Gemini na web) não conseguem abrir um programa no seu computador, então não funcionam. O modelo também precisa **ler imagens**: ele olha cada foto para descrevê-la. Um modelo só de texto consegue capturar o site, mas não descrever as telas.
+
 ## Dados reais
 
 Áreas logadas costumam mostrar dados de pessoas reais. O borrão automático cobre os casos comuns, não todos: use uma conta de teste quando puder e confira as imagens antes de publicar.
