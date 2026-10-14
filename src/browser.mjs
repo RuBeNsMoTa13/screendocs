@@ -57,6 +57,7 @@ export async function ensureVideoEncoder(browser) {
   }
   console.log("Downloading the video encoder (ffmpeg, first run only)...");
   const cli = path.join(path.dirname(createRequire(import.meta.url).resolve("playwright-core/package.json")), "cli.js");
-  const r = spawnSync(process.execPath, [cli, "install", "ffmpeg"], { stdio: "inherit" });
+  // Its output goes to stderr: under `screendocs mcp`, stdout carries the protocol
+  const r = spawnSync(process.execPath, [cli, "install", "ffmpeg"], { stdio: ["ignore", 2, 2] });
   if (r.status !== 0) throw new Error("could not download ffmpeg for the videos. Run again, or use --no-video.");
 }

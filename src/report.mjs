@@ -39,6 +39,7 @@ export function writeData(root, data, lang = data.lang ?? "en") {
 }
 
 const LANGS = { en: "English", pt: "Brazilian Portuguese", "pt-br": "Brazilian Portuguese", es: "Spanish" };
+export const langName = (lang) => LANGS[String(lang).toLowerCase()] ?? lang;
 
 /**
  * How to describe the screens with an AI chat in the browser, for whoever prefers doing it
@@ -98,7 +99,7 @@ export function primaryScreens(data) {
 
 /** The instructions and the list of screens, shared by prompt.md and the AI tools. */
 export function task(data, screens, what = "screenshot", docs = "") {
-  const lang = LANGS[String(data.lang).toLowerCase()] ?? data.lang;
+  const lang = langName(data.lang);
   const list = screens
     .map((s) => `- \`${s.file}\` · page ${s.page}${s.heading ? ` · heading: ${s.heading}` : ""}${s.description && s.description !== s.heading ? ` · text: ${s.description}` : ""}`)
     .join("\n");

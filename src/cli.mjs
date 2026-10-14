@@ -8,7 +8,7 @@ import { writeReport, writeForAi } from "./report.mjs";
 import { findCapture } from "./answers.mjs";
 import { chatFlow } from "./chat.mjs";
 import { launch, ensureVideoEncoder } from "./browser.mjs";
-import { authFile } from "./paths.mjs";
+import { authFile, normalizeUrl } from "./paths.mjs";
 import { sessionStatus } from "./session.mjs";
 import { interactive, banner, chooseDescriber } from "./interactive.mjs";
 import * as p from "@clack/prompts";
@@ -23,6 +23,7 @@ Usage
   npx screendocs <url> [options]       capture the site
   npx screendocs login <url>           log in once; later runs reuse the session
   npx screendocs describe <site>       describe the screens of a capture you already made
+  npx screendocs mcp [--dir <folder>]  MCP server for AI clients (Claude Code, Cursor...); see the README
 
 Options
   --max-pages <n>       pages to discover (default 20)
@@ -53,6 +54,12 @@ Options
 `;
 
 export async function run(argv) {
+  // Before anything prints: under an AI client, stdout carries the MCP protocol
+  if (argv[0] === "mcp") {
+    const { values } = parseArgs({ args: argv.slice(1), options: { dir: { type: "string" } } });
+    const { startMcp } = await import("./mcp.mjs");
+    return startMcp(values);
+  }
   // No arguments in a real terminal: show the menu instead of the help
   if (argv.length === 0 && process.stdin.isTTY && process.stdout.isTTY) argv = await interactive();
   else if (process.stdout.isTTY && !argv.some((x) => ["-h", "--help", "-v", "--version"].includes(x))) banner();
@@ -187,9 +194,4 @@ function openFile(file) {
   const [cmd, args] =
     process.platform === "win32" ? ["cmd", ["/c", "start", "", file]] : [process.platform === "darwin" ? "open" : "xdg-open", [file]];
   spawn(cmd, args, { detached: true, stdio: "ignore" }).on("error", () => {}).unref();
-}
-
-function normalizeUrl(raw) {
-  const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-  return new URL(withProto).href;
 }
