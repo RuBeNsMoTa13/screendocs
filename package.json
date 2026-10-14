@@ -1,0 +1,21 @@
+{
+  "name": "screendocs",
+  "version": "0.1.0",
+  "description": "Automatically screenshot, record and document every screen of a website, including pages behind login.",
+  "type": "module",
+  "bin": {
+    "screendocs": "bin/screendocs.mjs"
+  },
+  "files": ["bin", "src", "README.md", "README.pt-BR.md", "LICENSE"],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["screenshot", "documentation", "playwright", "portfolio", "crawler", "website"],
+  "author": "Rubens Mota",
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "0.11.0",
+    "picocolors": "1.1.1",
+    "playwright-core": "1.56.1"
+  }
+}
