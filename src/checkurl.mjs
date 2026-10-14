@@ -1,14 +1,14 @@
 /**
  * Checks that a web address answers before the capture starts and, when it does not,
- * looks for the address the person probably meant (missing www, missing .br, a typo).
+ * looks for the address the person probably meant (missing www, another ending, a typo).
  */
 
 const TIMEOUT = 8000;
 
 /** Address examples shown when the one typed does not work. */
 export const EXAMPLES = {
-  en: ["mysite.com", "www.mysite.com", "app.mysite.com/login", "http://localhost:3000"],
-  pt: ["meusite.com.br", "www.meusite.com", "app.meusite.com/login", "http://localhost:3000"],
+  en: ["mysite.com", "www.mysite.net", "mysite.io", "app.mysite.dev/login", "http://localhost:3000"],
+  pt: ["meusite.com.br", "www.meusite.com", "meusite.net.br", "meusite.app", "app.meusite.io/login", "http://localhost:3000"],
 };
 
 /**
@@ -20,7 +20,10 @@ export async function checkUrl(url, { get = reach } = {}) {
   if (first.ok) return first;
   const tries = candidates(url);
   const answers = await Promise.all(tries.map((u) => get(u)));
-  return { ok: false, reason: first.reason, suggestions: tries.filter((_, i) => answers[i].ok) };
+  const ok = tries.filter((_, i) => answers[i].ok);
+  // site.net and www.site.net both answering are the same site: show it once
+  const suggestions = ok.filter((t) => !(t.includes("://www.") && ok.includes(t.replace("://www.", "://"))));
+  return { ok: false, reason: first.reason, suggestions };
 }
 
 /**
@@ -50,26 +53,34 @@ function why(e) {
   return "other";
 }
 
-/** Addresses close to the one typed: www, .br, common typos, http. */
+/** Endings tried when the one typed does not answer, most common first. */
+const ENDINGS = ["com.br", "com", "net.br", "net", "org.br", "org", "io", "app", "dev"];
+const KNOWN = [...ENDINGS, "gov.br", "edu.br", "br"].sort((x, y) => y.length - x.length);
+
+/** Addresses close to the one typed: www, another ending (.com.br, .net, .io...), typos, http. */
 export function candidates(url) {
   const u = new URL(url);
   const host = u.hostname.toLowerCase();
   const local = host === "localhost" || /^[\d.]+$/.test(host) || host.includes(":");
   const hosts = new Set();
   if (!local) {
-    let fixed = host
+    const fixed = host
       .replace(/\.(con|cmo|ocm|vom|xom)$/, ".com")
       .replace(/\.(con|cmo|ocm|vom|xom)\.br$/, ".com.br")
       .replace(/\.com\.(b|bt|be)$/, ".com.br")
       .replace(/\.combr$/, ".com.br");
-    // "radiobraba" alone: the ending is missing
-    for (const f of fixed.includes(".") ? [fixed] : [`${fixed}.com.br`, `${fixed}.com`]) {
-      const bare = f.replace(/^www\./, "");
-      for (const h of [f, bare, `www.${bare}`]) {
-        hosts.add(h);
-        if (/\.(com|net|org)$/.test(h)) hosts.add(`${h}.br`);
-        if (/\.(com|net|org)\.br$/.test(h)) hosts.add(h.replace(/\.br$/, ""));
-      }
+    // "www.radiobraba.com.br" -> name "radiobraba", ending "com.br"; "radiobraba" alone has no ending
+    const bare = fixed.replace(/^www\./, "");
+    const end = KNOWN.find((e) => bare.endsWith(`.${e}`)) ?? (bare.includes(".") ? bare.split(".").pop() : "");
+    const name = end ? bare.slice(0, -end.length - 1) : bare;
+    const toggled = end.endsWith(".br") ? end.slice(0, -3) : `${end}.br`;
+    // A government or university address keeps its ending: prefeitura.sp.com.br would be someone else
+    const swap = !/^(gov|edu)\.br$/.test(end);
+    const ends = [...new Set([end, ...(ENDINGS.includes(toggled) ? [toggled] : []), ...(swap ? ENDINGS : [])].filter(Boolean))];
+    for (const e of ends) {
+      hosts.add(`${name}.${e}`);
+      // www only on a plain name: app.site.com does not become www.app.site.com
+      if (!name.includes(".")) hosts.add(`www.${name}.${e}`);
     }
   }
   const out = [];
@@ -81,7 +92,7 @@ export function candidates(url) {
   }
   // The site may have no https (common on local servers)
   if (u.protocol === "https:") out.push(u.href.replace(/^https:/, "http:"));
-  return [...new Set(out)].filter((x) => x !== u.href).slice(0, 8);
+  return [...new Set(out)].filter((x) => x !== u.href);
 }
 
 const REASON = {

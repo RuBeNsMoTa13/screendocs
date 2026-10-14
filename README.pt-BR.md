@@ -34,7 +34,7 @@ A pasta `.screendocs/` dá acesso à sua conta. Ela entra no `.gitignore` automa
 
 ## O que ele faz
 
-- **Confere o endereço** antes de começar: se o site não abrir, sugere o que pode estar faltando (`www.`, `.br`, um erro de digitação) e mostra exemplos, como `meusite.com.br`, `www.meusite.com` ou `app.meusite.com/login`.
+- **Confere o endereço** antes de começar: se o site não abrir, testa endereços parecidos (com ou sem `www.`, outros finais como `.com.br`, `.com`, `.net`, `.org`, `.io`, `.app`, `.dev`, erros como `.con`) e sugere os que abrirem, com exemplos como `meusite.com.br`, `meusite.app` ou `app.meusite.io/login`.
 - **Acha as páginas sozinho**: segue os links do próprio site a partir da página inicial, pula links de sair/logout e arquivos, e trata `/posts/12` e `/posts/13` como uma tela só.
 - **Uma imagem por seção**: `<header>`, `<section>`, `<footer>` e blocos parecidos; páginas sem isso são cortadas em fatias do tamanho da tela. Também tira a página inteira.
 - **Computador e celular** (1440×900 e 390×844).
