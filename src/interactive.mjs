@@ -58,8 +58,8 @@ const T = {
     loggedIn: "Done, I am logged in",
     chat: "A chat in your browser (ChatGPT, Gemini, Claude.ai...)",
     chatHint: "step by step, no key",
-    later: "Nobody now",
-    laterHint: "later: npx screendocs describe <site>",
+    later: "Just the page scan for now",
+    laterHint: "an AI can describe later: npx screendocs describe <site>",
     api: "An API (your key)",
     provider: "Which provider?",
     other: "Other (type the address)",
@@ -117,8 +117,8 @@ const T = {
     loggedIn: "Pronto, fiz login",
     chat: "Um chat no navegador (ChatGPT, Gemini, Claude.ai...)",
     chatHint: "passo a passo, sem chave",
-    later: "Ninguém agora",
-    laterHint: "depois: npx screendocs describe <site>",
+    later: "Por enquanto, só o scan da página",
+    laterHint: "uma IA pode descrever depois: npx screendocs describe <site>",
     api: "Uma API (com a sua chave)",
     provider: "Qual provedor?",
     other: "Outro (digitar o endereço)",
@@ -303,7 +303,7 @@ export async function interactive() {
 
 /**
  * "Who writes the descriptions?": an AI tool installed here, an API, an AI chat in the
- * browser (guided) or, in the capture menu, nobody for now. Also used by "screendocs describe".
+ * browser (guided) or, in the capture menu, just the page scan for now. Also used by "screendocs describe".
  */
 export async function chooseDescriber({ t = T[uiLang()], a = ask(t), later = false } = {}) {
   let tool;
