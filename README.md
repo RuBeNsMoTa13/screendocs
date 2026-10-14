@@ -120,7 +120,7 @@ The titles and descriptions go into `screens.json` and `index.html`, and the mob
 
 **1. A chat in your browser (no key, nothing installed).** Choose "A chat in your browser (ChatGPT, Gemini, Claude.ai...)" or use `--describe chat`. screendocs guides you: it opens a folder with the images (up to 10 per part, with unique names) and copies the text for the AI; you drag the images into the chat, paste the text, and paste the AI's answer back in the terminal. It checks the answer and asks again if it is not right. `prompt.md` explains how to do the chat part on your own.
 
-**2. An AI tool on your computer (uses your plan, no API key).** If [Claude Code](https://code.claude.com), [Codex](https://developers.openai.com/codex) or the [Antigravity CLI](https://antigravity.google) (`agy`, use a recent version) is installed and logged in, screendocs runs it for you:
+**2. An AI tool on your computer (uses your plan, no API key).** If [Claude Code](https://code.claude.com), [Codex](https://developers.openai.com/codex) or the [Antigravity CLI](https://antigravity.google) (`agy`, use a recent version) is installed and logged in, screendocs runs it for you. The menu always lists the three; if the one you pick is missing, it offers to install it with its official installer and tells you how to log in:
 
 ```bash
 npx screendocs https://your-site.com --describe claude   # or codex, antigravity

@@ -6,7 +6,7 @@ import { login } from "./login.mjs";
 import { authFile } from "./paths.mjs";
 import { launch } from "./browser.mjs";
 import { sessionStatus } from "./session.mjs";
-import { AGENTS, PROVIDERS, installedAgents } from "./agents.mjs";
+import { AGENTS, PROVIDERS, installedAgents, installCommand, installAgent } from "./agents.mjs";
 import { checkUrl, EXAMPLES, URL_TEXT, short } from "./checkurl.mjs";
 
 const BIG = String.raw`
@@ -49,6 +49,13 @@ const T = {
     mask: "Blur emails, phones, CPF/CNPJ and filled form fields?",
     describe: "Who writes the descriptions of the screens?",
     yourPlan: "uses your plan, no API key",
+    notInstalled: "not installed here, I can install it",
+    installWhat: (n, c) => `${n} is not installed on this computer. Its official installer is:\n  ${c}`,
+    installNow: (n) => `Install ${n} now?`,
+    installed: (n) => `${n} installed.`,
+    installFailed: (n, c) => `${n} did not install, or this terminal cannot see it yet. Close and reopen the terminal and run screendocs again, or install it yourself with:\n  ${c}`,
+    loginNow: (n, c) => `Now log in to ${n}: open another terminal, run ${c}, sign in with your account and come back.`,
+    loggedIn: "Done, I am logged in",
     chat: "A chat in your browser (ChatGPT, Gemini, Claude.ai...)",
     chatHint: "step by step, no key",
     later: "Nobody now",
@@ -101,6 +108,13 @@ const T = {
     mask: "Borrar e-mails, telefones, CPF/CNPJ e campos preenchidos?",
     describe: "Quem escreve as descrições das telas?",
     yourPlan: "usa o seu plano, sem chave de API",
+    notInstalled: "não instalado aqui, posso instalar",
+    installWhat: (n, c) => `O ${n} não está instalado neste computador. O instalador oficial é:\n  ${c}`,
+    installNow: (n) => `Instalar o ${n} agora?`,
+    installed: (n) => `${n} instalado.`,
+    installFailed: (n, c) => `O ${n} não instalou, ou este terminal ainda não enxerga ele. Feche e abra o terminal e rode o screendocs de novo, ou instale você mesmo com:\n  ${c}`,
+    loginNow: (n, c) => `Agora faça login no ${n}: abra outro terminal, rode ${c}, entre com a sua conta e volte aqui.`,
+    loggedIn: "Pronto, fiz login",
     chat: "Um chat no navegador (ChatGPT, Gemini, Claude.ai...)",
     chatHint: "passo a passo, sem chave",
     later: "Ninguém agora",
@@ -292,16 +306,21 @@ export async function interactive() {
  * browser (guided) or, in the capture menu, nobody for now. Also used by "screendocs describe".
  */
 export async function chooseDescriber({ t = T[uiLang()], a = ask(t), later = false } = {}) {
-  const agents = installedAgents();
-  const tool = await a(p.select({
-    message: t.describe,
-    options: [
-      ...agents.map((k) => ({ value: k, label: AGENTS[k].name, hint: t.yourPlan })),
-      { value: "api", label: t.api, hint: "OpenAI, Gemini, OpenRouter, Anthropic, Ollama..." },
-      { value: "chat", label: t.chat, hint: t.chatHint },
-      ...(later ? [{ value: "", label: t.later, hint: t.laterHint }] : []),
-    ],
-  }));
+  let tool;
+  // Every AI tool is listed; one that is missing can be installed from here
+  for (;;) {
+    const agents = installedAgents();
+    tool = await a(p.select({
+      message: t.describe,
+      options: [
+        ...Object.keys(AGENTS).map((k) => ({ value: k, label: AGENTS[k].name, hint: agents.includes(k) ? t.yourPlan : t.notInstalled })),
+        { value: "api", label: t.api, hint: "OpenAI, Gemini, OpenRouter, Anthropic, Ollama..." },
+        { value: "chat", label: t.chat, hint: t.chatHint },
+        ...(later ? [{ value: "", label: t.later, hint: t.laterHint }] : []),
+      ],
+    }));
+    if (!AGENTS[tool] || agents.includes(tool) || (await setUp(t, a, tool))) break;
+  }
   if (tool !== "api") return { describe: tool };
   const url = await a(p.select({
     message: t.provider,
@@ -316,6 +335,20 @@ export async function chooseDescriber({ t = T[uiLang()], a = ask(t), later = fal
     process.env.SCREENDOCS_API_KEY = key.trim();
   }
   return { describe: "api", apiUrl, model };
+}
+
+/** Installs a missing AI tool with its official installer and has the person log in. False: back to the list. */
+async function setUp(t, a, agent) {
+  const { name, login } = AGENTS[agent];
+  p.log.warn(t.installWhat(name, installCommand(agent)));
+  if (!(await a(p.confirm({ message: t.installNow(name), active: t.yes, inactive: t.no, initialValue: true })))) return false;
+  if (!installAgent(agent)) {
+    p.log.error(t.installFailed(name, installCommand(agent)));
+    return false;
+  }
+  p.log.success(t.installed(name));
+  await a(p.select({ message: t.loginNow(name, login), options: [{ value: true, label: t.loggedIn }] }));
+  return true;
 }
 
 /**

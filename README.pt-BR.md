@@ -120,7 +120,7 @@ Os títulos e descrições vão para o `screens.json` e o `index.html`, e as tel
 
 **1. Um chat no navegador (sem chave, sem instalar nada).** Escolha "Um chat no navegador (ChatGPT, Gemini, Claude.ai...)" ou use `--describe chat`. O screendocs guia você: abre uma pasta com as imagens (até 10 por parte, com nomes únicos) e copia o texto para a IA; você arrasta as imagens para o chat, cola o texto e cola a resposta da IA de volta no terminal. Ele confere a resposta e pede de novo se não vier certa. O `prompt.md` explica como fazer a parte do chat por conta própria.
 
-**2. Uma ferramenta de IA no seu computador (usa o seu plano, sem chave de API).** Se o [Claude Code](https://code.claude.com), o [Codex](https://developers.openai.com/codex) ou o [Antigravity CLI](https://antigravity.google) (`agy`, use uma versão recente) estiver instalado e com login feito, o screendocs roda ele para você:
+**2. Uma ferramenta de IA no seu computador (usa o seu plano, sem chave de API).** Se o [Claude Code](https://code.claude.com), o [Codex](https://developers.openai.com/codex) ou o [Antigravity CLI](https://antigravity.google) (`agy`, use uma versão recente) estiver instalado e com login feito, o screendocs roda ele para você. O menu sempre mostra os três; se o escolhido não estiver instalado, ele oferece instalar com o instalador oficial e diz como fazer login:
 
 ```bash
 npx screendocs https://seu-site.com.br --describe claude   # ou codex, antigravity
