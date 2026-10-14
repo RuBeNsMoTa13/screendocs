@@ -100,11 +100,11 @@ export function primaryScreens(data) {
 export function task(data, screens, what = "screenshot", docs = "") {
   const lang = LANGS[String(data.lang).toLowerCase()] ?? data.lang;
   const list = screens
-    .map((s) => `- \`${s.file}\` · page ${s.page}${s.heading ? ` · heading: ${s.heading}` : ""}${s.description && s.description !== s.heading ? ` · text: ${s.description}` : ""}`)
+    .map((s) => `- \`${s.file}\` · page ${s.page}${s.heading ? ` · heading: ${s.heading}` : ""}${s.description && !s.describedBy && s.description !== s.heading ? ` · text: ${s.description}` : ""}`)
     .join("\n");
   return `You are documenting the screens of the website ${data.url}. For each ${what}, say in ${lang} what the user sees and can do there, based only on what is visible and on the notes below${docs ? ` and on the project documentation in ${docs}` : ""}. Do not invent features.
 
-Reply with only a JSON array, one item per image, using the exact file names below:
+Reply with only a JSON array, one item per image, using the exact file names below. There ${screens.length === 1 ? "is 1 image" : `are ${screens.length} images`}, so the array must have exactly ${screens.length} item(s), none repeated. If any image did not arrive, write which ones before the JSON.
 
 \`\`\`json
 [{ "file": "${screens[0]?.file ?? "desktop/home/01.jpg"}", "title": "2 to 6 words", "description": "one or two sentences" }]

@@ -30,10 +30,18 @@ const WIN = process.platform === "win32";
 const BATCH = 10; // screens per run, so each run stays small
 const TIMEOUT = 15 * 60_000;
 
+/**
+ * On Windows the tools are .cmd launchers that need a shell. Node warns (DEP0190) when an
+ * argument list goes with shell: true, so there the command goes as one already-quoted line.
+ */
+function cmd(bin, args, opts) {
+  return WIN ? [[bin, ...args].join(" "), [], { ...opts, shell: true }] : [bin, args, opts];
+}
+
 /** The AI tools found on this computer. */
 export function installedAgents() {
   return Object.keys(AGENTS).filter(
-    (k) => spawnSync(AGENTS[k].bin, ["--version"], { shell: WIN, stdio: "ignore", timeout: 20_000 }).status === 0,
+    (k) => spawnSync(...cmd(AGENTS[k].bin, ["--version"], { stdio: "ignore", timeout: 20_000 })).status === 0,
   );
 }
 
@@ -96,7 +104,7 @@ function run(agent, root, file, batch, docsDir) {
         : [...(docsDir ? ["--add-dir", q(docsDir)] : []), "--print-timeout", "15m", "-p", q(ask)];
 
   return new Promise((resolve, reject) => {
-    const child = spawn(AGENTS[agent].bin, args, { cwd: root, shell: WIN, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(...cmd(AGENTS[agent].bin, args, { cwd: root, stdio: ["ignore", "pipe", "pipe"] }));
     let out = "";
     let err = "";
     child.stdout.on("data", (d) => (out += d));

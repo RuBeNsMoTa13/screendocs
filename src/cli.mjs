@@ -147,6 +147,12 @@ export async function run(argv) {
       }
     }
     const pages = await discover(browser, config, storageState);
+    if (!pages.length) {
+      throw new Error(
+        `no pages found at ${start.href}. Open it in your browser and check that it loads without a login or a "verify you are human" check.` +
+          (storageState ? "" : " If it needs a login, run: screendocs login " + start.host),
+      );
+    }
     console.log(`\n${pages.length} page(s) to capture`);
     if (config.video) await ensureVideoEncoder(browser);
     // The report is rewritten after every page, so stopping halfway still leaves one

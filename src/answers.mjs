@@ -15,7 +15,8 @@ export function parseAnswer(text) {
   for (const t of [...fenced, String(text)]) {
     try {
       const items = JSON.parse(t.slice(t.indexOf("["), t.lastIndexOf("]") + 1));
-      if (Array.isArray(items)) return items;
+      // Skip the example of the text for the AI, when that text was pasted along with the answer
+      if (Array.isArray(items) && !items.every((it) => /^2 to 6 words$/i.test(String(it?.title ?? "").trim()))) return items;
     } catch {}
   }
   return null;
