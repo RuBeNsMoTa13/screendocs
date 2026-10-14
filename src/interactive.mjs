@@ -28,7 +28,7 @@ const T = {
   en: {
     tagline: "screenshots, videos and docs of every screen of a website",
     by: "by",
-    url: "Which site do you want to document?",
+    url: "Which site do you want to document? (e.g. mysite.com, www.mysite.com.br, app.mysite.io/login)",
     urlBad: "Type a web address, like mysite.com",
     savedLogin: (h) => `Using the saved login for ${h}.`,
     checking: "Checking the saved login...",
@@ -80,7 +80,7 @@ const T = {
   pt: {
     tagline: "fotos, vídeos e documentação de todas as telas de um site",
     by: "por",
-    url: "Qual site você quer documentar?",
+    url: "Qual site você quer documentar? (ex.: meusite.com.br, www.meusite.com, app.meusite.io/login)",
     urlBad: "Digite um endereço, como meusite.com.br",
     savedLogin: (h) => `Usando o login salvo de ${h}.`,
     checking: "Conferindo o login salvo...",
@@ -328,7 +328,7 @@ async function askUrl(t, a, lang) {
   for (;;) {
     typed = await a(p.text({
       message: t.url,
-      placeholder: "https://",
+      placeholder: lang === "pt" ? "meusite.com.br" : "mysite.com",
       initialValue: typed,
       validate: (v) => (toUrl(v) ? undefined : t.urlBad),
     }));

@@ -27,6 +27,9 @@ Usage
   npx screendocs describe <site>       describe the screens of a capture you already made
   npx screendocs mcp [--dir <folder>]  MCP server for AI clients (Claude Code, Cursor...); see the README
 
+  <url> examples: mysite.com, www.mysite.com.br, app.mysite.io/login, http://localhost:3000
+  (https:// is added when missing; the address is checked before the capture starts)
+
 Options
   --max-pages <n>       pages to discover (default 20)
   --depth <n>           link depth from the start page (default 3)
