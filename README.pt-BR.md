@@ -20,6 +20,33 @@ npx screendocs https://seu-site.com
 
 Ele usa o Chrome ou o Edge já instalado no seu computador; nenhum navegador é baixado. O resultado fica em `screendocs-output/<site>/`; abra o `index.html`.
 
+## O que roda por padrão
+
+Com só o link (`npx screendocs meusite.com.br`), ele não pergunta nada e usa os padrões:
+
+| O que | Padrão | Para mudar |
+|---|---|---|
+| Endereço | confere se abre antes de começar e sugere correções | `--no-url-check` |
+| Login | usa o login salvo do site, se existir (`screendocs login`), e avisa se expirou | `npx screendocs login <site>` |
+| Páginas | segue os links a partir da página inicial, até 20 páginas e 3 cliques de distância | `--max-pages`, `--depth`, `--exclude`, `--pages` |
+| Telas | computador e celular | `--viewports desktop` ou `--viewports mobile` |
+| Fotos | uma por seção, mais a página inteira | |
+| Vídeo | um rolando cada página | `--no-video` |
+| Dados pessoais | borra e-mails, telefones, CPF/CNPJ e campos preenchidos | `--mask`, `--no-auto-mask` |
+| Descrições | nenhuma IA: cada tela fica com o texto da página (título e primeiro parágrafo) | `--describe`, ou depois `npx screendocs describe <site>` |
+| Idioma das descrições | inglês | `--lang pt` |
+| Pasta | `screendocs-output/<site>/`, substituindo a captura anterior do mesmo site | `--out`, `--keep` |
+| Navegador | escondido | `--headed` |
+| Relatório | não abre sozinho; o terminal mostra o caminho do `index.html` | `--open` |
+
+Há três jeitos de mudar os padrões:
+
+1. **No comando**, só para essa vez: `npx screendocs meusite.com.br --no-video --describe chat --lang pt --open`. Todas as opções estão em [Opções](#opções) e em `npx screendocs --help`.
+2. **No arquivo `screendocs.config.json`**, na pasta onde roda o comando, para valer sempre ali. Veja [Arquivo de configuração](#arquivo-de-configuração).
+3. **Pelo menu** (`npx screendocs` sem link): ele pergunta cada coisa e mostra no fim o comando equivalente, para repetir depois sem as perguntas.
+
+Quando mais de um define a mesma opção, vale o que estiver no comando, depois o arquivo, depois o padrão.
+
 ## Páginas com login
 
 ```bash
@@ -80,7 +107,7 @@ Variáveis de ambiente:
 
 ## Arquivo de configuração
 
-Crie um `screendocs.config.json` na pasta onde roda o comando e deixe as opções nele:
+Crie um `screendocs.config.json` na pasta onde roda o comando e deixe as opções nele. Elas trocam os padrões sempre que você roda o screendocs nessa pasta, e uma opção passada no comando ainda vale mais que o arquivo:
 
 ```json
 {

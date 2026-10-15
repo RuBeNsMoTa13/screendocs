@@ -30,6 +30,9 @@ Usage
   <url> examples: mysite.com, www.mysite.com.br, app.mysite.io/login, http://localhost:3000
   (https:// is added when missing; the address is checked before the capture starts)
 
+  With only <url>, every option below uses its default. To change them: type the option
+  here, or keep it in screendocs.config.json in this folder (the command wins over the file).
+
 Options
   --max-pages <n>       pages to discover (default 20)
   --depth <n>           link depth from the start page (default 3)

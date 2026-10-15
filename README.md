@@ -20,6 +20,33 @@ npx screendocs https://your-site.com
 
 It uses the Chrome or Edge already installed on your computer; no browser is downloaded. Output goes to `screendocs-output/<site>/`; open `index.html`.
 
+## What runs by default
+
+With just the link (`npx screendocs mysite.com`), it asks nothing and uses the defaults:
+
+| What | Default | To change |
+|---|---|---|
+| Address | checks that it opens before starting and suggests fixes | `--no-url-check` |
+| Login | uses the site's saved login, if there is one (`screendocs login`), and warns when it has expired | `npx screendocs login <site>` |
+| Pages | follows links from the start page, up to 20 pages and 3 clicks away | `--max-pages`, `--depth`, `--exclude`, `--pages` |
+| Screens | desktop and mobile | `--viewports desktop` or `--viewports mobile` |
+| Images | one per section, plus the full page | |
+| Video | one scrolling each page | `--no-video` |
+| Personal data | blurs emails, phones, CPF/CNPJ and filled form fields | `--mask`, `--no-auto-mask` |
+| Descriptions | no AI: each screen keeps the page's own text (title and first paragraph) | `--describe`, or later `npx screendocs describe <site>` |
+| Description language | English | `--lang pt` |
+| Folder | `screendocs-output/<site>/`, replacing the previous capture of the same site | `--out`, `--keep` |
+| Browser | hidden | `--headed` |
+| Report | not opened; the terminal shows the path to `index.html` | `--open` |
+
+There are three ways to change the defaults:
+
+1. **On the command**, for that run only: `npx screendocs mysite.com --no-video --describe chat --lang pt --open`. Every option is in [Options](#options) and in `npx screendocs --help`.
+2. **In a `screendocs.config.json` file**, in the folder where you run the command, to apply every time there. See [Config file](#config-file).
+3. **With the menu** (`npx screendocs` with no link): it asks about each thing and shows the equivalent command at the end, to repeat later without the questions.
+
+When more than one sets the same option, the command wins, then the file, then the default.
+
 ## Pages behind a login
 
 ```bash
@@ -80,7 +107,7 @@ Environment variables:
 
 ## Config file
 
-Put `screendocs.config.json` where you run the command and keep the options there:
+Put `screendocs.config.json` where you run the command and keep the options there. They replace the defaults every time you run screendocs in that folder, and an option typed on the command still wins over the file:
 
 ```json
 {
