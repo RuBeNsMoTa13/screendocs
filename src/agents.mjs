@@ -12,10 +12,45 @@ import { parseAnswer, applyItems } from "./answers.mjs";
  *   Ollama...), called with fetch, so no SDK is installed.
  */
 export const AGENTS = {
-  claude: { name: "Claude Code", bin: "claude" },
-  codex: { name: "Codex", bin: "codex" },
-  antigravity: { name: "Antigravity", bin: "agy" },
+  claude: {
+    name: "Claude Code",
+    bin: "claude",
+    install: { win: "irm https://claude.ai/install.ps1 | iex", unix: "curl -fsSL https://claude.ai/install.sh | bash" },
+    login: "claude",
+  },
+  codex: {
+    name: "Codex",
+    bin: "codex",
+    install: { win: "npm install -g @openai/codex", unix: "npm install -g @openai/codex" },
+    login: "codex login",
+  },
+  antigravity: {
+    name: "Antigravity",
+    bin: "agy",
+    install: { win: "irm https://antigravity.google/cli/install.ps1 | iex", unix: "curl -fsSL https://antigravity.google/cli/install.sh | bash" },
+    login: "agy",
+  },
 };
+
+/** The official install command of a tool, for this system (PowerShell on Windows). */
+export const installCommand = (agent) => AGENTS[agent].install[WIN ? "win" : "unix"];
+
+/**
+ * Runs the official installer in this terminal, so the person sees it working. A new install
+ * goes on the PATH of new terminals only, so the usual install folders are added here too.
+ */
+export function installAgent(agent) {
+  const line = installCommand(agent);
+  const r = WIN
+    ? spawnSync("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", line], { stdio: "inherit" })
+    : spawnSync("sh", ["-c", line], { stdio: "inherit" });
+  const home = process.env.USERPROFILE || process.env.HOME || "";
+  const extra = [path.join(home, ".local", "bin")];
+  const npmPrefix = spawnSync(...cmd("npm", ["prefix", "-g"], { encoding: "utf8" })).stdout?.trim();
+  if (npmPrefix) extra.push(WIN ? npmPrefix : path.join(npmPrefix, "bin"));
+  process.env.PATH = [process.env.PATH, ...extra].join(path.delimiter);
+  return r.status === 0 && installedAgents().includes(agent);
+}
 
 /** OpenAI-compatible endpoints of common providers, offered in the menu. */
 export const PROVIDERS = [
@@ -56,7 +91,11 @@ export function checkAgent(agent, config = {}) {
   }
   if (!AGENTS[agent]) throw new Error(`--describe accepts ${[...Object.keys(AGENTS), "api", "chat"].join(", ")}`);
   if (!installedAgents().includes(agent)) {
-    throw new Error(`${AGENTS[agent].name} was not found. Install it and log in, or use --describe chat (an AI chat in your browser).`);
+    throw new Error(
+      `${AGENTS[agent].name} was not found. Install it with: ${installCommand(agent)}` +
+        `\nthen log in by running: ${AGENTS[agent].login}` +
+        `\n(or use --describe chat, an AI chat in your browser)`,
+    );
   }
 }
 
