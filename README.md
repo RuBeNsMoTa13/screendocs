@@ -12,7 +12,7 @@ Works with any site, in any stack. Nothing is installed in the project being doc
 npx screendocs
 ```
 
-With no arguments it opens an interactive menu that asks for the site and the options (login, desktop/mobile, video, which pages) and shows the equivalent command at the end. Or pass everything at once:
+With no arguments it opens an interactive menu that asks for the site and the options (login, desktop/mobile, video, which pages) and shows the equivalent command at the end. `Esc` goes back to the previous question and `Ctrl+C` quits. Or pass everything at once:
 
 ```bash
 npx screendocs https://your-site.com

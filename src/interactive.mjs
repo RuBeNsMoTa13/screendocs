@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import readline from "node:readline";
 import pc, { crimson, bgCrimson } from "./theme.mjs";
 import * as p from "@clack/prompts";
 import { login } from "./login.mjs";
@@ -54,7 +55,7 @@ const T = {
     installNow: (n) => `Install ${n} now?`,
     installed: (n) => `${n} installed.`,
     installFailed: (n, c) => `${n} did not install, or this terminal cannot see it yet. Close and reopen the terminal and run screendocs again, or install it yourself with:\n  ${c}`,
-    loginNow: (n, c) => `Now log in to ${n}: open another terminal, run ${c}, sign in with your account and come back.`,
+    agentLogin: (n, c) => `Now log in to ${n}: open another terminal, run ${c}, sign in with your account and come back.`,
     loggedIn: "Done, I am logged in",
     chat: "A chat in your browser (ChatGPT, Gemini, Claude.ai...)",
     chatHint: "step by step, no key",
@@ -81,6 +82,7 @@ const T = {
     start: "Start the capture?",
     command: "Same thing next time, without the questions",
     cancel: "Cancelled.",
+    keys: "Esc goes back to the previous question · Ctrl+C quits",
     yes: "Yes", no: "No", none: "none",
     number: "Type a number",
   },
@@ -113,7 +115,7 @@ const T = {
     installNow: (n) => `Instalar o ${n} agora?`,
     installed: (n) => `${n} instalado.`,
     installFailed: (n, c) => `O ${n} não instalou, ou este terminal ainda não enxerga ele. Feche e abra o terminal e rode o screendocs de novo, ou instale você mesmo com:\n  ${c}`,
-    loginNow: (n, c) => `Agora faça login no ${n}: abra outro terminal, rode ${c}, entre com a sua conta e volte aqui.`,
+    agentLogin: (n, c) => `Agora faça login no ${n}: abra outro terminal, rode ${c}, entre com a sua conta e volte aqui.`,
     loggedIn: "Pronto, fiz login",
     chat: "Um chat no navegador (ChatGPT, Gemini, Claude.ai...)",
     chatHint: "passo a passo, sem chave",
@@ -140,6 +142,7 @@ const T = {
     start: "Começar a captura?",
     command: "Para repetir sem as perguntas",
     cancel: "Cancelado.",
+    keys: "Esc volta para a pergunta anterior · Ctrl+C sai",
     yes: "Sim", no: "Não", none: "nenhuma",
     number: "Digite um número",
   },
@@ -164,11 +167,30 @@ export function banner(t = T[uiLang()]) {
   console.log(`  ${pc.dim(t.by)} ${pc.bold(AUTHOR.name)}  ${links.join(pc.dim("  ·  "))}\n`);
 }
 
-/** Stops cleanly when the user presses Ctrl+C or Esc on any question. */
-function ask(t) {
+/** Thrown by a question when the person presses Esc: go back to the previous one. */
+const BACK = Symbol("back");
+let lastKey;
+/** For .catch(): Esc inside a step gives `value` instead of leaving the step. */
+const back = (value) => (e) => {
+  if (e !== BACK) throw e;
+  return value;
+};
+
+/**
+ * Wraps each question. Ctrl+C stops cleanly. Esc also stops, unless `back` is on (the
+ * capture menu), where it goes back to the previous question instead.
+ */
+function ask(t, { back = false } = {}) {
+  if (back && lastKey === undefined) {
+    // Clack reports Esc and Ctrl+C the same way, so the key itself is watched here
+    readline.emitKeypressEvents(process.stdin);
+    process.stdin.on("keypress", (_, k) => (lastKey = k?.name));
+    lastKey = null;
+  }
   return async (prompt) => {
     const v = await prompt;
     if (p.isCancel(v)) {
+      if (back && lastKey === "escape") throw BACK;
       p.cancel(t.cancel);
       process.exit(0);
     }
@@ -179,126 +201,186 @@ function ask(t) {
 /**
  * The menu shown when screendocs runs with no arguments. Asks for the site and the
  * options, logs in if needed, and returns the same arguments the command line takes.
+ * Each question is a step; Esc goes back to the previous step with its answer filled in.
  */
 export async function interactive() {
   const lang = uiLang();
   const t = T[lang];
-  const a = ask(t);
+  const a = ask(t, { back: true });
   const yesNo = (o) => p.confirm({ active: t.yes, inactive: t.no, ...o });
   banner(t);
   p.intro(pc.bold(bgCrimson(pc.white(" ScreenDocs "))));
+  p.log.message(pc.dim(t.keys));
 
-  const url = await askUrl(t, a, lang);
-  const host = new URL(url).host;
-
-  if (fs.existsSync(authFile(host))) {
-    const spin = p.spinner();
-    spin.start(t.checking);
-    const browser = await launch();
-    const s = await sessionStatus(browser, host).finally(() => browser.close());
-    if (s.state === "expired") {
-      spin.stop(pc.yellow(t.expired(host, new URL(s.checkUrl).pathname)));
-      if (await a(yesNo({ message: t.relogin, initialValue: true }))) {
+  const s = { outDir: "screendocs-output", maxPages: "20", depth: "3" };
+  const isNum = (v) => (/^\d+$/.test((v ?? "").trim()) ? undefined : t.number);
+  const steps = [
+    async () => {
+      s.url = await askUrl(t, a, lang, s.typed);
+      s.typed = s.url.replace(/^https:\/\//, "").replace(/\/$/, "");
+      s.host = new URL(s.url).host;
+    },
+    async () => {
+      if (fs.existsSync(authFile(s.host))) {
+        const spin = p.spinner();
+        spin.start(t.checking);
+        const browser = await launch();
+        const st = await sessionStatus(browser, s.host).finally(() => browser.close());
+        if (st.state === "expired") {
+          spin.stop(pc.yellow(t.expired(s.host, new URL(st.checkUrl).pathname)));
+          if (await a(yesNo({ message: t.relogin, initialValue: true }))) {
+            p.log.step(t.loginNow);
+            await login(s.url);
+          }
+        } else {
+          spin.stop(st.state === "ok" ? t.savedLogin(s.host) : t.unchecked(s.host));
+        }
+      } else if (await a(yesNo({ message: t.hasLogin, initialValue: false }))) {
         p.log.step(t.loginNow);
-        await login(url);
+        await login(s.url);
       }
-    } else {
-      spin.stop(s.state === "ok" ? t.savedLogin(host) : t.unchecked(host));
+    },
+    async () => {
+      s.viewports = await a(p.select({
+        message: t.viewports,
+        initialValue: s.viewports,
+        options: [
+          { value: "both", label: t.both },
+          { value: "desktop", label: t.desktop },
+          { value: "mobile", label: t.mobile },
+        ],
+      }));
+    },
+    async () => (s.video = await a(yesNo({ message: t.video, initialValue: s.video ?? true }))),
+    async () => {
+      s.mode = await a(p.select({
+        message: t.mode,
+        initialValue: s.mode,
+        options: [
+          { value: "discover", label: t.discover, hint: t.discoverHint },
+          { value: "list", label: t.list },
+        ],
+      }));
+    },
+    {
+      when: () => s.mode === "discover",
+      run: async () => {
+        s.maxPages = (await a(p.text({
+          message: t.maxPages,
+          initialValue: s.maxPages,
+          validate: (v) => (/^\d+$/.test((v ?? "").trim()) && Number(v) > 0 ? undefined : t.number),
+        }))).trim();
+      },
+    },
+    {
+      when: () => s.mode === "discover",
+      run: async () => (s.exclude = (await a(p.text({ message: t.exclude, placeholder: t.none, initialValue: s.exclude }))) ?? ""),
+    },
+    {
+      when: () => s.mode === "list",
+      run: async () => {
+        s.paths = await a(p.text({ message: t.paths, placeholder: "/, /about, /pricing", initialValue: s.paths, validate: (v) => ((v ?? "").trim() ? undefined : t.paths) }));
+      },
+    },
+    async () => (s.autoMask = await a(yesNo({ message: t.mask, initialValue: s.autoMask ?? true }))),
+    async () => {
+      s.how = await chooseDescriber({ t, a, later: true });
+      if (!s.how.describe) p.log.info(pc.dim(t.noKey));
+    },
+    async () => {
+      // The language the AI writes the descriptions in
+      s.descLang = await a(p.select({
+        message: t.lang,
+        initialValue: s.descLang ?? lang,
+        options: [{ value: "pt", label: "Português" }, { value: "en", label: "English" }, { value: "es", label: "Español" }],
+      }));
+    },
+    async () => (s.advanced = await a(yesNo({ message: t.advanced, initialValue: s.advanced ?? false }))),
+    {
+      when: () => s.advanced && s.mode === "discover",
+      run: async () => (s.depth = (await a(p.text({ message: t.depth, initialValue: s.depth, validate: isNum }))).trim()),
+    },
+    {
+      when: () => s.advanced,
+      run: async () => (s.maskSel = (await a(p.text({ message: t.maskSel, placeholder: t.none, initialValue: s.maskSel }))) ?? ""),
+    },
+    {
+      when: () => s.advanced,
+      run: async () => {
+        s.outDir = (await a(p.text({ message: t.out, initialValue: s.outDir, validate: (v) => ((v ?? "").trim() ? undefined : t.out) }))).trim();
+      },
+    },
+    { when: () => s.advanced, run: async () => (s.headed = await a(yesNo({ message: t.headed, initialValue: s.headed ?? false }))) },
+    {
+      when: () => s.advanced && s.how.describe && s.how.describe !== "chat",
+      run: async () => (s.docs = (await a(p.text({ message: t.docs, placeholder: t.none, initialValue: s.docs }))) ?? ""),
+    },
+    {
+      when: () => fs.existsSync(path.join(s.outDir, s.host.replace(/[^a-z0-9.-]/gi, "_"))),
+      run: async () => {
+        s.keep = await a(p.select({
+          message: t.previous(s.host),
+          initialValue: s.keep ?? false,
+          options: [{ value: true, label: t.keepOld }, { value: false, label: t.replace }],
+        }));
+      },
+    },
+    async () => {
+      if (fs.existsSync("screendocs.config.json")) p.log.info(t.usingConfig("screendocs.config.json"));
+      p.note(`npx screendocs ${toArgs(s).map(quote).join(" ")}`, t.command);
+      if (!(await a(yesNo({ message: t.start, initialValue: true })))) {
+        p.cancel(t.cancel);
+        process.exit(0);
+      }
+    },
+  ].map((st) => (typeof st === "function" ? { run: st } : st));
+
+  // Steps that were asked, so Esc returns to the last one actually shown
+  const done = [];
+  for (let i = 0; i < steps.length; ) {
+    if (steps[i].when && !steps[i].when()) {
+      i++;
+      continue;
     }
-  } else if (await a(yesNo({ message: t.hasLogin, initialValue: false }))) {
-    p.log.step(t.loginNow);
-    await login(url);
-  }
-
-  const viewports = await a(p.select({
-    message: t.viewports,
-    options: [
-      { value: "both", label: t.both },
-      { value: "desktop", label: t.desktop },
-      { value: "mobile", label: t.mobile },
-    ],
-  }));
-  const video = await a(yesNo({ message: t.video, initialValue: true }));
-
-  const args = [url];
-  if (viewports !== "both") args.push("--viewports", viewports);
-  if (!video) args.push("--no-video");
-
-  const mode = await a(p.select({
-    message: t.mode,
-    options: [
-      { value: "discover", label: t.discover, hint: t.discoverHint },
-      { value: "list", label: t.list },
-    ],
-  }));
-  if (mode === "discover") {
-    const max = await a(p.text({
-      message: t.maxPages,
-      initialValue: "20",
-      validate: (v) => (/^\d+$/.test((v ?? "").trim()) && Number(v) > 0 ? undefined : t.number),
-    }));
-    if (max.trim() !== "20") args.push("--max-pages", max.trim());
-    const skip = await a(p.text({ message: t.exclude, placeholder: t.none }));
-    const list = (skip ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-    if (list.length) args.push("--exclude", list.join(","));
-  } else {
-    const paths = await a(p.text({ message: t.paths, placeholder: "/, /about, /pricing", validate: (v) => ((v ?? "").trim() ? undefined : t.paths) }));
-    args.push("--pages", paths.split(",").map((s) => s.trim()).filter(Boolean).join(","));
-  }
-
-  if (!(await a(yesNo({ message: t.mask, initialValue: true })))) args.push("--no-auto-mask");
-
-  const how = await chooseDescriber({ t, a, later: true });
-  const describing = how.describe && how.describe !== "chat";
-  if (how.describe) {
-    args.push("--describe", how.describe);
-    if (how.describe === "api") args.push("--api-url", how.apiUrl, "--model", how.model);
-  } else {
-    p.log.info(pc.dim(t.noKey));
-  }
-  // The language the AI writes the descriptions in
-  const descLang = await a(p.select({
-    message: t.lang,
-    initialValue: lang,
-    options: [{ value: "pt", label: "Português" }, { value: "en", label: "English" }, { value: "es", label: "Español" }],
-  }));
-  if (descLang !== "en") args.push("--lang", descLang);
-
-  let outDir = "screendocs-output";
-  if (await a(yesNo({ message: t.advanced, initialValue: false }))) {
-    const isNum = (v) => (/^\d+$/.test((v ?? "").trim()) ? undefined : t.number);
-    if (mode === "discover") {
-      const depth = await a(p.text({ message: t.depth, initialValue: "3", validate: isNum }));
-      if (depth.trim() !== "3") args.push("--depth", depth.trim());
+    try {
+      await steps[i].run();
+      done.push(i++);
+    } catch (e) {
+      if (e !== BACK) throw e;
+      if (done.length) i = done.pop();
     }
-    const sel = await a(p.text({ message: t.maskSel, placeholder: t.none }));
-    if (sel?.trim()) args.push("--mask", sel.trim());
-    const out = await a(p.text({ message: t.out, initialValue: outDir, validate: (v) => ((v ?? "").trim() ? undefined : t.out) }));
-    outDir = out.trim();
-    if (outDir !== "screendocs-output") args.push("--out", outDir);
-    if (await a(yesNo({ message: t.headed, initialValue: false }))) args.push("--headed");
-    if (describing) {
-      const docs = await a(p.text({ message: t.docs, placeholder: t.none }));
-      if (docs?.trim()) args.push("--docs", docs.trim());
-    }
-  }
-  if (fs.existsSync("screendocs.config.json")) p.log.info(t.usingConfig("screendocs.config.json"));
-
-  if (fs.existsSync(path.join(outDir, host.replace(/[^a-z0-9.-]/gi, "_")))) {
-    const keep = await a(p.select({
-      message: t.previous(host),
-      options: [{ value: true, label: t.keepOld }, { value: false, label: t.replace }],
-    }));
-    if (keep) args.push("--keep");
-  }
-
-  p.note(`npx screendocs ${args.map(quote).join(" ")}`, t.command);
-  if (!(await a(yesNo({ message: t.start, initialValue: true })))) {
-    p.cancel(t.cancel);
-    process.exit(0);
   }
   p.outro("ScreenDocs");
-  return [...args, "--open"];
+  return [...toArgs(s), "--open"];
+}
+
+/** The menu's answers as command line arguments. */
+function toArgs(s) {
+  const args = [s.url];
+  if (s.viewports !== "both") args.push("--viewports", s.viewports);
+  if (!s.video) args.push("--no-video");
+  if (s.mode === "discover") {
+    if (s.maxPages !== "20") args.push("--max-pages", s.maxPages);
+    const list = (s.exclude ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+    if (list.length) args.push("--exclude", list.join(","));
+  } else {
+    args.push("--pages", s.paths.split(",").map((x) => x.trim()).filter(Boolean).join(","));
+  }
+  if (!s.autoMask) args.push("--no-auto-mask");
+  if (s.how.describe) {
+    args.push("--describe", s.how.describe);
+    if (s.how.describe === "api") args.push("--api-url", s.how.apiUrl, "--model", s.how.model);
+  }
+  if (s.descLang !== "en") args.push("--lang", s.descLang);
+  if (s.advanced) {
+    if (s.mode === "discover" && s.depth !== "3") args.push("--depth", s.depth);
+    if (s.maskSel?.trim()) args.push("--mask", s.maskSel.trim());
+    if (s.outDir !== "screendocs-output") args.push("--out", s.outDir);
+    if (s.headed) args.push("--headed");
+    if (s.how.describe && s.how.describe !== "chat" && s.docs?.trim()) args.push("--docs", s.docs.trim());
+  }
+  if (s.keep) args.push("--keep");
+  return args;
 }
 
 /**
@@ -306,11 +388,10 @@ export async function interactive() {
  * browser (guided) or, in the capture menu, just the page scan for now. Also used by "screendocs describe".
  */
 export async function chooseDescriber({ t = T[uiLang()], a = ask(t), later = false } = {}) {
-  let tool;
   // Every AI tool is listed; one that is missing can be installed from here
   for (;;) {
     const agents = installedAgents();
-    tool = await a(p.select({
+    const tool = await a(p.select({
       message: t.describe,
       options: [
         ...Object.keys(AGENTS).map((k) => ({ value: k, label: AGENTS[k].name, hint: agents.includes(k) ? t.yourPlan : t.notInstalled })),
@@ -319,9 +400,16 @@ export async function chooseDescriber({ t = T[uiLang()], a = ask(t), later = fal
         ...(later ? [{ value: "", label: t.later, hint: t.laterHint }] : []),
       ],
     }));
-    if (!AGENTS[tool] || agents.includes(tool) || (await setUp(t, a, tool))) break;
+    if (AGENTS[tool] && !agents.includes(tool) && !(await setUp(t, a, tool).catch(back(false)))) continue;
+    if (tool !== "api") return { describe: tool };
+    // Esc on the API questions goes back to the list above
+    const api = await askApi(t, a).catch(back(null));
+    if (api) return api;
   }
-  if (tool !== "api") return { describe: tool };
+}
+
+/** Which API, which model and, when needed, the key. */
+async function askApi(t, a) {
   const url = await a(p.select({
     message: t.provider,
     options: [...PROVIDERS.map((pr) => ({ value: pr.url, label: pr.name, hint: pr.url })), { value: "", label: t.other }],
@@ -347,7 +435,7 @@ async function setUp(t, a, agent) {
     return false;
   }
   p.log.success(t.installed(name));
-  await a(p.select({ message: t.loginNow(name, login), options: [{ value: true, label: t.loggedIn }] }));
+  await a(p.select({ message: t.agentLogin(name, login), options: [{ value: true, label: t.loggedIn }] }));
   return true;
 }
 
@@ -355,9 +443,8 @@ async function setUp(t, a, agent) {
  * Asks for the site and checks that it opens. When it does not, offers the close
  * addresses that do (missing www, missing .br, a typo) and shows examples.
  */
-async function askUrl(t, a, lang) {
+async function askUrl(t, a, lang, typed = "") {
   const u = URL_TEXT[lang];
-  let typed = "";
   for (;;) {
     typed = await a(p.text({
       message: t.url,
@@ -383,7 +470,7 @@ async function askUrl(t, a, lang) {
         { value: "retype", label: u.retype },
         { value: "anyway", label: u.anyway },
       ],
-    }));
+    })).catch(back("retype"));
     if (choice === "anyway") return url;
     if (choice !== "retype") return choice;
   }

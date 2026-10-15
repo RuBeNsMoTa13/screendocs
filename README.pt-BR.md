@@ -12,7 +12,7 @@ Funciona com qualquer site, em qualquer stack. Nada é instalado no projeto docu
 npx screendocs
 ```
 
-Sem argumentos, ele abre um menu interativo que pergunta o site e as opções (login, computador/celular, vídeo, quais páginas) e mostra no fim o comando equivalente. Ou passe tudo de uma vez:
+Sem argumentos, ele abre um menu interativo que pergunta o site e as opções (login, computador/celular, vídeo, quais páginas) e mostra no fim o comando equivalente. `Esc` volta para a pergunta anterior e `Ctrl+C` sai. Ou passe tudo de uma vez:
 
 ```bash
 npx screendocs https://seu-site.com
