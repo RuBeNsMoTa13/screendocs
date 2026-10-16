@@ -42,11 +42,20 @@ With just the link (`npx screendocs mysite.com`), it asks nothing and uses the d
 There are four ways to change the defaults:
 
 1. **On the command**, for that run only: `npx screendocs mysite.com --no-video --describe chat --lang pt --open`. Every option is in [Options](#options) and in `npx screendocs --help`.
-2. **In a `screendocs.config.json` file**, in the folder where you run the command, to apply every time there. See [Config file](#config-file).
-3. **With `npx screendocs config`**, your own defaults wherever you run screendocs, also when it comes from npm. See [Your defaults and language](#your-defaults-and-language).
+2. **With `npx screendocs config`**, your own defaults, in every folder. See [Your defaults and language](#your-defaults-and-language).
+3. **In a `screendocs.config.json` file** (optional), in the folder where you run the command, to apply only there. See [Config file](#config-file).
 4. **With the menu** (`npx screendocs` with no link): it asks about each thing, starting from your defaults, and shows the equivalent command at the end, to repeat later without the questions.
 
-When more than one sets the same option, the command wins, then `screendocs.config.json`, then your defaults, then screendocs' own.
+When more than one sets the same option, think of layers, each one on top of the one below. The higher one wins:
+
+1. **screendocs' own defaults** (bottom): what comes in the package, like up to 20 pages.
+2. **Your defaults**, saved with `npx screendocs config`: they apply in every folder.
+3. **A `screendocs.config.json` in the folder** (optional): applies only in that folder.
+4. **The command** (top): what you type now, for this run only.
+
+For example, with the number of pages: screendocs says 20. You saved 40 with `npx screendocs config`, so it uses 40 everywhere. The folder `client-x` has a `screendocs.config.json` that says 10, so there it uses 10. Typing `--max-pages 5` in that folder uses 5, this time only.
+
+Most people only need layers 2 and 4: save what you always want with `npx screendocs config`, and change one run with an option on the command.
 
 ## Pages behind a login
 
@@ -58,7 +67,7 @@ A browser window opens. Log in as usual (Google login works), go back to the ter
 
 Before each run it opens the page you were on when you logged in; if the site sends it elsewhere or asks for a password, it warns that the login has expired (the menu offers to log in again).
 
-`.screendocs/` gives access to your account. It is added to `.gitignore` automatically; never commit or share it.
+The session lives in a `.screendocs` folder inside the folder where you ran the command, so run screendocs from the same folder next time. That folder gives access to your account: never send it to anyone or put it where others can open it.
 
 ## What it does
 
@@ -114,7 +123,7 @@ Environment variables:
 
 screendocs talks in English, Portuguese or Spanish. The first time it runs in a terminal it asks which one (the computer's language comes selected) and saves the answer.
 
-Whoever installs from npm cannot change the package's files, so your own defaults live in your user folder: `~/.screendocs/config.json` (on Windows `C:\Users\<you>\.screendocs\config.json`), next to the saved API keys and outside any project. They apply in every folder, and `screendocs.config.json` or an option typed on the command still win over them.
+Your defaults are saved on your computer, in your user folder (`npx screendocs config path` shows where), not in the folder where you run the command. They apply in every folder and stay when screendocs is updated. An option typed on the command, or a `screendocs.config.json` in the folder, still wins over them.
 
 ```bash
 npx screendocs config                         # menu: pick a setting, change it, Done
@@ -133,7 +142,7 @@ The settings are the same names as in `screendocs.config.json` (`maxPages` or `m
 
 ## Config file
 
-Put `screendocs.config.json` where you run the command and keep the options there. They replace the defaults every time you run screendocs in that folder, and an option typed on the command still wins over the file:
+Optional, for when one project needs options different from your defaults. Create a file named `screendocs.config.json` in the folder where you run the command for that project, with the options it needs. They apply every time you run screendocs in that folder, and an option typed on the command still wins over the file. Nobody needs to create it: without it, your defaults apply.
 
 ```json
 {
@@ -276,6 +285,20 @@ A capture takes one to several minutes; with `video: false` it is faster.
 
 > **Which AI apps work.** Any app that runs MCP servers on your computer: Claude Desktop, Claude Code, Cursor, VS Code (Copilot), Windsurf, Codex, Gemini CLI, Cline, LM Studio and others. AI chats that only run in the browser (ChatGPT, Claude.ai, Gemini on the web) cannot start a program on your computer, so they don't work. The model must also **read images**: it looks at each screenshot to describe it. A text-only model can capture the site but not describe the screens.
 
+## What it leaves on your computer
+
+In the folder where you run the command:
+
+| What | When |
+|---|---|
+| `screendocs-output/` | always: the captures and the reports, one folder per site |
+| `.screendocs/` | when you log in to a site: the saved session. Never share it. Recording videos can also leave it there, empty |
+| `.gitignore` | when you log in to a site: a line that keeps `.screendocs/` out of Git, in case that folder is a Git project |
+
+In your user folder (`npx screendocs config path` shows where): your defaults and, when the system has no password store, the saved API keys. Deleting that folder erases both; the language is asked again on the next run.
+
+A `screendocs.config.json` is only read, if you created one; screendocs never creates it.
+
 ## Real data
 
 Logged-in areas often show real people's data. The automatic blur covers the common cases, not all of them: use a test account when you can and check the images before publishing.
@@ -283,6 +306,10 @@ Logged-in areas often show real people's data. The automatic blur covers the com
 ## Requirements
 
 Node.js 18 or newer. Google Chrome or Microsoft Edge installed (Edge comes with Windows). To use another Chromium-based browser, set `CHROMIUM_PATH` to its executable.
+
+## Running from the code
+
+To download the code from GitHub and run it, change it or send a fix, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

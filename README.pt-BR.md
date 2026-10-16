@@ -42,11 +42,20 @@ Com só o link (`npx screendocs meusite.com.br`), ele não pergunta nada e usa o
 Há quatro jeitos de mudar os padrões:
 
 1. **No comando**, só para essa vez: `npx screendocs meusite.com.br --no-video --describe chat --lang pt --open`. Todas as opções estão em [Opções](#opções) e em `npx screendocs --help`.
-2. **No arquivo `screendocs.config.json`**, na pasta onde roda o comando, para valer sempre ali. Veja [Arquivo de configuração](#arquivo-de-configuração).
-3. **Com `npx screendocs config`**, os seus padrões em qualquer pasta, inclusive quando o screendocs vem do npm. Veja [Seus padrões e idioma](#seus-padrões-e-idioma).
+2. **Com `npx screendocs config`**, os seus padrões, em qualquer pasta. Veja [Seus padrões e idioma](#seus-padrões-e-idioma).
+3. **No arquivo `screendocs.config.json`** (opcional), na pasta onde roda o comando, para valer só ali. Veja [Arquivo de configuração](#arquivo-de-configuração).
 4. **Pelo menu** (`npx screendocs` sem link): ele pergunta cada coisa, partindo dos seus padrões, e mostra no fim o comando equivalente, para repetir depois sem as perguntas.
 
-Quando mais de um define a mesma opção, vale o que estiver no comando, depois o `screendocs.config.json`, depois os seus padrões, depois os do screendocs.
+Quando mais de um define a mesma opção, pense em camadas, uma por cima da outra. A de cima ganha:
+
+1. **Os padrões do screendocs** (embaixo): o que vem no pacote, como até 20 páginas.
+2. **Os seus padrões**, salvos com `npx screendocs config`: valem em qualquer pasta.
+3. **Um `screendocs.config.json` na pasta** (opcional): vale só naquela pasta.
+4. **O comando** (em cima): o que você digita agora, só nesta vez.
+
+Por exemplo, com o número de páginas: o screendocs diz 20. Você salvou 40 com `npx screendocs config`, então ele usa 40 em qualquer lugar. A pasta `cliente-x` tem um `screendocs.config.json` que diz 10, então ali ele usa 10. Digitando `--max-pages 5` nessa pasta, ele usa 5, só desta vez.
+
+A maioria só precisa das camadas 2 e 4: salve o que quer sempre com `npx screendocs config` e mude uma vez com uma opção no comando.
 
 ## Páginas com login
 
@@ -58,7 +67,7 @@ Abre uma janela do navegador. Faça login normalmente (login com Google funciona
 
 Antes de cada captura ele abre a página em que você estava quando fez login; se o site mandar para outro lugar ou pedir senha, ele avisa que o login expirou (o menu oferece fazer login de novo).
 
-A pasta `.screendocs/` dá acesso à sua conta. Ela entra no `.gitignore` automaticamente; nunca faça commit nem compartilhe.
+A sessão fica numa pasta `.screendocs` dentro da pasta onde você rodou o comando, então rode o screendocs da mesma pasta nas próximas vezes. Essa pasta dá acesso à sua conta: nunca mande para ninguém nem deixe onde outras pessoas possam abrir.
 
 ## O que ele faz
 
@@ -114,7 +123,7 @@ Variáveis de ambiente:
 
 O screendocs fala inglês, português ou espanhol. Na primeira vez que roda num terminal ele pergunta qual (já vem marcado o idioma do computador) e guarda a resposta.
 
-Quem instala pelo npm não consegue mudar os arquivos do pacote, então os seus padrões ficam na sua pasta de usuário: `~/.screendocs/config.json` (no Windows `C:\Users\<você>\.screendocs\config.json`), junto das chaves de API salvas e fora de qualquer projeto. Eles valem em qualquer pasta, e o `screendocs.config.json` ou uma opção digitada no comando ainda ganham deles.
+Os seus padrões ficam salvos no seu computador, na sua pasta de usuário (`npx screendocs config path` mostra onde), e não na pasta onde você roda o comando. Eles valem em qualquer pasta e continuam lá quando o screendocs atualiza. Uma opção digitada no comando, ou um `screendocs.config.json` na pasta, ainda ganham deles.
 
 ```bash
 npx screendocs config                         # menu: escolha uma opção, mude, Pronto
@@ -133,7 +142,7 @@ As opções têm os mesmos nomes do `screendocs.config.json` (`maxPages` ou `max
 
 ## Arquivo de configuração
 
-Crie um `screendocs.config.json` na pasta onde roda o comando e deixe as opções nele. Elas trocam os padrões sempre que você roda o screendocs nessa pasta, e uma opção passada no comando ainda vale mais que o arquivo:
+Opcional, para quando um projeto precisa de opções diferentes dos seus padrões. Crie um arquivo chamado `screendocs.config.json` na pasta onde você roda o comando para esse projeto, com as opções dele. Elas valem sempre que você roda o screendocs nessa pasta, e uma opção digitada no comando ainda vale mais que o arquivo. Ninguém precisa criar esse arquivo: sem ele, valem os seus padrões.
 
 ```json
 {
@@ -276,6 +285,20 @@ Uma captura leva de um a vários minutos; com `video: false` é mais rápida.
 
 > **Quais IAs funcionam.** Qualquer app que roda servidores MCP no seu computador: Claude Desktop, Claude Code, Cursor, VS Code (Copilot), Windsurf, Codex, Gemini CLI, Cline, LM Studio e outros. Chats de IA que rodam só no navegador (ChatGPT, Claude.ai, Gemini na web) não conseguem abrir um programa no seu computador, então não funcionam. O modelo também precisa **ler imagens**: ele olha cada foto para descrevê-la. Um modelo só de texto consegue capturar o site, mas não descrever as telas.
 
+## O que fica no seu computador
+
+Na pasta onde você roda o comando:
+
+| O quê | Quando |
+|---|---|
+| `screendocs-output/` | sempre: as capturas e os relatórios, uma pasta por site |
+| `.screendocs/` | quando você faz login num site: a sessão salva. Nunca compartilhe. Gravar vídeos também pode deixar essa pasta, vazia |
+| `.gitignore` | quando você faz login num site: uma linha que deixa a `.screendocs/` fora do Git, caso essa pasta seja um projeto Git |
+
+Na sua pasta de usuário (`npx screendocs config path` mostra onde): os seus padrões e, quando o sistema não tem cofre de senhas, as chaves de API salvas. Apagar essa pasta apaga os dois, e o idioma é perguntado de novo na próxima vez.
+
+Um `screendocs.config.json` só é lido, se você criou um; o screendocs nunca cria esse arquivo.
+
 ## Dados reais
 
 Áreas logadas costumam mostrar dados de pessoas reais. O borrão automático cobre os casos comuns, não todos: use uma conta de teste quando puder e confira as imagens antes de publicar.
@@ -283,6 +306,10 @@ Uma captura leva de um a vários minutos; com `video: false` é mais rápida.
 ## Requisitos
 
 Node.js 18 ou mais novo. Google Chrome ou Microsoft Edge instalado (o Edge já vem no Windows). Para usar outro navegador baseado em Chromium, aponte `CHROMIUM_PATH` para o executável dele.
+
+## Rodar pelo código
+
+Para baixar o código do GitHub e rodar, mudar ou mandar uma correção, veja o [CONTRIBUTING.pt-BR.md](CONTRIBUTING.pt-BR.md).
 
 ## Licença
 
