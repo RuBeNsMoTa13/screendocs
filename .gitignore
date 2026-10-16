@@ -1,4 +1,16 @@
 node_modules/
+dist/
+*.tgz
+
+# Captures, logins and local settings made by running screendocs here
 .screendocs/
 screendocs-output/
-dist/
+screendocs.config.json
+
+# Personal notes and local files
+CONTEXTO.md
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
