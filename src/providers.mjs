@@ -4,22 +4,22 @@ import path from "node:path";
 
 /**
  * Describing with an API, the way tools like llm and aider do it: the person names only the
- * model (--model gemini-2.5-flash) and the provider comes from its name, or from a prefix
- * (ollama/llama3.2-vision). The key comes from the provider's usual environment variable, or
+ * model with its provider in front (--model gemini/gemini-2.5-flash, ollama/llama3.2-vision).
+ * For OpenAI, Gemini and Anthropic the prefix may be left out: the name says the provider. The key comes from the provider's usual environment variable, or
  * is saved once in the user's folder. Every provider is called through its OpenAI-compatible
  * endpoint, so no SDK is installed.
  */
 export const PROVIDERS = [
-  { id: "openai", name: "OpenAI", url: "https://api.openai.com/v1", env: ["OPENAI_API_KEY"], match: /^(gpt-|chatgpt-|o\d)/i, example: "gpt-4o-mini" },
+  { id: "openai", name: "OpenAI", url: "https://api.openai.com/v1", env: ["OPENAI_API_KEY"], match: /^(gpt-|chatgpt-|o\d)/i, example: "openai/gpt-4o-mini" },
   {
     id: "gemini",
     name: "Google Gemini",
     url: "https://generativelanguage.googleapis.com/v1beta/openai",
     env: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
     match: /^gemini/i,
-    example: "gemini-2.5-flash",
+    example: "gemini/gemini-2.5-flash",
   },
-  { id: "anthropic", name: "Anthropic", url: "https://api.anthropic.com/v1", env: ["ANTHROPIC_API_KEY"], match: /^claude/i, example: "claude-sonnet-4-5" },
+  { id: "anthropic", name: "Anthropic", url: "https://api.anthropic.com/v1", env: ["ANTHROPIC_API_KEY"], match: /^claude/i, example: "anthropic/claude-sonnet-4-5" },
   { id: "openrouter", name: "OpenRouter", url: "https://openrouter.ai/api/v1", env: ["OPENROUTER_API_KEY"], example: "openrouter/qwen/qwen2.5-vl-72b-instruct" },
   { id: "ollama", name: "Ollama (local)", url: "http://localhost:11434/v1", env: [], local: true, example: "ollama/llama3.2-vision" },
   { id: "lmstudio", name: "LM Studio (local)", url: "http://localhost:1234/v1", env: [], local: true, example: "lmstudio/qwen2.5-vl-7b" },
@@ -53,7 +53,7 @@ function ollamaUrl() {
  */
 export function resolveModel(model, apiUrl) {
   const full = String(model ?? "").trim();
-  if (!full) throw new Error("--model is missing: say which model describes the screens (e.g. gemini-2.5-flash, gpt-4o-mini, ollama/llama3.2-vision)");
+  if (!full) throw new Error("--model is missing: say which model describes the screens (e.g. gemini/gemini-2.5-flash, openai/gpt-4o-mini, ollama/llama3.2-vision)");
   const slash = full.indexOf("/");
   const prefixed = slash > 0 ? providerById(full.slice(0, slash)) : undefined;
   const id = prefixed ? full.slice(slash + 1) : full;

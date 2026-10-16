@@ -301,7 +301,7 @@ async function describeWithApi(data, root, screens, config) {
           const msg = body.error?.message || body.message || `HTTP ${res.status}`;
           // A model that only reads text rejects the screenshot; say so in plain words
           if (/image|vision|multimodal|modalit/i.test(msg) && !/401|403/.test(String(res.status)))
-            throw new Error(`${config.model} does not seem to read images. Pick a model that does (e.g. gpt-4o-mini, gemini-2.5-flash). API said: ${msg}`);
+            throw new Error(`${config.model} does not seem to read images. Pick a model that does (e.g. openai/gpt-4o-mini, gemini/gemini-2.5-flash). API said: ${msg}`);
           // A wrong key fails every screen: say so once, with how to fix it
           if (res.status === 401 || res.status === 403)
             throw new Error(

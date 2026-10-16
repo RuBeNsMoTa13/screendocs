@@ -85,7 +85,7 @@ Before each run it opens the page you were on when you logged in; if the site se
 | `--mask <selectors>` | | extra CSS selectors to blur |
 | `--no-auto-mask` | | don't blur emails, phones, documents |
 | `--describe <how>` | | who writes the descriptions: `claude`, `codex`, `antigravity` or `chat` (see below) |
-| `--model <model>` | | describe with an API, naming only the model (e.g. `gemini-2.5-flash`, `ollama/llama3.2-vision`; see below) |
+| `--model <provider/model>` | | describe with an API (e.g. `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; see below) |
 | `--docs <dir>` | | Markdown docs the AI reads when describing |
 | `--lang <code>` | `en` | description language (`pt`, `es`...) |
 | `--config <file>` | `screendocs.config.json` | config file (see below) |
@@ -158,20 +158,22 @@ The titles and descriptions go into `screens.json` and `index.html`, and the mob
 npx screendocs https://your-site.com --describe claude   # or codex, antigravity
 ```
 
-**3. Any API (for developers).** Name only the model; the provider comes from its name and is called directly, with no SDK installed:
+**3. Any API (for developers).** Name the model with its provider in front, the usual format of AI tools (LiteLLM, aider); it is called directly, with no SDK installed:
 
 ```bash
-npx screendocs your-site.com --model gemini-2.5-flash
+npx screendocs your-site.com --model gemini/gemini-2.5-flash
 ```
 
 | Model | Provider | Key |
 |---|---|---|
-| `gpt-4o-mini`, `o4-mini`... | OpenAI | `OPENAI_API_KEY` |
-| `gemini-2.5-flash`... | Google Gemini | `GEMINI_API_KEY` |
-| `claude-sonnet-4-5`... | Anthropic | `ANTHROPIC_API_KEY` |
+| `openai/gpt-4o-mini` | OpenAI | `OPENAI_API_KEY` |
+| `gemini/gemini-2.5-flash` | Google Gemini | `GEMINI_API_KEY` |
+| `anthropic/claude-sonnet-4-5` | Anthropic | `ANTHROPIC_API_KEY` |
 | `openrouter/<model>` | OpenRouter | `OPENROUTER_API_KEY` |
 | `ollama/<model>` | Ollama on your computer (free) | none |
 | `lmstudio/<model>` | LM Studio on your computer (free) | none |
+
+For OpenAI, Gemini and Anthropic the prefix can be left out (`--model gemini-2.5-flash` works too), since the name already says the provider.
 
 **The key** is looked for in this order: the provider's variable above (if you already use another AI tool, it is probably set), `SCREENDOCS_API_KEY`, and the key saved with `npx screendocs keys set <provider>`. If there is none, screendocs asks for it without showing what you type and offers to save it in `~/.screendocs/keys.json`, in your user folder, outside any project, so it never goes to Git. `npx screendocs keys list` shows which providers have a saved key and `keys remove <provider>` deletes one.
 

@@ -85,7 +85,7 @@ A pasta `.screendocs/` dá acesso à sua conta. Ela entra no `.gitignore` automa
 | `--mask <seletores>` | | seletores CSS extras para borrar |
 | `--no-auto-mask` | | não borra e-mails, telefones, documentos |
 | `--describe <como>` | | quem escreve as descrições: `claude`, `codex`, `antigravity` ou `chat` (veja abaixo) |
-| `--model <modelo>` | | descreve com uma API, dizendo só o modelo (ex.: `gemini-2.5-flash`, `ollama/llama3.2-vision`; veja abaixo) |
+| `--model <provedor/modelo>` | | descreve com uma API (ex.: `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; veja abaixo) |
 | `--docs <pasta>` | | documentação em Markdown que a IA lê para descrever |
 | `--lang <código>` | `en` | idioma das descrições (`pt`, `es`...) |
 | `--config <arquivo>` | `screendocs.config.json` | arquivo de configuração (veja abaixo) |
@@ -158,20 +158,22 @@ Os títulos e descrições vão para o `screens.json` e o `index.html`, e as tel
 npx screendocs https://seu-site.com.br --describe claude   # ou codex, antigravity
 ```
 
-**3. Qualquer API (para devs).** Diga só o modelo; o provedor sai do nome e é chamado direto, sem instalar SDK:
+**3. Qualquer API (para devs).** Diga o modelo com o provedor na frente, o formato comum das ferramentas de IA (LiteLLM, aider); ele é chamado direto, sem instalar SDK:
 
 ```bash
-npx screendocs seu-site.com.br --model gemini-2.5-flash
+npx screendocs seu-site.com.br --model gemini/gemini-2.5-flash
 ```
 
 | Modelo | Provedor | Chave |
 |---|---|---|
-| `gpt-4o-mini`, `o4-mini`... | OpenAI | `OPENAI_API_KEY` |
-| `gemini-2.5-flash`... | Google Gemini | `GEMINI_API_KEY` |
-| `claude-sonnet-4-5`... | Anthropic | `ANTHROPIC_API_KEY` |
+| `openai/gpt-4o-mini` | OpenAI | `OPENAI_API_KEY` |
+| `gemini/gemini-2.5-flash` | Google Gemini | `GEMINI_API_KEY` |
+| `anthropic/claude-sonnet-4-5` | Anthropic | `ANTHROPIC_API_KEY` |
 | `openrouter/<modelo>` | OpenRouter | `OPENROUTER_API_KEY` |
 | `ollama/<modelo>` | Ollama no seu computador (grátis) | nenhuma |
 | `lmstudio/<modelo>` | LM Studio no seu computador (grátis) | nenhuma |
+
+Para OpenAI, Gemini e Anthropic o prefixo pode ficar de fora (`--model gemini-2.5-flash` também funciona), porque o nome já diz o provedor.
 
 **A chave** é procurada nesta ordem: a variável do provedor acima (se você já usa outra ferramenta de IA, provavelmente ela já existe), `SCREENDOCS_API_KEY` e a chave guardada com `npx screendocs keys set <provedor>`. Se não achar nenhuma, o screendocs pede a chave sem mostrar o que você digita e oferece guardar em `~/.screendocs/keys.json`, na sua pasta de usuário, fora de qualquer projeto, então ela nunca vai para o Git. `npx screendocs keys list` mostra quais provedores têm chave guardada e `keys remove <provedor>` apaga uma.
 

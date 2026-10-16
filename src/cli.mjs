@@ -50,14 +50,14 @@ Options
                           claude, codex, antigravity
                                 an AI tool installed and logged in here (uses your plan)
                           chat  an AI chat in your browser, step by step (ChatGPT, Gemini...)
-  --model <model>       describe with an API, naming only the model (one that reads images).
-                        The provider comes from the name, the key from its usual variable:
-                          gpt-4o-mini, o4-mini       OpenAI     OPENAI_API_KEY
-                          gemini-2.5-flash           Gemini     GEMINI_API_KEY
-                          claude-sonnet-4-5          Anthropic  ANTHROPIC_API_KEY
-                          openrouter/<model>         OpenRouter OPENROUTER_API_KEY
-                          ollama/<model>             Ollama on this computer, no key
-                          lmstudio/<model>           LM Studio on this computer, no key
+  --model <provider/model>  describe with an API (a model that reads images).
+                        The key comes from the provider's usual variable:
+                          openai/gpt-4o-mini             OPENAI_API_KEY
+                          gemini/gemini-2.5-flash        GEMINI_API_KEY
+                          anthropic/claude-sonnet-4-5    ANTHROPIC_API_KEY
+                          openrouter/<model>             OPENROUTER_API_KEY
+                          ollama/llama3.2-vision         Ollama on this computer, no key
+                          lmstudio/<model>               LM Studio on this computer, no key
                         No key set: it asks once (hidden) and can save it (screendocs keys set).
   --docs <dir>          project docs the AI reads when describing
   --lang <code>         description language (default en)

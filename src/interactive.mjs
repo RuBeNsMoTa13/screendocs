@@ -435,7 +435,7 @@ async function askApi(t, a) {
   const apiUrl = provider ? undefined : (await a(p.text({ message: t.apiUrl, placeholder: "https://.../v1", validate: (v) => ((v ?? "").trim() ? undefined : t.apiUrl) }))).trim();
   const typed = (await a(p.text({
     message: t.model,
-    placeholder: t.modelHint(provider ? provider.example.replace(`${provider.id}/`, "") : "gpt-4o-mini"),
+    placeholder: t.modelHint(provider ? provider.example.replace(/^[^/]+\//, "") : "gpt-4o-mini"),
     validate: (v) => ((v ?? "").trim() ? undefined : t.model),
   }))).trim();
   // The name the command line understands: the provider in front when the name does not say it
@@ -444,7 +444,9 @@ async function askApi(t, a) {
     process.env.OPENAI_BASE_URL = apiUrl;
     p.log.info(t.baseUrl(apiUrl));
   }
-  const model = !provider ? `openai/${typed.replace(/^openai\//, "")}` : typed.startsWith(`${provider.id}/`) || provider.match?.test(typed) ? typed : `${provider.id}/${typed}`;
+  // Always with the provider in front, the usual format
+  const prefix = provider?.id ?? "openai";
+  const model = typed.startsWith(`${prefix}/`) ? typed : `${prefix}/${typed}`;
   if (provider?.local) {
     const spin = p.spinner();
     spin.start(t.checkingLocal(provider.name));
