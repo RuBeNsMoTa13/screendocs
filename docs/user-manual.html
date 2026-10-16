@@ -1,0 +1,1438 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual do ScreenDocs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: sticky header with the language switch, a left index on wide screens, and the manual as a column of
+   explanation + terminal pairs. Terminal frames are always dark, like a real terminal. Rubens Crimson accent. */
+:root {
+  --bg: #faf8f8;
+  --surface: #ffffff;
+  --fg: #1c1717;
+  --muted: #6b6161;
+  --line: #e7dfdf;
+  --accent: #c81818;
+  --accent-soft: #fbe9e9;
+  --term-bg: #121010;
+  --term-fg: #e8e2e2;
+  --term-dim: #8a8080;
+  --term-bar: #4d4545;
+  --term-red: #e11d1d;
+  --term-red2: #f05252;
+  --term-yellow: #e6b450;
+  --term-blue: #6cb6ff;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0b0b; --surface: #171313; --fg: #efe9e9; --muted: #a59a9a; --line: #2c2525;
+    --accent: #f04545; --accent-soft: #2a1414; --term-bg: #070606; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d0b0b; --surface: #171313; --fg: #efe9e9; --muted: #a59a9a; --line: #2c2525;
+  --accent: #f04545; --accent-soft: #2a1414; --term-bg: #070606; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px; }
+.brand { font-family: var(--font-display); font-weight: 800; font-size: 18px; letter-spacing: -0.01em; }
+.brand span { color: var(--accent); }
+.langs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.langs button { font: 600 13px var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.langs button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.langs button:focus-visible, a:focus-visible, .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.hero { padding-block: 48px 32px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; align-items: center; }
+.hero > * { min-width: 0; }
+.eyebrow { font: 600 12px var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(34px, 5.5vw, 56px); line-height: 1.02; letter-spacing: -0.03em; margin: 8px 0 16px; text-wrap: balance; }
+.lead { font-size: 18px; color: var(--muted); max-width: 52ch; margin: 0; }
+.notice a { color: var(--accent); }
+.notice { margin-top: 16px; padding: 10px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: 14px; max-width: 60ch; }
+
+.layout { display: grid; grid-template-columns: 200px 1fr; gap: 40px; padding-block: 8px 64px; }
+.layout > * { min-width: 0; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); align-self: start; font-size: 14px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: t; }
+nav.toc li { counter-increment: t; }
+nav.toc a { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--muted); text-decoration: none; }
+nav.toc a::before { content: counter(t); font: 700 12px var(--font-mono); color: var(--accent); min-width: 14px; padding-top: 2px; }
+nav.toc a:hover { background: var(--surface); color: var(--fg); }
+
+section.part { padding-block: 28px; border-top: 1px solid var(--line); scroll-margin-top: 72px; }
+section.part:first-child { border-top: 0; padding-top: 0; }
+h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -0.02em; line-height: 1.1; margin: 0 0 10px; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0 0 6px; letter-spacing: -0.01em; }
+p { margin: 0 0 12px; max-width: 66ch; }
+.intro { color: var(--muted); }
+code, kbd { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--surface); border: 1px solid var(--line); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+kbd { display: inline-block; border: 1px solid var(--line); border-bottom-width: 2px; background: var(--surface); padding: 1px 7px; border-radius: 5px; font-weight: 700; }
+
+.cmd { display: flex; align-items: center; gap: 8px; background: var(--term-bg); color: var(--term-fg); border-radius: 10px; padding: 12px 12px 12px 16px; font: 14px var(--font-mono); margin: 10px 0 14px; max-width: 640px; }
+.cmd .t { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; }
+.cmd .t::before { content: "$ "; color: var(--term-red); }
+.copy { font: 600 12px var(--font-body); border: 1px solid var(--term-bar); background: transparent; color: var(--term-fg); padding: 5px 10px; border-radius: 6px; cursor: pointer; flex: none; }
+.copy:hover { border-color: var(--term-red); }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+.two > * { min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+.card p:last-child { margin-bottom: 0; }
+.tag { display: inline-block; font: 600 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+
+.step { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 24px; padding-block: 22px; border-top: 1px dashed var(--line); align-items: start; }
+.step:first-of-type { border-top: 0; }
+.step .n { font: 700 12px var(--font-mono); color: var(--accent); margin-bottom: 4px; }
+.when { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; margin-bottom: 8px; }
+
+pre.term { margin: 0; background: var(--term-bg); color: var(--term-fg); border-radius: 12px; padding: 16px 18px; font: 13px/1.55 var(--font-mono); overflow-x: auto; white-space: pre; box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 10px 30px -18px rgba(0,0,0,.5); }
+pre.term .chrome { display: block; margin: -4px 0 10px; }
+pre.term .chrome i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--term-bar); margin-right: 5px; }
+.term .r { color: var(--term-red); } .term .r2 { color: var(--term-red2); } .term .d { color: var(--term-dim); }
+.term .b { color: var(--term-bar); } .term .y { color: var(--term-yellow); } .term .bl { color: var(--term-blue); }
+.term .w { font-weight: 700; color: #fff; } .term .pill { background: var(--term-red); color: #fff; font-weight: 700; }
+.term .cur { background: var(--term-fg); color: var(--term-bg); }
+.term .u { text-decoration: underline; }
+
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin-top: 12px; }
+th, td { text-align: left; padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+thead th { border-top: 0; font: 600 12px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td:first-child { white-space: nowrap; }
+td code { background: transparent; border: 0; padding: 0; color: var(--accent); }
+
+.keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 12px; }
+.keys div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; font-size: 14px; }
+.keys kbd { margin-bottom: 6px; }
+
+.opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+.opts .card { display: flex; flex-direction: column; gap: 4px; }
+.opts .card h3 { margin: 0; }
+.opts .card code { align-self: flex-start; }
+
+.tree { margin-top: 12px; }
+.tree .f { color: var(--term-red2); }
+footer { border-top: 1px solid var(--line); padding-block: 24px 40px; color: var(--muted); font-size: 14px; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  nav.toc { display: none; }
+  .hero { grid-template-columns: minmax(0, 1fr); padding-block: 28px 16px; }
+  .step { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+}
+@media (max-width: 640px) {
+  .two, .opts { grid-template-columns: minmax(0, 1fr); }
+  pre.term { font-size: 12px; padding: 14px; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* site mapping */
+h3.sub { font-size: 21px; margin: 26px 0 8px; }
+.flow { list-style: none; padding: 0; margin: 16px 0 8px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; counter-reset: f; }
+.flow li { counter-increment: f; position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.flow li::before { content: counter(f); font: 700 11px var(--font-mono); color: var(--accent); }
+.flow li b { font-size: 13.5px; line-height: 1.25; }
+.flow li span { color: var(--muted); line-height: 1.35; }
+.flow li.hot { border-color: var(--accent); background: var(--accent-soft); }
+.flow li:not(:last-child)::after { content: "→"; position: absolute; right: -8px; top: 50%; transform: translate(50%, -50%); color: var(--muted); font-size: 13px; z-index: 1; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; font-size: 13px; }
+.crawl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; overflow-x: auto; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.lvl { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lvl-h { font: 600 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-bottom: 6px; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+.node { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 7px; border-radius: 8px; padding: 6px 9px; font-size: 13px; border: 1px solid var(--line); background: var(--bg); }
+.lvl .node { display: flex; }
+.node .m { font: 700 12px var(--font-mono); }
+.node .p { font: 13px var(--font-mono); overflow-wrap: anywhere; min-width: 0; }
+.node .w { flex-basis: 100%; font-size: 12px; color: var(--muted); padding-left: 17px; }
+.node.ok { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.node.ok .m { color: var(--accent); }
+.node.same .m { color: var(--muted); }
+.node.no { opacity: 0.72; border-style: dashed; }
+.node.no .p { text-decoration: line-through; text-decoration-color: var(--muted); }
+.node.no .m { color: var(--muted); }
+.cap { font-size: 13px; color: var(--muted); margin: 8px 0 14px; }
+.rules ul, .cutrules { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.rules li, .cutrules li { max-width: 72ch; }
+.cut { display: grid; grid-template-columns: 200px 200px minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 12px; }
+.mock-h { font: 600 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.browser { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+.bar3 i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--line); margin: 0 3px 2px 0; }
+.blk { border: 1.5px solid var(--accent); border-radius: 5px; background: var(--accent-soft); display: flex; justify-content: space-between; align-items: center; padding: 0 8px; font-size: 11.5px; }
+.blk span { color: var(--fg); } .blk b { font: 700 11px var(--font-mono); color: var(--accent); }
+.blk.sl { border-style: dashed; background: transparent; }
+/* flags */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+.chips a { text-decoration: none; }
+.chips code { color: var(--accent); }
+.flags { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.flag { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; scroll-margin-top: 80px; }
+.flag p { font-size: 14.5px; margin-bottom: 4px; }
+.flag .cmd { margin: 8px 0 6px; font-size: 12.5px; }
+.flag .cmd .t { white-space: normal; overflow-wrap: anywhere; }
+.fh { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 10px; margin-bottom: 6px; }
+.fn { font-size: 15px !important; font-weight: 700; color: var(--accent); background: transparent !important; border: 0 !important; padding: 0 !important; }
+.def { font-size: 12px; color: var(--muted); }
+.cfg { font-size: 12.5px; color: var(--muted); }
+.note { font-size: 13px !important; color: var(--muted); border-left: 2px solid var(--accent); padding-left: 8px; margin-top: 6px; }
+.env { margin: 0; display: grid; gap: 2px 0; }
+.env dt { margin-top: 8px; } .env dd { margin: 0; color: var(--muted); font-size: 14px; }
+.win { margin-top: 14px; } .win ol { margin: 0; padding-left: 20px; }
+.rank { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+.rank li:first-child { font-weight: 600; }
+.sec-list { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 15px; }
+.sec-list li { max-width: 70ch; }
+.where { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; }
+.where dt { font-weight: 600; } .where dd { margin: 0; color: var(--muted); }
+.guard h3 { display: flex; gap: 8px; align-items: baseline; }
+.guard .m { font: 700 15px var(--font-mono); }
+.guard.yes { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.guard.yes .m { color: var(--accent); }
+.guard.no { border-style: dashed; }
+.guard.no .m { color: var(--muted); }
+@media (max-width: 640px) { .where { grid-template-columns: minmax(0, 1fr); } .where dd { margin-bottom: 4px; } }
+@media (max-width: 1100px) { .flow { grid-template-columns: repeat(4, minmax(0, 1fr)); } .flow li::after { display: none; } }
+@media (max-width: 900px) { .crawl { grid-template-columns: repeat(4, minmax(170px, 1fr)); } .cut { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cutrules { grid-column: 1 / -1; } }
+@media (max-width: 640px) { .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } .flags { grid-template-columns: minmax(0, 1fr); } }
+
+.layers { list-style: none; margin: 14px 0 10px; padding: 0; display: grid; gap: 8px; }
+.layers li { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.layers li:first-child { border-color: var(--accent); }
+.layers .ln { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--soft, rgba(127,127,127,.12)); font-weight: 700; font-size: 14px; }
+.layers li:first-child .ln { background: var(--accent); color: #fff; }
+.layers .lt { display: grid; gap: 2px; min-width: 0; }
+.layers .lt span { color: var(--muted); font-size: 14px; }
+.layers .lt code { justify-self: start; font-size: 12.5px; overflow-wrap: anywhere; }
+.layers .lv { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 2ch; text-align: right; }
+.layers li:first-child .lv { color: var(--accent); }
+.card.dev { border-style: dashed; }
+.card.dev a, .part a { color: var(--accent); }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">Screen<span>Docs</span></div>
+    <div class="langs" role="group" aria-label="Idioma / Language / Idioma">
+      <button type="button" id="lang-pt" data-lang="pt" aria-pressed="true">PT</button>
+      <button type="button" id="lang-en" data-lang="en" aria-pressed="false">EN</button>
+      <button type="button" id="lang-es" data-lang="es" aria-pressed="false">ES</button>
+    </div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<script>
+/* ---------- terminal frame helpers (mimic @clack/prompts as ScreenDocs draws it) ---------- */
+const B = '<span class="b">│</span>';
+const bar = (s = "") => (s ? `${B}  ${s}` : B);
+const active = (msg) => `<span class="r">◆</span>  ${msg}`;
+const doneQ = (msg, ans) => [`<span class="r2">◇</span>  ${msg}`, bar(`<span class="d">${ans}</span>`), B];
+const opt = (label, on, hint) => bar(`${on ? '<span class="r">●</span>' : '<span class="d">○</span>'} ${on ? label : `<span class="d">${label}</span>`}${hint && on ? ` <span class="d">(${hint})</span>` : ""}`);
+const end = (h) => `<span class="b">└</span>  <span class="d">${h}</span>`;
+const confirm = (y, n, yesOn = true) => bar(`${yesOn ? '<span class="r">●</span> ' + y : '<span class="d">○ ' + y + "</span>"} <span class="d">/</span> ${!yesOn ? '<span class="r">●</span> ' + n : '<span class="d">○ ' + n + "</span>"}`);
+const input = (val, ph) => bar(val ? `${val}<span class="cur"> </span>` : `<span class="cur">${ph[0]}</span><span class="d">${ph.slice(1)}</span>`);
+const frame = (lines) => `<pre class="term"><span class="chrome"><i></i><i></i><i></i></span>${lines.join("\n")}</pre>`;
+
+const SMALL = String.raw`  ____                           ____
+ / ___|  ___ _ __ ___  ___ _ __ |  _ \  ___   ___ ___
+ \___ \ / __| '__/ _ \/ _ \ '_ \| | | |/ _ \ / __/ __|
+  ___) | (__| | |  __/  __/ | | | |_| | (_) | (__\__ \
+ |____/ \___|_|  \___|\___|_| |_|____/ \___/ \___|___/`;
+
+/* ---------- texts: c = what the CLI shows, u = the manual itself ---------- */
+const L = {
+pt: {
+  c: {
+    tagline: "fotos, vídeos e documentação de todas as telas de um site", by: "por",
+    url: "Qual site você quer documentar? (ex.: meusite.com.br, www.meusite.com, app.meusite.io/login)",
+    ph: "meusite.com.br", ok: "meusite.com.br respondeu.",
+    fail: "meusite.con não abriu: esse endereço não existe.", pick: "Você quis dizer um destes? (eles responderam)", retype: "Digitar de novo", anyway: "Usar mesmo assim",
+    hasLogin: "O site tem páginas que exigem login?", loginNow: "Vai abrir uma janela do navegador. Faça login, volte aqui e aperte Enter.",
+    viewports: "Quais telas?", both: "Os dois", desktop: "Computador", mobile: "Celular",
+    video: "Gravar um vídeo rolando cada página?",
+    mode: "Quais páginas?", discover: "Encontrar seguindo os links", discoverHint: "recomendado", list: "Só os caminhos que eu digitar",
+    maxPages: "No máximo quantas páginas?", exclude: "Pular páginas cujo endereço contém (ex.: /admin, /checkout; Enter para nenhuma)", none: "nenhuma",
+    mask: "Borrar e-mails, telefones, CPF/CNPJ e campos preenchidos?",
+    describe: "Quem escreve as descrições das telas?", yourPlan: "usa o seu plano, sem chave de API", notInstalled: "não instalado aqui, posso instalar",
+    api: "Uma API (com a sua chave)", chat: "Um chat no navegador (ChatGPT, Gemini, Claude.ai...)", chatHint: "passo a passo, sem chave",
+    later: "Por enquanto, só o scan da página",
+    lang: "Idioma das descrições",
+    advanced: "Mudar as opções avançadas? (profundidade dos links, borrar mais coisas)",
+    previous: "Já existe uma captura de meusite.com.br. O que fazer com ela?", replace: "Substituir", keepOld: "Guardar (renomeada com a data)",
+    command: "Para repetir sem as perguntas", start: "Começar a captura?",
+    headed: "Mostrar o navegador durante a captura?",
+    out: "Onde salvar a captura? (Enter para usar esta pasta)",
+    provider: "Qual provedor?",
+    other: "Outro (digitar o endereço)",
+    model: "Modelo (que leia imagens)",
+    keyFor: "Chave da API do Google Gemini (não aparece enquanto você digita)",
+    keySave: "Guardar para as próximas vezes? (em ~/.screendocs/keys.json, fora do projeto)",
+    instructions: "Quer que as descrições falem de algo específico? (Enter para pular)",
+    instructionsVal: "o que o cliente ganha em cada tela",
+    docs: "Tem uma pasta ou arquivo com documentação do site para a IA ler? (Enter para pular)",
+    docsVal: "./docs",
+    usingUser: "Os seus padrões vêm de ~/.screendocs/config.json (mude com: npx screendocs config).",
+    langSaved: "O screendocs vai falar em Português. Mude quando quiser: npx screendocs config",
+    looking: "Procurando páginas (até 20)...",
+    found: "achei",
+    toCapture: "3 página(s) para capturar",
+    sections: "seção(ões)",
+    doneRun: "Pronto: 30 capturas.",
+    report: "Relatório",
+    cfgTitle: "Os seus padrões do screendocs",
+    cfgFile: "Guardados em ~/.screendocs/config.json. Valem em qualquer pasta onde você rodar o screendocs.",
+    cfgPick: "O que você quer mudar?",
+    cfgReset: "Voltar tudo para o padrão",
+    cfgDone: "Pronto",
+    cfgDef: "padrão",
+    cfgRows: [["Idioma do screendocs", "Português", "language"], ["Idioma das descrições", "padrão: o idioma do screendocs", ""], ["Telas (desktop, mobile)", "padrão: desktop,mobile", ""], ["Gravar vídeos", "Não", ""], ["Páginas para encontrar", "40", ""], ["Quem descreve (ferramenta de IA ou chat)", "claude", ""], ["Modelo de API (provedor/modelo)", "padrão: nenhum", ""], ["No que as descrições focam", "padrão: nenhum", ""]],
+    cfgSaved: "maxPages = 40",
+    yes: "Sim", no: "Não",
+    hints: { sel: "↑↓ escolher · Enter confirmar · Esc voltar · Ctrl+C sair", conf: "←→ escolher · Enter confirmar · Esc voltar · Ctrl+C sair", text: "Enter confirmar · Esc voltar · Ctrl+C sair" },
+    part: "Parte 1 de 2",
+    s1: "Abri a pasta screendocs-output/meusite.com.br/for-ai/part-1. Selecione as 10 imagens (Ctrl+A) e arraste para o chat.",
+    s2: "O texto para a IA já está copiado. Cole no chat (Ctrl+V) e envie.",
+    s3: "A IA deve responder com 10 descrição(ões), uma por imagem. Copie a resposta inteira, cole aqui e aperte Enter. (Digite pular para pular esta parte.)",
+    got: "10 de 10 descrições recebidas.",
+    pickCap: "Qual captura descrever?", screens: "tela(s)",
+  },
+  u: {
+    toc: ["Antes de começar", "Dois jeitos de usar", "O menu, passo a passo", "Teclas", "Quem escreve as descrições", "Outros comandos", "Opções do comando", "O que sai no fim"],
+    eyebrow: "Manual do usuário · npm",
+    h1: "Documente todas as telas de um site com um comando",
+    lead: "O ScreenDocs abre o site, acha as páginas sozinho, tira uma foto de cada seção no computador e no celular, grava um vídeo rolando cada página, borra dados pessoais e monta um relatório com a descrição de cada tela.",
+    notice: "Este manual é para quem usa o ScreenDocs pelo npm (<code>npx screendocs</code>). Para mexer no código do repositório, veja o <a href=\"https://github.com/RuBeNsMoTa13/screendocs/blob/main/CONTRIBUTING.pt-BR.md\">guia para desenvolvedores</a>.",
+    s1h: "Antes de começar",
+    s1p: [
+      "Você precisa do <b>Node.js 18</b> ou mais novo e do <b>Chrome ou Edge</b> instalado. O ScreenDocs usa o navegador que já está no computador; nenhum navegador é baixado. Na primeira gravação de vídeo ele baixa só o codificador de vídeo.",
+      "Não precisa instalar nada no projeto que vai ser documentado. Rode o comando em qualquer pasta: o resultado fica em <code>screendocs-output/</code> dentro dela.",
+    ],
+    s2h: "Dois jeitos de usar",
+    s2p: "Os dois fazem a mesma coisa. O menu pergunta cada opção; o comando direto usa os padrões e só muda o que você escrever.",
+    menuT: "Menu interativo", menuP: "Sem nada depois de <code>screendocs</code>, ele abre o menu. Bom para a primeira vez: no fim ele mostra o comando equivalente para você repetir depois.",
+    directT: "Comando direto", directP: "Com o endereço, ele não pergunta nada e usa os padrões: até 20 páginas, computador e celular, vídeo, dados pessoais borrados e nenhuma IA.",
+    s3h: "O menu, passo a passo",
+    s3p: "Estas são as perguntas na ordem em que aparecem. Algumas só aparecem dependendo da resposta anterior; a etiqueta cinza diz quando.",
+    only: { first: "só na primeira vez", api: "só se escolher “Uma API”", ai: "só se uma IA for descrever", disc: "só se escolher “Encontrar seguindo os links”", adv: "só se responder Sim às opções avançadas", prev: "só se já existir uma captura desse site" },
+    steps: {
+      firstrun: ["Escolher o idioma", "Na primeira vez que roda, o ScreenDocs pergunta em qual idioma vai falar: inglês, português ou espanhol. O idioma do computador já vem marcado. A escolha fica guardada nos seus padrões e dá para trocar depois com <code>npx screendocs config</code>."],
+      out: ["Onde salvar", "<kbd>Enter</kbd> salva em <code>screendocs-output</code>, dentro da pasta onde você rodou o comando. Para outro lugar, digite o caminho."],
+      api: ["Pela API", "Escolha o provedor e digite o modelo. Se a chave não estiver numa variável de ambiente nem guardada, ele pede a chave sem mostrar o que você digita e testa na hora; se o provedor recusar, pede de novo. Depois pergunta se quer guardar, com Não já marcado. Guardada, a chave vai para o cofre de senhas do sistema (Keychain no Mac, criptografada com a sua conta no Windows, chaveiro no Linux). Com Ollama ou LM Studio não pede chave e confere se o programa está aberto."],
+      focus: ["Foco e documentação", "Dá para pedir que as descrições falem de algo específico, como o que o cliente ganha em cada tela. Também dá para indicar uma pasta ou um arquivo com a documentação do site (Markdown, PDF, Word, Excel, PowerPoint...) para a IA ler antes de descrever. <kbd>Enter</kbd> pula as duas."],
+      banner: ["Abrir o menu", "Rode <code>npx screendocs</code>. Aparece o nome ScreenDocs e a primeira pergunta, no idioma que você escolheu."],
+      url: ["O site", "Digite o endereço do jeito que lembrar: <code>meusite.com.br</code>, <code>www.meusite.com</code> ou <code>app.meusite.io/login</code>. O <code>https://</code> entra sozinho. Antes de seguir, ele confere se o site abre."],
+      urlFail: ["Se o endereço não abrir", "Ele testa endereços parecidos (com ou sem <code>www</code>, outro final como <code>.com.br</code> ou <code>.net</code>, erros como <code>.con</code>) e mostra os que responderam. Também dá para digitar de novo, ou usar mesmo assim quando o site só abre na sua rede ou VPN."],
+      login: ["Login", "Se o site tem área logada, responda Sim. Abre uma janela do Chrome ou Edge: faça login (login com Google funciona), volte ao terminal e aperte <kbd>Enter</kbd>. A sessão fica salva na sua pasta de usuário e vale em qualquer pasta. Nas próximas vezes ele usa esse login, confere se ainda vale e oferece fazer login de novo se expirou."],
+      screens: ["Telas, vídeo e navegador", "Computador é 1440×900 e celular é 390×844. O vídeo grava cada página rolando de cima a baixo, com o mesmo borrão das fotos. Mostrar o navegador abre a janela durante a captura, bom para ver onde algo travou."],
+      mode: ["Quais páginas", "<b>Encontrar seguindo os links</b> parte da página inicial e segue os links do próprio site, pulando sair/logout e arquivos. <b>Só os caminhos que eu digitar</b> pede uma lista como <code>/, /sobre, /precos</code>."],
+      limit: ["Limite e páginas para pular", "O padrão é até 20 páginas. Para deixar uma área de fora, digite partes do endereço separadas por vírgula, como <code>/admin, /checkout</code>. <kbd>Enter</kbd> sem nada não pula nenhuma."],
+      mask: ["Dados pessoais", "Sim borra e-mails, telefones, CPF/CNPJ e campos de e-mail, telefone e senha preenchidos, nas fotos e nos vídeos. Mesmo assim, confira as telas antes de publicar quando o painel mostrar dados reais de clientes."],
+      describe: ["Quem escreve as descrições", "Uma IA olha cada foto e escreve um título e uma descrição. As opções estão explicadas em <a href=\"#descrever\">Quem escreve as descrições</a>. Se escolher uma ferramenta que não está instalada, ele oferece instalar."],
+      lang: ["Idioma das descrições", "Em qual idioma a IA escreve: português, inglês ou espanhol. Sem IA, cada tela fica com o texto da própria página."],
+      advanced: ["Opções avançadas", "Responda Sim para mudar a profundidade dos links (padrão 3 cliques) ou borrar mais coisas com seletores CSS."],
+      previous: ["Captura anterior", "Se você já capturou esse site, escolha entre substituir ou guardar a antiga com a data no nome."],
+      start: ["Conferir e começar", "Se você tem padrões guardados, ele avisa de onde vêm. Depois mostra o comando equivalente a tudo o que você respondeu, para repetir a mesma captura sem as perguntas. Confirme e a captura começa; no fim, o relatório abre sozinho."],
+      run: ["Durante a captura", "O terminal mostra as páginas encontradas e cada tela fotografada. Se você parar no meio, o relatório até ali já fica salvo."],
+    },
+    s4h: "Teclas",
+    s4p: "Embaixo de cada pergunta aparece uma linha lembrando o que cada tecla faz.",
+    keys: [["↑ ↓", "Escolher entre as opções da lista"], ["← →", "Escolher Sim ou Não"], ["Enter", "Confirmar a resposta"], ["Esc", "Voltar para a pergunta anterior, com a resposta já preenchida"], ["Ctrl+C", "Sair do menu"]],
+    s5h: "Quem escreve as descrições",
+    s5p: "A IA precisa ler imagens, porque ela olha cada foto para escrever. Escolha no menu ou com <code>--describe</code>.",
+    ways: [
+      ["Ferramenta de IA no computador", "Claude Code, Codex ou Antigravity CLI instalado e com login feito. Usa o seu plano, sem chave de API.", "--describe claude"],
+      ["Um chat no navegador", "ChatGPT, Gemini, Claude.ai ou outro chat. Sem chave e sem instalar nada; o terminal guia cada passo.", "--describe chat"],
+      ["Uma API", "Diga o provedor e o modelo: OpenAI, Gemini, Anthropic, OpenRouter, ou Ollama e LM Studio no seu PC, sem chave.", "--model gemini/gemini-2.5-flash"],
+      ["Só o scan por enquanto", "Cada tela fica com o título e o primeiro parágrafo da página. Uma IA pode descrever depois com o comando describe.", "screendocs describe"],
+    ],
+    chatH: "Como funciona o chat no navegador",
+    chatP: "As telas vão em partes de até 10 imagens. Para cada parte, o ScreenDocs abre a pasta e já copia o texto para a IA. Você arrasta as imagens para o chat, cola o texto, envia e cola a resposta da IA de volta no terminal. Ele confere a resposta e pede de novo se faltar alguma tela. Pode continuar no mesmo chat nas próximas partes.",
+    apiH: "Pela API",
+    apiP: "Basta o <code>--model</code>. A chave vem da variável do provedor (<code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>, <code>OPENROUTER_API_KEY</code>), da <code>SCREENDOCS_API_KEY</code> ou da chave guardada com <code>screendocs keys set</code>. Antes de capturar, ele testa a chave. Se não achar nenhuma, ou se o provedor recusar a que achou, ele pede no terminal sem mostrar e oferece guardar. Com <code>ollama/</code> ou <code>lmstudio/</code> não precisa de chave, e ele confere se o programa está aberto antes de capturar.",
+    s6h: "Outros comandos",
+    loginH: "Fazer login uma vez", loginP: "Abre o navegador para você entrar na conta do site. A sessão fica salva na sua pasta de usuário, junto dos seus padrões, então o login vale em qualquer pasta onde você rodar o ScreenDocs.",
+    descH: "Descrever uma captura que já existe", descP: "Escreve as descrições sem capturar de novo. Sem o site, ele lista as capturas que existem para você escolher.",
+    mcpH: "Usar por uma IA (MCP)", mcpP: "Transforma o ScreenDocs em ferramentas para Claude Code, Cursor, Claude Desktop e outros. Você pede com suas palavras e a IA captura e descreve sozinha.",
+    keysH: "Guardar a chave da API", keysP: "Pede a chave sem mostrar e guarda no cofre de senhas do sistema: Keychain no Mac, criptografada com a sua conta no Windows, chaveiro no Linux. Só quando nenhum deles existe ela vai para um arquivo na sua pasta de usuário que só você pode ler. Depois, <code>--model</code> usa essa chave sozinho. <code>keys list</code> mostra onde cada chave está, e <code>keys remove &lt;provedor&gt;</code> apaga.",
+    helpH: "Ajuda e versão", helpP: "<code>screendocs --help</code> lista todas as opções; <code>screendocs -v</code> mostra a versão.",
+    s7h: "Opções do comando",
+    s7p: "Escreva depois do endereço. Elas valem só nesta vez. Para valer sempre, salve com <code>npx screendocs config</code>.",
+    th: ["Opção", "Padrão", "O que faz"],
+    s8h: "O que sai no fim",
+    s8p: "Tudo fica numa pasta com o nome do site. Abra o <code>index.html</code> no navegador para ver o relatório.",
+    tree: [
+      ["index.html", "o relatório, com fotos, vídeos e descrições"],
+      ["index-original.html", "o relatório como foi capturado, antes da IA"],
+      ["screens.json", "todas as telas com título e descrição, para scripts"],
+      ["prompt.md", "como descrever com um chat por conta própria"],
+      ["for-ai/part-1/", "imagens e texto para a IA, até 10 por parte"],
+      ["desktop/<página>/", "01.jpg, 02.jpg... full.jpg e video.webm"],
+      ["mobile/<página>/", "o mesmo, na tela do celular"],
+    ],
+    copy: "Copiar", copied: "Copiado",
+    foot: "ScreenDocs é open source (MIT), feito por Rubens Mota.",
+  },
+},
+
+en: {
+  c: {
+    tagline: "screenshots, videos and docs of every screen of a website", by: "by",
+    url: "Which site do you want to document? (e.g. mysite.com, www.mysite.com.br, app.mysite.io/login)",
+    ph: "mysite.com", ok: "mysite.com answered.",
+    fail: "mysite.con did not open: this address does not exist.", pick: "Did you mean one of these? (they answered)", retype: "Type it again", anyway: "Use it anyway",
+    hasLogin: "Does the site have pages behind a login?", loginNow: "A browser window will open. Log in, then come back here and press Enter.",
+    viewports: "Which screens?", both: "Both", desktop: "Desktop", mobile: "Mobile",
+    video: "Record a video scrolling each page?",
+    mode: "Which pages?", discover: "Find them by following the links", discoverHint: "recommended", list: "Only the paths I type",
+    maxPages: "Up to how many pages?", exclude: "Skip pages whose address contains (e.g. /admin, /checkout; Enter for none)", none: "none",
+    mask: "Blur emails, phones, CPF/CNPJ and filled form fields?",
+    describe: "Who writes the descriptions of the screens?", yourPlan: "uses your plan, no API key", notInstalled: "not installed here, I can install it",
+    api: "An API (your key)", chat: "A chat in your browser (ChatGPT, Gemini, Claude.ai...)", chatHint: "step by step, no key",
+    later: "Just the page scan for now",
+    lang: "Description language",
+    advanced: "Change advanced options? (link depth, extra blurring)",
+    previous: "There is already a capture of mysite.com. What should happen to it?", replace: "Replace it", keepOld: "Keep it (renamed with its date)",
+    command: "Same thing next time, without the questions", start: "Start the capture?",
+    headed: "Show the browser while capturing?",
+    out: "Where to save the capture? (Enter keeps this folder)",
+    provider: "Which provider?",
+    other: "Other (type the address)",
+    model: "Model (one that reads images)",
+    keyFor: "Google Gemini API key (it does not show while you type)",
+    keySave: "Save it for next time? (in ~/.screendocs/keys.json, outside the project)",
+    instructions: "Should the descriptions focus on something specific? (Enter to skip)",
+    instructionsVal: "what the customer gains on each screen",
+    docs: "A folder or file with the site's documentation for the AI to read? (Enter to skip)",
+    docsVal: "./docs",
+    usingUser: "Your defaults come from ~/.screendocs/config.json (change them with: npx screendocs config).",
+    langSaved: "screendocs will talk in English. Change it any time: npx screendocs config",
+    looking: "Looking for pages (up to 20)...",
+    found: "found",
+    toCapture: "3 page(s) to capture",
+    sections: "section(s)",
+    doneRun: "Done: 30 screenshots.",
+    report: "Report",
+    cfgTitle: "Your screendocs defaults",
+    cfgFile: "Saved in ~/.screendocs/config.json. They apply wherever you run screendocs.",
+    cfgPick: "What do you want to change?",
+    cfgReset: "Reset everything to the defaults",
+    cfgDone: "Done",
+    cfgDef: "default",
+    cfgRows: [["Language of screendocs", "English", "language"], ["Language of the descriptions", "default: the language of screendocs", ""], ["Screens (desktop, mobile)", "default: desktop,mobile", ""], ["Record videos", "No", ""], ["Pages to discover", "40", ""], ["Who describes (AI tool or chat)", "claude", ""], ["API model (provider/model)", "default: none", ""], ["What the descriptions focus on", "default: none", ""]],
+    cfgSaved: "maxPages = 40",
+    yes: "Yes", no: "No",
+    hints: { sel: "↑↓ choose · Enter confirm · Esc back · Ctrl+C quit", conf: "←→ choose · Enter confirm · Esc back · Ctrl+C quit", text: "Enter confirm · Esc back · Ctrl+C quit" },
+    part: "Part 1 of 2",
+    s1: "I opened the folder screendocs-output/mysite.com/for-ai/part-1. Select its 10 images (Ctrl+A) and drag into the chat.",
+    s2: "The text for the AI is already copied. Paste it in the chat (Ctrl+V) and send.",
+    s3: "The AI should answer with 10 description(s), one per image. Copy its whole answer, paste it here and press Enter. (Type skip to skip this part.)",
+    got: "10 of 10 descriptions received.",
+    pickCap: "Which capture should be described?", screens: "screen(s)",
+  },
+  u: {
+    toc: ["Before you start", "Two ways to use it", "The menu, step by step", "Keys", "Who writes the descriptions", "Other commands", "Command options", "What you get"],
+    eyebrow: "User manual · npm",
+    h1: "Document every screen of a website with one command",
+    lead: "ScreenDocs opens the site, finds the pages on its own, takes a screenshot of each section on desktop and mobile, records a video scrolling each page, blurs personal data and builds a report with a description of every screen.",
+    notice: "This manual is for people who use ScreenDocs from npm (<code>npx screendocs</code>). To work on the repository code, see the <a href=\"https://github.com/RuBeNsMoTa13/screendocs/blob/main/CONTRIBUTING.md\">developer guide</a>.",
+    s1h: "Before you start",
+    s1p: [
+      "You need <b>Node.js 18</b> or newer and <b>Chrome or Edge</b> installed. ScreenDocs uses the browser already on your computer; no browser is downloaded. The first time it records a video it downloads only the video encoder.",
+      "Nothing is installed in the project you are documenting. Run the command in any folder: the result goes to <code>screendocs-output/</code> inside it.",
+    ],
+    s2h: "Two ways to use it",
+    s2p: "Both do the same thing. The menu asks about each option; the direct command uses the defaults and changes only what you type.",
+    menuT: "Interactive menu", menuP: "With nothing after <code>screendocs</code>, it opens the menu. Good for the first time: at the end it shows the matching command so you can repeat it later.",
+    directT: "Direct command", directP: "With the address, it asks nothing and uses the defaults: up to 20 pages, desktop and mobile, video, personal data blurred and no AI.",
+    s3h: "The menu, step by step",
+    s3p: "These are the questions in the order they appear. Some only show up depending on an earlier answer; the grey label says when.",
+    only: { first: "only the first time", api: "only if you pick “An API”", ai: "only when an AI describes", disc: "only with “Find them by following the links”", adv: "only if you answer Yes to advanced options", prev: "only if this site was captured before" },
+    steps: {
+      firstrun: ["Pick the language", "The first time it runs, ScreenDocs asks which language to speak: English, Portuguese or Spanish. Your computer's language comes selected. The choice is saved in your defaults and you can change it later with <code>npx screendocs config</code>."],
+      out: ["Where to save", "<kbd>Enter</kbd> saves to <code>screendocs-output</code>, inside the folder where you ran the command. For another place, type the path."],
+      api: ["With an API", "Pick the provider and type the model. If the key is not in an environment variable or saved, it asks for it without showing what you type and tests it right away; if the provider refuses it, it asks again. Then it asks whether to save it, with No selected. A saved key goes to the system's password store (Keychain on Mac, encrypted with your account on Windows, the keyring on Linux). With Ollama or LM Studio it asks for no key and checks that the app is running."],
+      focus: ["Focus and documentation", "You can ask the descriptions to focus on something specific, like what the customer gains on each screen. You can also point to a folder or file with the site's documentation (Markdown, PDF, Word, Excel, PowerPoint...) for the AI to read before describing. <kbd>Enter</kbd> skips both."],
+      banner: ["Open the menu", "Run <code>npx screendocs</code>. The ScreenDocs name appears, then the first question, in the language you picked."],
+      url: ["The site", "Type the address however you remember it: <code>mysite.com</code>, <code>www.mysite.com.br</code> or <code>app.mysite.io/login</code>. <code>https://</code> is added for you. Before moving on, it checks that the site opens."],
+      urlFail: ["When the address does not open", "It tries similar addresses (with or without <code>www</code>, another ending like <code>.com.br</code> or <code>.net</code>, typos like <code>.con</code>) and lists the ones that answered. You can also type it again, or use it anyway when the site only opens on your network or VPN."],
+      login: ["Login", "If the site has a logged-in area, answer Yes. A Chrome or Edge window opens: log in (Google sign-in works), come back to the terminal and press <kbd>Enter</kbd>. The session is saved in your user folder and works from any folder. Next time it reuses that login, checks that it still works and offers to log in again when it has expired."],
+      screens: ["Screens, video and browser", "Desktop is 1440×900 and mobile is 390×844. The video records each page scrolling top to bottom, with the same blurring as the screenshots. Showing the browser opens its window during the capture, handy to see where something got stuck."],
+      mode: ["Which pages", "<b>Find them by following the links</b> starts at the home page and follows the site's own links, skipping logout links and files. <b>Only the paths I type</b> asks for a list such as <code>/, /about, /pricing</code>."],
+      limit: ["Page limit and pages to skip", "The default is up to 20 pages. To leave an area out, type parts of its address separated by commas, such as <code>/admin, /checkout</code>. <kbd>Enter</kbd> with nothing skips none."],
+      mask: ["Personal data", "Yes blurs emails, phones, CPF/CNPJ and filled email, phone and password fields, in screenshots and videos. Still, check the screens before publishing when a dashboard shows real customer data."],
+      describe: ["Who writes the descriptions", "An AI looks at each screenshot and writes a title and a description. The choices are explained in <a href=\"#descrever\">Who writes the descriptions</a>. If you pick a tool that is not installed, it offers to install it."],
+      lang: ["Description language", "The language the AI writes in: Portuguese, English or Spanish. Without an AI, each screen keeps the text from its own page."],
+      advanced: ["Advanced options", "Answer Yes to change the link depth (default 3 clicks) or blur more things with CSS selectors."],
+      previous: ["Previous capture", "If you already captured this site, choose to replace it or keep the old one with its date in the name."],
+      start: ["Review and start", "If you have saved defaults, it says where they come from. Then it shows the command that matches everything you answered, to repeat the same capture without the questions. Confirm and the capture starts; at the end the report opens on its own."],
+      run: ["During the capture", "The terminal lists the pages it finds and each screen it captures. If you stop halfway, the report so far is already saved."],
+    },
+    s4h: "Keys",
+    s4p: "Under every question a line reminds you what each key does.",
+    keys: [["↑ ↓", "Pick an option from the list"], ["← →", "Pick Yes or No"], ["Enter", "Confirm the answer"], ["Esc", "Go back to the previous question, with its answer filled in"], ["Ctrl+C", "Quit the menu"]],
+    s5h: "Who writes the descriptions",
+    s5p: "The AI must read images, because it looks at each screenshot to write. Choose in the menu or with <code>--describe</code>.",
+    ways: [
+      ["An AI tool on your computer", "Claude Code, Codex or Antigravity CLI installed and logged in. Uses your plan, no API key.", "--describe claude"],
+      ["A chat in your browser", "ChatGPT, Gemini, Claude.ai or any other chat. No key and nothing to install; the terminal guides each step.", "--describe chat"],
+      ["An API", "Name the provider and the model: OpenAI, Gemini, Anthropic, OpenRouter, or Ollama and LM Studio on your computer, with no key.", "--model gemini/gemini-2.5-flash"],
+      ["Just the scan for now", "Each screen keeps the title and first paragraph from the page. An AI can describe it later with the describe command.", "screendocs describe"],
+    ],
+    chatH: "How the browser chat works",
+    chatP: "Screens go in parts of up to 10 images. For each part, ScreenDocs opens the folder and copies the text for the AI. You drag the images into the chat, paste the text, send it and paste the AI's answer back in the terminal. It checks the answer and asks again if a screen is missing. You can keep using the same chat for the next parts.",
+    apiH: "With an API",
+    apiP: "<code>--model</code> is all it takes. The key comes from the provider's variable (<code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>, <code>OPENROUTER_API_KEY</code>), <code>SCREENDOCS_API_KEY</code> or the key saved with <code>screendocs keys set</code>. Before capturing, it tests the key. With none, or when the provider refuses the one it found, it asks in the terminal without showing it and offers to save it. With <code>ollama/</code> or <code>lmstudio/</code> no key is needed, and it checks that the app is running before capturing.",
+    s6h: "Other commands",
+    loginH: "Log in once", loginP: "Opens the browser so you can sign in to the site. The session is saved in your user folder, next to your defaults, so the login works from any folder where you run ScreenDocs.",
+    descH: "Describe a capture you already have", descP: "Writes the descriptions without capturing again. Without a site, it lists the captures there are so you can pick one.",
+    mcpH: "Use it from an AI (MCP)", mcpP: "Turns ScreenDocs into tools for Claude Code, Cursor, Claude Desktop and others. You ask in your own words and the AI captures and describes on its own.",
+    keysH: "Save the API key", keysP: "Asks for the key without showing it and saves it in the system's password store: Keychain on Mac, encrypted with your account on Windows, the keyring on Linux. Only when none of these exists does it go to a file in your user folder that only you can read. After that, <code>--model</code> uses it on its own. <code>keys list</code> shows where each key is, and <code>keys remove &lt;provider&gt;</code> deletes one.",
+    helpH: "Help and version", helpP: "<code>screendocs --help</code> lists every option; <code>screendocs -v</code> shows the version.",
+    s7h: "Command options",
+    s7p: "Type them after the address. They apply to this run only. To make them always apply, save them with <code>npx screendocs config</code>.",
+    th: ["Option", "Default", "What it does"],
+    s8h: "What you get",
+    s8p: "Everything goes in a folder named after the site. Open <code>index.html</code> in your browser to see the report.",
+    tree: [
+      ["index.html", "the report, with screenshots, videos and descriptions"],
+      ["index-original.html", "the report as captured, before the AI"],
+      ["screens.json", "every screen with title and description, for scripts"],
+      ["prompt.md", "how to describe with a chat on your own"],
+      ["for-ai/part-1/", "images and text for the AI, up to 10 per part"],
+      ["desktop/<page>/", "01.jpg, 02.jpg... full.jpg and video.webm"],
+      ["mobile/<page>/", "the same, on the mobile screen"],
+    ],
+    copy: "Copy", copied: "Copied",
+    foot: "ScreenDocs is open source (MIT), made by Rubens Mota.",
+  },
+},
+
+es: {
+  c: {
+    tagline: "capturas, videos y documentación de todas las pantallas de un sitio web", by: "por",
+    url: "¿Qué sitio quieres documentar? (ej.: misitio.com, www.misitio.es, app.misitio.io/login)",
+    ph: "misitio.com", ok: "misitio.com respondió.",
+    fail: "misitio.con no abrió: esta dirección no existe.", pick: "¿Quisiste decir una de estas? (respondieron)", retype: "Escribirla de nuevo", anyway: "Usarla de todos modos",
+    hasLogin: "¿El sitio tiene páginas que piden iniciar sesión?", loginNow: "Se abrirá una ventana del navegador. Inicia sesión, vuelve aquí y presiona Enter.",
+    viewports: "¿Qué pantallas?", both: "Las dos", desktop: "Computadora", mobile: "Celular",
+    video: "¿Grabar un video desplazándose por cada página?",
+    mode: "¿Qué páginas?", discover: "Encontrarlas siguiendo los enlaces", discoverHint: "recomendado", list: "Solo las rutas que yo escriba",
+    maxPages: "¿Hasta cuántas páginas?", exclude: "Saltar páginas cuya dirección contiene (ej.: /admin, /checkout; Enter para ninguna)", none: "ninguna",
+    mask: "¿Difuminar correos, teléfonos, documentos (CPF/CNPJ) y campos de formulario llenos?",
+    describe: "¿Quién escribe las descripciones de las pantallas?", yourPlan: "usa tu plan, sin clave de API", notInstalled: "no está instalado aquí, puedo instalarlo",
+    api: "Una API (con tu clave)", chat: "Un chat en tu navegador (ChatGPT, Gemini, Claude.ai...)", chatHint: "paso a paso, sin clave",
+    later: "Por ahora, solo el escaneo de la página",
+    lang: "Idioma de las descripciones",
+    advanced: "¿Cambiar las opciones avanzadas? (profundidad de enlaces, difuminar más cosas)",
+    previous: "Ya existe una captura de misitio.com. ¿Qué hago con ella?", replace: "Reemplazarla", keepOld: "Guardarla (renombrada con su fecha)",
+    command: "Lo mismo la próxima vez, sin las preguntas", start: "¿Empezar la captura?",
+    headed: "¿Mostrar el navegador durante la captura?",
+    out: "¿Dónde guardar la captura? (Enter para usar esta carpeta)",
+    provider: "¿Qué proveedor?",
+    other: "Otro (escribir la dirección)",
+    model: "Modelo (uno que lea imágenes)",
+    keyFor: "Clave de la API de Google Gemini (no se ve mientras escribes)",
+    keySave: "¿Guardarla para la próxima vez? (en ~/.screendocs/keys.json, fuera del proyecto)",
+    instructions: "¿Las descripciones deben enfocarse en algo específico? (Enter para saltar)",
+    instructionsVal: "lo que gana el cliente en cada pantalla",
+    docs: "¿Hay una carpeta o archivo con la documentación del sitio para que la IA lea? (Enter para saltar)",
+    docsVal: "./docs",
+    usingUser: "Tus valores predeterminados vienen de ~/.screendocs/config.json (cámbialos con: npx screendocs config).",
+    langSaved: "screendocs hablará en Español. Cámbialo cuando quieras: npx screendocs config",
+    looking: "Buscando páginas (hasta 20)...",
+    found: "encontré",
+    toCapture: "3 página(s) para capturar",
+    sections: "sección(es)",
+    doneRun: "Listo: 30 capturas.",
+    report: "Informe",
+    cfgTitle: "Tus valores predeterminados de screendocs",
+    cfgFile: "Guardados en ~/.screendocs/config.json. Valen en cualquier carpeta donde ejecutes screendocs.",
+    cfgPick: "¿Qué quieres cambiar?",
+    cfgReset: "Volver todo a los valores predeterminados",
+    cfgDone: "Listo",
+    cfgDef: "predeterminado",
+    cfgRows: [["Idioma de screendocs", "Español", "language"], ["Idioma de las descripciones", "predeterminado: el idioma de screendocs", ""], ["Pantallas (desktop, mobile)", "predeterminado: desktop,mobile", ""], ["Grabar videos", "No", ""], ["Páginas a encontrar", "40", ""], ["Quién describe (herramienta de IA o chat)", "claude", ""], ["Modelo de API (proveedor/modelo)", "predeterminado: ninguno", ""], ["En qué se enfocan las descripciones", "predeterminado: ninguno", ""]],
+    cfgSaved: "maxPages = 40",
+    yes: "Sí", no: "No",
+    hints: { sel: "↑↓ elegir · Enter confirmar · Esc volver · Ctrl+C salir", conf: "←→ elegir · Enter confirmar · Esc volver · Ctrl+C salir", text: "Enter confirmar · Esc volver · Ctrl+C salir" },
+    part: "Parte 1 de 2",
+    s1: "Abrí la carpeta screendocs-output/misitio.com/for-ai/part-1. Selecciona sus 10 imágenes (Ctrl+A) y arrástralas al chat.",
+    s2: "El texto para la IA ya está copiado. Pégalo en el chat (Ctrl+V) y envíalo.",
+    s3: "La IA debe responder con 10 descripción(es), una por imagen. Copia su respuesta completa, pégala aquí y presiona Enter. (Escribe saltar para saltar esta parte.)",
+    got: "10 de 10 descripciones recibidas.",
+    pickCap: "¿Qué captura describir?", screens: "pantalla(s)",
+  },
+  u: {
+    toc: ["Antes de empezar", "Dos formas de usarlo", "El menú, paso a paso", "Teclas", "Quién escribe las descripciones", "Otros comandos", "Opciones del comando", "Qué obtienes"],
+    eyebrow: "Manual del usuario · npm",
+    h1: "Documenta todas las pantallas de un sitio con un comando",
+    lead: "ScreenDocs abre el sitio, encuentra las páginas solo, toma una captura de cada sección en computadora y celular, graba un video desplazando cada página, difumina datos personales y arma un informe con la descripción de cada pantalla.",
+    notice: "Este manual es para quien usa ScreenDocs desde npm (<code>npx screendocs</code>). Para trabajar en el código del repositorio, mira la <a href=\"https://github.com/RuBeNsMoTa13/screendocs/blob/main/CONTRIBUTING.es.md\">guía para desarrolladores</a>.",
+    s1h: "Antes de empezar",
+    s1p: [
+      "Necesitas <b>Node.js 18</b> o más nuevo y <b>Chrome o Edge</b> instalado. ScreenDocs usa el navegador que ya está en tu computadora; no se descarga ningún navegador. La primera vez que graba un video descarga solo el codificador de video.",
+      "No se instala nada en el proyecto que vas a documentar. Ejecuta el comando en cualquier carpeta: el resultado queda en <code>screendocs-output/</code> dentro de ella.",
+    ],
+    s2h: "Dos formas de usarlo",
+    s2p: "Las dos hacen lo mismo. El menú pregunta cada opción; el comando directo usa los valores por defecto y solo cambia lo que escribas.",
+    menuT: "Menú interactivo", menuP: "Sin nada después de <code>screendocs</code>, abre el menú. Ideal para la primera vez: al final muestra el comando equivalente para que lo repitas después.",
+    directT: "Comando directo", directP: "Con la dirección, no pregunta nada y usa los valores por defecto: hasta 20 páginas, computadora y celular, video, datos personales difuminados y sin IA.",
+    s3h: "El menú, paso a paso",
+    s3p: "Estas son las preguntas en el orden en que aparecen. Algunas solo aparecen según una respuesta anterior; la etiqueta gris dice cuándo.",
+    only: { first: "solo la primera vez", api: "solo si eliges “Una API”", ai: "solo cuando una IA describe", disc: "solo con “Encontrarlas siguiendo los enlaces”", adv: "solo si respondes Sí a las opciones avanzadas", prev: "solo si ese sitio ya se capturó antes" },
+    steps: {
+      firstrun: ["Elegir el idioma", "La primera vez que se ejecuta, ScreenDocs pregunta en qué idioma va a hablar: inglés, portugués o español. El idioma de la computadora viene marcado. La elección queda guardada en tus valores predeterminados y puedes cambiarla después con <code>npx screendocs config</code>."],
+      out: ["Dónde guardar", "<kbd>Enter</kbd> guarda en <code>screendocs-output</code>, dentro de la carpeta donde ejecutaste el comando. Para otro lugar, escribe la ruta."],
+      api: ["Con una API", "Elige el proveedor y escribe el modelo. Si la clave no está en una variable de entorno ni guardada, la pide sin mostrar lo que escribes y la prueba en el momento; si el proveedor la rechaza, la pide de nuevo. Después pregunta si quieres guardarla, con No ya marcado. Guardada, la clave va al almacén de contraseñas del sistema (Keychain en Mac, cifrada con tu cuenta en Windows, el llavero en Linux). Con Ollama o LM Studio no pide clave y comprueba que el programa esté abierto."],
+      focus: ["Enfoque y documentación", "Puedes pedir que las descripciones se enfoquen en algo específico, como lo que gana el cliente en cada pantalla. También puedes indicar una carpeta o un archivo con la documentación del sitio (Markdown, PDF, Word, Excel, PowerPoint...) para que la IA lo lea antes de describir. <kbd>Enter</kbd> salta las dos."],
+      banner: ["Abrir el menú", "Ejecuta <code>npx screendocs</code>. Aparece el nombre ScreenDocs y luego la primera pregunta, en el idioma que elegiste."],
+      url: ["El sitio", "Escribe la dirección como la recuerdes: <code>misitio.com</code>, <code>www.misitio.com.ar</code> o <code>app.misitio.io/login</code>. El <code>https://</code> se agrega solo. Antes de seguir, comprueba que el sitio abre."],
+      urlFail: ["Si la dirección no abre", "Prueba direcciones parecidas (con o sin <code>www</code>, otra terminación como <code>.com.ar</code> o <code>.net</code>, errores como <code>.con</code>) y muestra las que respondieron. También puedes escribirla de nuevo, o usarla igual cuando el sitio solo abre en tu red o VPN."],
+      login: ["Inicio de sesión", "Si el sitio tiene un área con sesión, responde Sí. Se abre una ventana de Chrome o Edge: inicia sesión (con Google también funciona), vuelve a la terminal y presiona <kbd>Enter</kbd>. La sesión queda guardada en tu carpeta de usuario y vale en cualquier carpeta. Las próximas veces la reutiliza, comprueba que sigue válida y ofrece iniciar sesión de nuevo si expiró."],
+      screens: ["Pantallas, video y navegador", "Computadora es 1440×900 y celular es 390×844. El video graba cada página desplazándose de arriba abajo, con el mismo difuminado de las capturas. Mostrar el navegador abre su ventana durante la captura, útil para ver dónde se trabó algo."],
+      mode: ["Qué páginas", "<b>Encontrarlas siguiendo los enlaces</b> parte de la página de inicio y sigue los enlaces del propio sitio, saltando cerrar sesión y archivos. <b>Solo las rutas que escriba</b> pide una lista como <code>/, /nosotros, /precios</code>."],
+      limit: ["Límite y páginas a saltar", "Por defecto, hasta 20 páginas. Para dejar un área afuera, escribe partes de su dirección separadas por comas, como <code>/admin, /checkout</code>. <kbd>Enter</kbd> sin nada no salta ninguna."],
+      mask: ["Datos personales", "Sí difumina correos, teléfonos, documentos (CPF/CNPJ) y campos de correo, teléfono y contraseña completados, en capturas y videos. Aun así, revisa las pantallas antes de publicar cuando un panel muestre datos reales de clientes."],
+      describe: ["Quién escribe las descripciones", "Una IA mira cada captura y escribe un título y una descripción. Las opciones están explicadas en <a href=\"#descrever\">Quién escribe las descripciones</a>. Si eliges una herramienta que no está instalada, ofrece instalarla."],
+      lang: ["Idioma de las descripciones", "En qué idioma escribe la IA: portugués, inglés o español. Sin IA, cada pantalla queda con el texto de su propia página."],
+      advanced: ["Opciones avanzadas", "Responde Sí para cambiar la profundidad de los enlaces (3 clics por defecto) o difuminar más cosas con selectores CSS."],
+      previous: ["Captura anterior", "Si ya capturaste ese sitio, elige reemplazarla o guardar la anterior con la fecha en el nombre."],
+      start: ["Revisar y empezar", "Si tienes valores guardados, avisa de dónde vienen. Luego muestra el comando equivalente a todo lo que respondiste, para repetir la misma captura sin las preguntas. Confirma y la captura empieza; al final, el informe se abre solo."],
+      run: ["Durante la captura", "La terminal muestra las páginas encontradas y cada pantalla capturada. Si la detienes a la mitad, el informe hasta ese punto ya queda guardado."],
+    },
+    s4h: "Teclas",
+    s4p: "Debajo de cada pregunta aparece una línea que recuerda qué hace cada tecla.",
+    keys: [["↑ ↓", "Elegir una opción de la lista"], ["← →", "Elegir Sí o No"], ["Enter", "Confirmar la respuesta"], ["Esc", "Volver a la pregunta anterior, con la respuesta ya completada"], ["Ctrl+C", "Salir del menú"]],
+    s5h: "Quién escribe las descripciones",
+    s5p: "La IA tiene que leer imágenes, porque mira cada captura para escribir. Elige en el menú o con <code>--describe</code>.",
+    ways: [
+      ["Una herramienta de IA en tu computadora", "Claude Code, Codex o Antigravity CLI instalado y con sesión iniciada. Usa tu plan, sin clave de API.", "--describe claude"],
+      ["Un chat en el navegador", "ChatGPT, Gemini, Claude.ai u otro chat. Sin clave y sin instalar nada; la terminal te guía en cada paso.", "--describe chat"],
+      ["Una API", "Indica el proveedor y el modelo: OpenAI, Gemini, Anthropic, OpenRouter, u Ollama y LM Studio en tu computadora, sin clave.", "--model gemini/gemini-2.5-flash"],
+      ["Solo el escaneo por ahora", "Cada pantalla queda con el título y el primer párrafo de la página. Una IA puede describirla después con el comando describe.", "screendocs describe"],
+    ],
+    chatH: "Cómo funciona el chat en el navegador",
+    chatP: "Las pantallas van en partes de hasta 10 imágenes. Para cada parte, ScreenDocs abre la carpeta y copia el texto para la IA. Arrastras las imágenes al chat, pegas el texto, lo envías y pegas la respuesta de la IA de vuelta en la terminal. Revisa la respuesta y vuelve a pedirla si falta alguna pantalla. Puedes seguir en el mismo chat para las siguientes partes.",
+    apiH: "Con una API",
+    apiP: "Basta con <code>--model</code>. La clave sale de la variable del proveedor (<code>OPENAI_API_KEY</code>, <code>GEMINI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>, <code>OPENROUTER_API_KEY</code>), <code>SCREENDOCS_API_KEY</code> o de la clave guardada con <code>screendocs keys set</code>. Antes de capturar, prueba la clave. Si no encuentra ninguna, o si el proveedor rechaza la que encontró, la pide en la terminal sin mostrarla y ofrece guardarla. Con <code>ollama/</code> o <code>lmstudio/</code> no hace falta clave, y comprueba que el programa esté abierto antes de capturar.",
+    s6h: "Otros comandos",
+    loginH: "Iniciar sesión una vez", loginP: "Abre el navegador para que entres a tu cuenta del sitio. La sesión queda guardada en tu carpeta de usuario, junto a tus valores, así que el inicio de sesión vale en cualquier carpeta donde ejecutes ScreenDocs.",
+    descH: "Describir una captura que ya existe", descP: "Escribe las descripciones sin capturar de nuevo. Sin el sitio, lista las capturas que existen para que elijas una.",
+    mcpH: "Usarlo desde una IA (MCP)", mcpP: "Convierte ScreenDocs en herramientas para Claude Code, Cursor, Claude Desktop y otros. Pides con tus palabras y la IA captura y describe sola.",
+    keysH: "Guardar la clave de la API", keysP: "Pide la clave sin mostrarla y la guarda en el almacén de contraseñas del sistema: Keychain en Mac, cifrada con tu cuenta en Windows, el llavero en Linux. Solo cuando no existe ninguno va a un archivo en tu carpeta de usuario que solo tú puedes leer. Después, <code>--model</code> la usa sola. <code>keys list</code> muestra dónde está cada clave, y <code>keys remove &lt;proveedor&gt;</code> la borra.",
+    helpH: "Ayuda y versión", helpP: "<code>screendocs --help</code> lista todas las opciones; <code>screendocs -v</code> muestra la versión.",
+    s7h: "Opciones del comando",
+    s7p: "Escríbelas después de la dirección. Valen solo esta vez. Para que valgan siempre, guárdalas con <code>npx screendocs config</code>.",
+    th: ["Opción", "Por defecto", "Qué hace"],
+    s8h: "Qué obtienes",
+    s8p: "Todo queda en una carpeta con el nombre del sitio. Abre <code>index.html</code> en el navegador para ver el informe.",
+    tree: [
+      ["index.html", "el informe, con capturas, videos y descripciones"],
+      ["index-original.html", "el informe tal como se capturó, antes de la IA"],
+      ["screens.json", "todas las pantallas con título y descripción, para scripts"],
+      ["prompt.md", "cómo describir con un chat por tu cuenta"],
+      ["for-ai/part-1/", "imágenes y texto para la IA, hasta 10 por parte"],
+      ["desktop/<página>/", "01.jpg, 02.jpg... full.jpg y video.webm"],
+      ["mobile/<página>/", "lo mismo, en la pantalla del celular"],
+    ],
+    copy: "Copiar", copied: "Copiado",
+    foot: "ScreenDocs es open source (MIT), hecho por Rubens Mota.",
+  },
+},
+};
+
+/* ---------- site mapping + flag guide texts ---------- */
+const OK = "ok", NO = "no", SAME = "same";
+Object.assign(L.pt.u, {
+  secH: "Segurança",
+  secIntro: "O ScreenDocs mexe com três coisas sensíveis: a chave da API da IA, o login dos sites e as fotos das telas. Esta seção diz onde cada uma fica, do que está protegida e o que fica por sua conta.",
+  keyH: "1. Chave da API",
+  keyP: "Por padrão a chave vale só para aquela execução: quando o ScreenDocs pede a chave, o “Guardar para as próximas vezes?” já vem marcado Não. A chave nunca vai no comando nem em arquivo de opções, e não fica na pasta onde você roda o comando. Então não aparece no histórico do terminal e não vai junto se você mandar essa pasta para alguém. Antes da captura, ela é testada com o provedor: se você digitou errado, ele pede de novo na hora, e se uma chave guardada ou de variável for recusada, ele diz de onde ela veio e pede uma nova. A chave é procurada nesta ordem: a variável do provedor (<code>GEMINI_API_KEY</code>, <code>OPENAI_API_KEY</code>...), depois <code>SCREENDOCS_API_KEY</code>, depois a chave guardada.",
+  whereH: "Onde a chave guardada fica",
+  where: [["macOS", "Keychain do sistema, o mesmo cofre das senhas do Safari."], ["Windows", "Um arquivo na sua pasta de usuário, criptografado com a sua conta do Windows. Só a sua conta, neste computador, consegue abrir."], ["Linux", "Chaveiro do sistema (<code>secret-tool</code>)."], ["Sem nenhum desses", "Um arquivo na sua pasta de usuário (<code>keys.json</code>) que só o seu usuário pode ler."]],
+  whereNote: "<code>npx screendocs keys list</code> mostra onde cada chave está, e <code>keys remove &lt;provedor&gt;</code> apaga.",
+  yesH: "Protege contra",
+  yes: ["Quem só lê o arquivo: vê um código embaralhado, não a chave.", "Uma IA ou ferramenta que abra o arquivo da chave.", "Um backup ou uma cópia do arquivo que vaze.", "Outra pessoa que use o mesmo computador com outra conta.", "Levar o arquivo para outro computador."],
+  noH: "Não protege contra",
+  no: ["Um programa malicioso rodando com a sua conta, como um pacote npm infectado ou um vírus. Ele consegue pedir ao sistema para abrir a chave do mesmo jeito que o ScreenDocs faz.", "Uma IA a quem você deu permissão de rodar comandos e que decida fazer isso."],
+  noNote: "Essa limitação vale para todo programa que guarda senha sem pedir uma senha mestra, inclusive os navegadores e o Gerenciador de Credenciais do Windows. A defesa é impedir que esse programa chegue a rodar.",
+  tipsH: "Boas práticas",
+  tips: ["Crie uma chave só para o ScreenDocs, com limite de gasto no painel do provedor (Google AI Studio, OpenAI, Anthropic...). Se algo der errado, o estrago fica pequeno.", "Se não usa sempre, não guarde: deixe o Não marcado e digite a chave quando precisar.", "Desconfiou de algo? Apague a chave no painel do provedor. A antiga para de funcionar na hora. Depois rode <code>keys remove</code>.", "Instale só pacotes confiáveis e mantenha o antivírus ligado.", "Com Ollama ou LM Studio não existe chave, e as fotos não saem do computador."],
+  authH: "2. Login dos sites",
+  authP: "O <code>npx screendocs login</code> guarda a sessão de cada site num arquivo na sua pasta de usuário, que só o seu usuário consegue ler. Esse arquivo dá acesso à sua conta no site, do mesmo jeito que um navegador já logado.",
+  auth: ["Nada do login fica na pasta onde você roda o comando, então ele não vai junto se você mandar essa pasta para alguém.", "Para sair, rode <code>npx screendocs login</code> de novo ou saia da conta pelo próprio site.", "Em painéis de clientes, prefira uma conta de teste, sem dados reais."],
+  shotsH: "3. Fotos e vídeos das telas",
+  shotsP: "O borrão de e-mails, telefones, CPF/CNPJ e campos preenchidos é aplicado na página antes de cada foto e durante o vídeo, mas ele procura padrões e pode deixar passar algo, como um nome ou um valor.",
+  shots: ["Confira as fotos e os vídeos antes de publicar ou mandar para alguém.", "Use <code>--mask</code> para borrar o que o ScreenDocs não reconhece sozinho, como <code>.nome-cliente</code> ou <code>#saldo</code>.", "Quando uma IA descreve, as fotos vão para ela: para o provedor da API, para o chat no navegador ou para a ferramenta instalada. Com Ollama ou LM Studio, elas ficam no seu computador."],
+  padH: "Seus padrões e o idioma",
+  cfgIntro: "Os seus padrões são as escolhas que valem sempre, em qualquer pasta onde você rodar o ScreenDocs: o idioma, quantas páginas procurar, se grava vídeo, quem descreve as telas e o resto. Você escolhe com <code>npx screendocs config</code> e eles ficam salvos no seu computador, na sua pasta de usuário. Continuam lá quando o ScreenDocs atualiza.",
+  cfgMenuH: "O menu de padrões",
+  cfgMenuP: "<code>npx screendocs config</code> abre uma lista com cada configuração e o valor que ela tem agora. Escolha uma, mude, e repita até escolher Pronto. Os valores em cinza são os padrões do próprio ScreenDocs.",
+  cfgCmdH: "Pelo terminal, sem menu",
+  cfgCmds: [["config list", "mostra o que está guardado"], ["config set maxPages 40", "guarda um valor"], ["config unset maxPages", "volta um valor ao padrão"], ["config reset", "apaga tudo (o idioma é perguntado de novo)"], ["config path", "mostra onde fica o arquivo"]],
+  langH: "Dois idiomas diferentes",
+  langP: "<b>O idioma do terminal</b> é o que o ScreenDocs usa para falar com você. Ele pergunta só na primeira vez que você roda e depois fica salvo. Para trocar, rode <code>npx screendocs config</code> e escolha <i>Idioma do screendocs</i>; vale para todas as próximas vezes.<br><br><b>O idioma das descrições</b> é o que a IA usa para escrever. É esse que o menu pergunta toda vez. Se você não escolher, é o mesmo do terminal. Para trocar só numa vez, use <code>--lang en</code> no comando; para sempre, escolha <i>Idioma das descrições</i> no mesmo menu.",
+  tipNone: "<b>Uma vez sem IA.</b> Se você salvou nos seus padrões uma IA para descrever, ela é usada em toda execução. Para uma vez sair só com as capturas, acrescente <code>--describe none</code> no comando. Na próxima vez, a IA volta.", layH: "Quem vale mais: pense em camadas", layP: "Uma opção pode vir de quatro lugares, um por cima do outro. Quando dois dizem coisas diferentes, vale o de cima.", layers: [["O comando", "O que você digita agora. Vale só nesta vez.", "--max-pages 5", "5"], ["Opções da pasta (opcional)", "Um <code>screendocs.config.json</code> na pasta onde você roda. Vale só ali.", "\"maxPages\": 10", "10"], ["Seus padrões", "O que você salvou com <code>npx screendocs config</code>. Vale em qualquer pasta.", "config set maxPages 40", "40"], ["Padrão do ScreenDocs", "O que já vem no pacote.", "", "20"]], layEx: "<b>Exemplo com o número de páginas.</b> Em qualquer pasta ele procura 40, porque você salvou 40. Na pasta <code>cliente-x</code>, que tem um arquivo dizendo 10, ele procura 10. Se ali você digitar <code>--max-pages 5</code>, ele procura 5, só desta vez.", layTip: "Na prática, quase todo mundo usa só duas camadas: salva o que quer sempre com <code>npx screendocs config</code> e muda uma vez com uma flag no comando.", filesH: "O que fica no seu computador", runH: "Na pasta onde você roda o comando", run: [["screendocs-output/", "As fotos, os vídeos e o relatório, uma pasta por site. É a única coisa que o ScreenDocs cria aqui."]], homeH: "Na sua pasta de usuário", home: [["Seus padrões", "Tudo o que você salvou com <code>npx screendocs config</code>, inclusive o idioma. <code>npx screendocs config path</code> mostra onde."], ["Logins dos sites", "Um arquivo por site, salvo pelo <code>npx screendocs login</code>. Nunca compartilhe."], ["Chaves de API", "Só se você escolheu guardar, e só quando o sistema não tem cofre de senhas. Veja <a href=\"#seguranca\">Segurança</a>."]], filesNote: "O ScreenDocs nunca cria o <code>screendocs.config.json</code>. Ele só lê esse arquivo, se você criar um.", devH: "Vai rodar pelo código do GitHub?", devP: "Este manual é para quem usa pelo npm. Para baixar o código do GitHub, rodar o ScreenDocs a partir dele ou mandar uma correção, veja o <a href=\"https://github.com/RuBeNsMoTa13/screendocs/blob/main/CONTRIBUTING.pt-BR.md\">guia para desenvolvedores</a>.",
+  mapH: "Como o site é mapeado",
+  mapP: "Do endereço ao relatório, o ScreenDocs passa por estas etapas. A procura de páginas e o corte em seções são as partes que decidem o que entra no relatório.",
+  flow: [
+    ["Confere o endereço", "Vê se o site responde e sugere correções."],
+    ["Carrega o login", "Usa a sessão salva e avisa se expirou."],
+    ["Procura as páginas", "Segue os links, nível por nível."],
+    ["Fotografa cada página", "Em cada tela: rola, filma e corta em seções."],
+    ["Borra dados pessoais", "Antes de cada foto e durante o vídeo."],
+    ["Monta o relatório", "index.html, screens.json e for-ai/."],
+    ["IA descreve (opcional)", "Título e descrição de cada tela."],
+  ],
+  bfsH: "1. Procurando as páginas",
+  bfsP: "Ele abre a página inicial (nível 0), junta todos os links dela e visita cada um (nível 1), depois os links desses (nível 2), e assim por diante. Isso se chama busca em largura: as páginas mais perto da inicial entram primeiro. Ele para quando chega a <code>--max-pages</code> páginas (20) ou quando não há mais links até o nível <code>--depth</code> (3). Os links achados na última camada não são seguidos.",
+  lvl: (n, last) => (n === 0 ? "Nível 0 · página inicial" : `Nível ${n}${last ? " · último (--depth 3)" : ""}`),
+  legend: [["ok", "vira uma tela do relatório"], ["same", "já está no relatório"], ["no", "fica de fora"]],
+  why: {
+    logout: "link de sair", file: "arquivo, não página", other: "outro site", sub: "subdomínio conta como outro site",
+    query: "é o /blog: o que vem depois do ? é ignorado", id: "números e códigos viram :id → /blog/:id", sameId: "mesma tela que /blog/12",
+    excl: "--exclude /admin", login: "só aparece com o login salvo", redirect: "redireciona para /login, que já foi visto", noFollow: "links desta página não são seguidos",
+  },
+  rulesH: "Regras que valem em toda a procura",
+  rules: [
+    "<b>Mesmo site:</b> <code>meusite.com.br</code> e <code>www.meusite.com.br</code> contam como um só. Subdomínios (<code>app.</code>, <code>blog.</code>) e outros domínios ficam de fora; para capturar um subdomínio, rode o ScreenDocs nele.",
+    "<b>Sem repetir telas:</b> partes do caminho que são números ou códigos longos viram <code>:id</code>, então <code>/blog/12</code> e <code>/blog/13</code> contam como uma tela só.",
+    "<b>Endereço limpo:</b> o que vem depois de <code>?</code> e de <code>#</code> é ignorado. A exceção são apps com rotas em <code>#/</code> (como <code>#/painel</code>), que contam como páginas.",
+    "<b>Pulados sempre:</b> links de sair (logout, sair, sign out) e arquivos (PDF, imagens, planilhas, ZIP...).",
+    "<b>Com login:</b> a procura usa a sessão salva, então as páginas da área logada aparecem como qualquer outra.",
+    "<b>Sem procura:</b> com <code>--pages</code> ele fotografa só os caminhos da lista, sem seguir links.",
+  ],
+  cutH: "2. Cortando cada página em seções",
+  cutP: "Em cada página e em cada tela (computador e celular), ele rola até o fim para carregar imagens e animações, filma essa rolagem, volta ao topo e procura os blocos grandes da página. Cada bloco vira uma foto numerada.",
+  cutRules: [
+    "Blocos procurados: <code>header</code>, <code>section</code>, <code>article</code>, <code>footer</code>, <code>[data-section]</code> e os filhos diretos de <code>main</code>.",
+    "Só conta um bloco com pelo menos 1/4 da altura da tela e 60% da largura; blocos dentro de outro bloco não viram foto separada.",
+    "Uma foto tem no máximo 1,6 tela de altura, e cada página tem no máximo 10 fotos. A página inteira também sai em <code>full.jpg</code>.",
+    "Se a página não tem esses blocos, ele corta em fatias do tamanho da tela.",
+    "O título e o primeiro parágrafo de cada bloco viram a descrição inicial da tela, até a IA escrever a dela.",
+  ],
+  withBlocks: "Página com blocos", noBlocks: "Página sem blocos",
+  slice: "fatia", full: "página inteira",
+  blocks: ["header", "section · hero", "section · planos", "section · depoimentos", "footer"],
+
+  flagsH: "Manual das flags",
+  flagsP: "Escreva as flags depois do endereço, em qualquer ordem. Sem nenhuma, valem os seus padrões. Uma flag vale só naquela vez e ganha de qualquer padrão (veja <a href=\"#padroes\">Quem vale mais</a>).",
+  defLabel: "Padrão", exLabel: "Exemplo", cfgLabel: "No arquivo",
+  groups: [
+    ["Quais páginas", [
+      ["--max-pages <n>", "20", "Quantas páginas a procura junta no máximo. Ela para assim que chega nesse número.", "--max-pages 50", "\"maxPages\": 50", "Cada página vira até 10 fotos por tela, então 50 páginas podem passar de mil fotos."],
+      ["--depth <n>", "3", "Até quantos cliques de distância da página inicial ele procura. 1 pega só os links da inicial.", "--depth 1", "\"depth\": 1", ""],
+      ["--pages <a,b,c>", "", "Fotografa só esses caminhos, sem procurar. Use para escolher as telas a dedo ou para apps em que a procura não acha os links.", "--pages /,/precos,/painel", "\"pages\": [\"/\", \"/precos\"]", "Com --pages, --max-pages, --depth e --exclude não fazem nada."],
+      ["--exclude <a,b>", "", "Pula endereços que contêm qualquer um desses textos. Os links dessas páginas também não são seguidos.", "--exclude /admin,/checkout", "\"exclude\": [\"/admin\"]", ""],
+    ]],
+    ["Telas e vídeo", [
+      ["--viewports <lista>", "desktop,mobile", "Em quais telas fotografar: desktop (1440×900), mobile (390×844, como um celular com toque) ou as duas.", "--viewports desktop", "\"viewports\": [\"desktop\"]", ""],
+      ["--no-video", "", "Não grava o vídeo rolando cada página. A captura fica mais rápida e a pasta, menor. Se os seus padrões desligaram o vídeo, --video liga de novo nessa vez.", "--no-video", "\"video\": false", ""],
+    ]],
+    ["Dados pessoais", [
+      ["--mask <seletores>", "", "Borra também os elementos desses seletores CSS, além do que já é borrado sozinho.", "--mask .nome-cliente,#saldo", "\"mask\": [\".nome-cliente\"]", ""],
+      ["--no-auto-mask", "", "Não borra e-mails, telefones, CPF/CNPJ nem campos preenchidos. Use só em sites sem dados reais. Se os seus padrões desligaram o borrão, --auto-mask liga de novo.", "--no-auto-mask", "\"autoMask\": false", ""],
+    ]],
+    ["Descrições", [
+      ["--describe <como>", "", "Quem escreve as descrições: claude, codex, antigravity (ferramenta instalada, usa o seu plano) ou chat (um chat no navegador, guiado no terminal). Para usar uma API, use --model. Sem nenhuma das duas, cada tela fica com o texto da página.", "--describe claude", "\"describe\": \"claude\"", "<b>none</b>: sem IA só nesta vez. Serve para quando os seus padrões já têm uma IA e você roda direto pelo comando (<code>npx screendocs meusite.com --describe none</code>). No menu não precisa: é só escolher “Por enquanto, só o scan da página”."],
+      ["--model <provedor/modelo>", "", "A única flag de API: descreve com o modelo escolhido, que precisa ler imagens. O provedor vem sempre na frente: openai/gpt-4o-mini, gemini/gemini-2.5-flash, anthropic/claude-sonnet-4-5, openrouter/…, ollama/llama3.2-vision ou lmstudio/… (os dois últimos rodam no seu PC, sem chave). A chave vem da variável do provedor ou do screendocs keys set.", "--model gemini/gemini-2.5-flash", "\"model\": \"gemini/gemini-2.5-flash\"", "Não combina com --describe claude, codex, antigravity ou chat: é um ou outro. Para outro servidor compatível com OpenAI, defina OPENAI_BASE_URL com o endereço e use --model openai/<modelo>."],
+      ["--instructions <texto>", "", "O que mais as descrições devem levar em conta. Vale para qualquer IA (ferramenta, chat ou API).", "--instructions \"foque no que o cliente ganha\"", "\"instructions\": \"...\"", ""],
+      ["--docs <caminho>", "", "Uma pasta ou um arquivo com a documentação do projeto para a IA ler antes de descrever. Lê md, txt, html, json, yaml, csv, PDF, Word, Excel, PowerPoint e OpenDocument.", "--docs ./manual.pdf", "\"docs\": \"./manual.pdf\"", ""],
+      ["--lang <código>", "o idioma do screendocs", "Idioma em que a IA escreve as descrições: pt, en ou es. Sem ela, é o mesmo idioma em que o ScreenDocs fala com você.", "--lang pt", "\"lang\": \"pt\"", ""],
+    ]],
+    ["Pasta e relatório", [
+      ["--out <pasta>", "screendocs-output", "Onde salvar. Cada site ganha uma subpasta com o nome dele.", "--out ./capturas", "\"out\": \"./capturas\"", ""],
+      ["--keep", "", "Guarda a captura anterior do mesmo site, renomeada com a data, em vez de substituir. --no-keep substitui quando os seus padrões guardam.", "--keep", "\"keep\": true", ""],
+      ["--open", "", "Abre o relatório no navegador quando termina. O menu sempre abre.", "--open", "", ""],
+    ]],
+    ["Navegador e endereço", [
+      ["--headed", "", "Mostra a janela do navegador durante a captura. Útil para ver onde algo travou. --no-headed esconde de novo quando os seus padrões mostram.", "--headed", "\"headed\": true", ""],
+      ["--no-url-check", "", "Não confere se o endereço abre antes de começar. Use para sites que só abrem na sua rede ou VPN.", "--no-url-check", "", ""],
+      ["--config <arquivo>", "screendocs.config.json", "Lê as opções de outro arquivo de configuração.", "--config cliente.json", "", ""],
+    ]],
+    ["Ajuda", [
+      ["-h, --help", "", "Mostra a ajuda com todas as flags.", "--help", "", ""],
+      ["-v, --version", "", "Mostra a versão instalada.", "--version", "", ""],
+    ]],
+  ],
+  envH: "Variáveis de ambiente",
+  env: [["OPENAI_API_KEY · GEMINI_API_KEY · ANTHROPIC_API_KEY · OPENROUTER_API_KEY", "chave de cada provedor, usada com --model"], ["SCREENDOCS_API_KEY", "chave para qualquer provedor, quando a do provedor não existe"], ["OLLAMA_HOST", "endereço do Ollama, se não for localhost:11434"], ["OPENAI_BASE_URL", "outro servidor compatível com OpenAI, usado com --model openai/<modelo>"], ["CHROMIUM_PATH", "usa outro navegador baseado em Chromium no lugar do Chrome ou Edge"], ["SCREENDOCS_DEBUG", "defina como 1 para ver o erro completo"], ["SCREENDOCS_LANGUAGE", "o idioma do screendocs nesta execução: en, pt ou es"], ["SCREENDOCS_HOME", "outra pasta para os seus padrões e chaves (padrão ~/.screendocs)"]],
+  cfgH: "Opções só para uma pasta (opcional)",
+  cfgP: "Se um projeto precisa de opções diferentes dos seus padrões, crie um arquivo chamado <code>screendocs.config.json</code> na pasta onde você roda o comando para ele. Os nomes são os das flags em camelCase, sem os dois traços. Ninguém precisa criar esse arquivo: sem ele, valem os seus padrões.",
+  orderH: "Quem vale mais", order: ["Flag no comando", "<code>screendocs.config.json</code> da pasta (opcional)", "Seus padrões (<code>npx screendocs config</code>)", "Padrão do ScreenDocs"],
+});
+
+Object.assign(L.en.u, {
+  secH: "Security",
+  secIntro: "ScreenDocs handles three sensitive things: the AI's API key, the sites' logins and the screenshots. This section says where each one lives, what protects it and what is up to you.",
+  keyH: "1. API key",
+  keyP: "By default the key only lasts for that run: when ScreenDocs asks for the key, “Save it for next time?” comes with No selected. The key never goes in the command or in an options file, and it is not kept in the folder where you run the command. So it does not show in your terminal history and does not go along if you send that folder to someone. Before the capture, it is tested with the provider: if you mistyped it, it asks again right away, and if a saved or environment key is rejected, it says where that key came from and asks for a new one. The key is looked up in this order: the provider's variable (<code>GEMINI_API_KEY</code>, <code>OPENAI_API_KEY</code>...), then <code>SCREENDOCS_API_KEY</code>, then the saved key.",
+  whereH: "Where a saved key lives",
+  where: [["macOS", "The system Keychain, the same store as Safari's passwords."], ["Windows", "A file in your user folder, encrypted with your Windows account. Only your account, on this computer, can open it."], ["Linux", "The system keyring (<code>secret-tool</code>)."], ["None of these", "A file in your user folder (<code>keys.json</code>) readable only by your user."]],
+  whereNote: "<code>npx screendocs keys list</code> shows where each key is, and <code>keys remove &lt;provider&gt;</code> deletes one.",
+  yesH: "Protects against",
+  yes: ["Someone who only reads the file: they see scrambled text, not the key.", "An AI or tool that opens the key file.", "A backup or copy of the file that leaks.", "Another person using the same computer with another account.", "Taking the file to another computer."],
+  noH: "Does not protect against",
+  no: ["A malicious program running under your account, like an infected npm package or a virus. It can ask the system to open the key the same way ScreenDocs does.", "An AI you allowed to run commands that decides to do so."],
+  noNote: "This limit applies to every program that saves passwords without asking for a master password, browsers and the Windows Credential Manager included. The defense is to keep such a program from running at all.",
+  tipsH: "Good practices",
+  tips: ["Create a key just for ScreenDocs, with a spending limit in the provider's dashboard (Google AI Studio, OpenAI, Anthropic...). If something goes wrong, the damage stays small.", "If you do not use it often, do not save it: leave No selected and type the key when you need it.", "Suspect something? Delete the key in the provider's dashboard. The old one stops working at once. Then run <code>keys remove</code>.", "Install only trusted packages and keep your antivirus on.", "With Ollama or LM Studio there is no key, and the screenshots never leave your computer."],
+  authH: "2. Site logins",
+  authP: "<code>npx screendocs login</code> saves each site's session to a file in your user folder that only your user can read. That file gives access to your account on the site, like a browser that is already logged in.",
+  auth: ["Nothing from the login stays in the folder where you run the command, so it does not go along if you send that folder to someone.", "To log out, run <code>npx screendocs login</code> again or log out on the site itself.", "On customer dashboards, prefer a test account without real data."],
+  shotsH: "3. Screenshots and videos",
+  shotsP: "Emails, phones, CPF/CNPJ and filled fields are blurred on the page before each screenshot and during the video, but the blur looks for patterns and can miss something, like a name or an amount.",
+  shots: ["Check the screenshots and videos before publishing or sending them to anyone.", "Use <code>--mask</code> to blur what ScreenDocs does not recognize on its own, like <code>.customer-name</code> or <code>#balance</code>.", "When an AI describes, the screenshots go to it: to the API provider, to the browser chat or to the installed tool. With Ollama or LM Studio they stay on your computer."],
+  padH: "Your defaults and language",
+  cfgIntro: "Your defaults are the choices that always apply, in any folder where you run ScreenDocs: the language, how many pages to look for, whether to record video, who describes the screens and the rest. You pick them with <code>npx screendocs config</code> and they are saved on your computer, in your user folder. They stay there when ScreenDocs updates.",
+  cfgMenuH: "The defaults menu",
+  cfgMenuP: "<code>npx screendocs config</code> opens a list with each setting and its current value. Pick one, change it, and repeat until you choose Done. Grey values are ScreenDocs' own defaults.",
+  cfgCmdH: "From the terminal, without the menu",
+  cfgCmds: [["config list", "shows what is saved"], ["config set maxPages 40", "saves a value"], ["config unset maxPages", "puts a value back to its default"], ["config reset", "erases everything (the language is asked again)"], ["config path", "shows where the file is"]],
+  langH: "Two different languages",
+  langP: "<b>The terminal language</b> is the one ScreenDocs uses to talk to you. It only asks the first time you run it, then it stays saved. To change it, run <code>npx screendocs config</code> and pick <i>Language of screendocs</i>; it applies from then on.<br><br><b>The description language</b> is the one the AI writes in. This is the one the menu asks every time. If you do not pick one, it is the same as the terminal. To change it for one run, add <code>--lang pt</code> to the command; to change it for good, pick <i>Language of the descriptions</i> in the same menu.",
+  tipNone: "<b>One run without AI.</b> If you saved an AI in your defaults, it is used on every run. To get only the captures one time, add <code>--describe none</code> to the command. Next time, the AI is back.", layH: "What wins: think in layers", layP: "An option can come from four places, one on top of the other. When two say different things, the one on top wins.", layers: [["The command", "What you type now. Applies to this run only.", "--max-pages 5", "5"], ["Folder options (optional)", "A <code>screendocs.config.json</code> in the folder where you run it. Applies only there.", "\"maxPages\": 10", "10"], ["Your defaults", "What you saved with <code>npx screendocs config</code>. Applies in every folder.", "config set maxPages 40", "40"], ["ScreenDocs' default", "What comes in the package.", "", "20"]], layEx: "<b>Example with the number of pages.</b> In any folder it looks for 40, because you saved 40. In the <code>client-x</code> folder, which has a file saying 10, it looks for 10. If you type <code>--max-pages 5</code> there, it looks for 5, this time only.", layTip: "In practice, almost everyone uses just two layers: save what you always want with <code>npx screendocs config</code> and change one run with a flag on the command.", filesH: "What it leaves on your computer", runH: "In the folder where you run the command", run: [["screendocs-output/", "The screenshots, videos and report, one folder per site. It is the only thing ScreenDocs creates here."]], homeH: "In your user folder", home: [["Your defaults", "Everything you saved with <code>npx screendocs config</code>, the language included. <code>npx screendocs config path</code> shows where."], ["Site logins", "One file per site, saved by <code>npx screendocs login</code>. Never share them."], ["API keys", "Only if you chose to save one, and only when the system has no password store. See <a href=\"#seguranca\">Security</a>."]], filesNote: "ScreenDocs never creates <code>screendocs.config.json</code>. It only reads that file, if you create one.", devH: "Running it from the GitHub code?", devP: "This manual is for people who use it from npm. To download the code from GitHub, run ScreenDocs from it or send a fix, see the <a href=\"https://github.com/RuBeNsMoTa13/screendocs/blob/main/CONTRIBUTING.md\">developer guide</a>.",
+  mapH: "How the site is mapped",
+  mapP: "From the address to the report, ScreenDocs goes through these stages. Finding the pages and cutting them into sections are what decide what ends up in the report.",
+  flow: [
+    ["Checks the address", "Makes sure the site answers and suggests fixes."],
+    ["Loads the login", "Uses the saved session and warns if it expired."],
+    ["Finds the pages", "Follows the links, level by level."],
+    ["Captures each page", "On each screen: scrolls, films and cuts into sections."],
+    ["Blurs personal data", "Before every screenshot and during the video."],
+    ["Builds the report", "index.html, screens.json and for-ai/."],
+    ["AI describes (optional)", "A title and description for each screen."],
+  ],
+  bfsH: "1. Finding the pages",
+  bfsP: "It opens the home page (level 0), collects all its links and visits each one (level 1), then their links (level 2), and so on. This is a breadth-first search: pages closer to the home page come first. It stops when it reaches <code>--max-pages</code> pages (20) or when there are no more links up to level <code>--depth</code> (3). Links found on the last level are not followed.",
+  lvl: (n, last) => (n === 0 ? "Level 0 · home page" : `Level ${n}${last ? " · last (--depth 3)" : ""}`),
+  legend: [["ok", "becomes a screen in the report"], ["same", "already in the report"], ["no", "left out"]],
+  why: {
+    logout: "logout link", file: "a file, not a page", other: "another site", sub: "a subdomain counts as another site",
+    query: "it is /blog: everything after ? is ignored", id: "numbers and codes become :id → /blog/:id", sameId: "same screen as /blog/12",
+    excl: "--exclude /admin", login: "only shows up with the saved login", redirect: "redirects to /login, already seen", noFollow: "links on this page are not followed",
+  },
+  rulesH: "Rules for the whole search",
+  rules: [
+    "<b>Same site:</b> <code>mysite.com</code> and <code>www.mysite.com</code> count as one. Subdomains (<code>app.</code>, <code>blog.</code>) and other domains are left out; to capture a subdomain, run ScreenDocs on it.",
+    "<b>No repeated screens:</b> path parts that are numbers or long codes become <code>:id</code>, so <code>/blog/12</code> and <code>/blog/13</code> count as one screen.",
+    "<b>Clean addresses:</b> everything after <code>?</code> and <code>#</code> is ignored. The exception is apps with <code>#/</code> routes (like <code>#/dashboard</code>), which count as pages.",
+    "<b>Always skipped:</b> logout links (logout, sign out, sair) and files (PDF, images, spreadsheets, ZIP...).",
+    "<b>With a login:</b> the search uses the saved session, so pages behind the login show up like any other.",
+    "<b>No search:</b> with <code>--pages</code> it captures only the listed paths, without following links.",
+  ],
+  cutH: "2. Cutting each page into sections",
+  cutP: "On each page and each screen (desktop and mobile), it scrolls to the bottom to load images and animations, films that scroll, goes back to the top and looks for the page's big blocks. Each block becomes a numbered screenshot.",
+  cutRules: [
+    "Blocks it looks for: <code>header</code>, <code>section</code>, <code>article</code>, <code>footer</code>, <code>[data-section]</code> and the direct children of <code>main</code>.",
+    "A block counts only if it is at least 1/4 of the screen tall and 60% of its width; blocks inside another block are not captured separately.",
+    "A screenshot is at most 1.6 screens tall, and each page has at most 10 screenshots. The whole page is also saved as <code>full.jpg</code>.",
+    "When the page has none of these blocks, it is cut into screen-sized slices.",
+    "Each block's heading and first paragraph become the screen's first description, until an AI writes its own.",
+  ],
+  withBlocks: "Page with blocks", noBlocks: "Page without blocks",
+  slice: "slice", full: "whole page",
+  blocks: ["header", "section · hero", "section · pricing", "section · testimonials", "footer"],
+
+  flagsH: "Flag guide",
+  flagsP: "Type the flags after the address, in any order. Without any, your defaults apply. A flag applies to that run only and wins over any default (see <a href=\"#padroes\">What wins</a>).",
+  defLabel: "Default", exLabel: "Example", cfgLabel: "In the file",
+  groups: [
+    ["Which pages", [
+      ["--max-pages <n>", "20", "The most pages the search collects. It stops as soon as it reaches this number.", "--max-pages 50", "\"maxPages\": 50", "Each page gives up to 10 screenshots per screen, so 50 pages can mean over a thousand images."],
+      ["--depth <n>", "3", "How many clicks away from the home page it looks. 1 takes only the home page's links.", "--depth 1", "\"depth\": 1", ""],
+      ["--pages <a,b,c>", "", "Captures only these paths, without searching. Use it to hand-pick screens or for apps where the search cannot find the links.", "--pages /,/pricing,/dashboard", "\"pages\": [\"/\", \"/pricing\"]", "With --pages, --max-pages, --depth and --exclude do nothing."],
+      ["--exclude <a,b>", "", "Skips addresses containing any of these texts. Links on those pages are not followed either.", "--exclude /admin,/checkout", "\"exclude\": [\"/admin\"]", ""],
+    ]],
+    ["Screens and video", [
+      ["--viewports <list>", "desktop,mobile", "Which screens to capture: desktop (1440×900), mobile (390×844, like a touch phone) or both.", "--viewports desktop", "\"viewports\": [\"desktop\"]", ""],
+      ["--no-video", "", "Does not record the video scrolling each page. The capture is faster and the folder smaller. If your defaults turned video off, --video turns it back on for that run.", "--no-video", "\"video\": false", ""],
+    ]],
+    ["Personal data", [
+      ["--mask <selectors>", "", "Also blurs the elements matching these CSS selectors, on top of what is blurred automatically.", "--mask .customer-name,#balance", "\"mask\": [\".customer-name\"]", ""],
+      ["--no-auto-mask", "", "Does not blur emails, phones, CPF/CNPJ or filled fields. Use only on sites without real data. If your defaults turned blurring off, --auto-mask turns it back on.", "--no-auto-mask", "\"autoMask\": false", ""],
+    ]],
+    ["Descriptions", [
+      ["--describe <how>", "", "Who writes the descriptions: claude, codex, antigravity (an installed tool, uses your plan) or chat (a browser chat, guided in the terminal). To use an API, use --model. With neither, each screen keeps the page's text.", "--describe claude", "\"describe\": \"claude\"", "<b>none</b>: no AI this time only. Useful when your defaults already name an AI and you run straight from the command (<code>npx screendocs mysite.com --describe none</code>). In the menu you do not need it: just pick “Just the page scan for now”."],
+      ["--model <provider/model>", "", "The only API flag: describes with the chosen model, which must read images. The provider always comes first: openai/gpt-4o-mini, gemini/gemini-2.5-flash, anthropic/claude-sonnet-4-5, openrouter/…, ollama/llama3.2-vision or lmstudio/… (the last two run on your computer, with no key). The key comes from the provider's variable or screendocs keys set.", "--model gemini/gemini-2.5-flash", "\"model\": \"gemini/gemini-2.5-flash\"", "It does not combine with --describe claude, codex, antigravity or chat: it is one or the other. For another OpenAI-compatible server, set OPENAI_BASE_URL to its address and use --model openai/<model>."],
+      ["--instructions <text>", "", "What else the descriptions should take into account. Works with any AI (tool, chat or API).", "--instructions \"focus on what the customer gains\"", "\"instructions\": \"...\"", ""],
+      ["--docs <path>", "", "A folder or one file with the project's documentation for the AI to read before describing. It reads md, txt, html, json, yaml, csv, PDF, Word, Excel, PowerPoint and OpenDocument.", "--docs ./manual.pdf", "\"docs\": \"./manual.pdf\"", ""],
+      ["--lang <code>", "the language of screendocs", "The language the AI writes the descriptions in: pt, en or es. Without it, the same language ScreenDocs talks to you in.", "--lang es", "\"lang\": \"es\"", ""],
+    ]],
+    ["Folder and report", [
+      ["--out <folder>", "screendocs-output", "Where to save. Each site gets a subfolder named after it.", "--out ./captures", "\"out\": \"./captures\"", ""],
+      ["--keep", "", "Keeps the previous capture of the same site, renamed with its date, instead of replacing it. --no-keep replaces it when your defaults keep it.", "--keep", "\"keep\": true", ""],
+      ["--open", "", "Opens the report in the browser when done. The menu always does.", "--open", "", ""],
+    ]],
+    ["Browser and address", [
+      ["--headed", "", "Shows the browser window during the capture. Handy to see where something got stuck. --no-headed hides it again when your defaults show it.", "--headed", "\"headed\": true", ""],
+      ["--no-url-check", "", "Does not check that the address opens before starting. Use it for sites that only open on your network or VPN.", "--no-url-check", "", ""],
+      ["--config <file>", "screendocs.config.json", "Reads the options from another config file.", "--config client.json", "", ""],
+    ]],
+    ["Help", [
+      ["-h, --help", "", "Shows the help with every flag.", "--help", "", ""],
+      ["-v, --version", "", "Shows the installed version.", "--version", "", ""],
+    ]],
+  ],
+  envH: "Environment variables",
+  env: [["OPENAI_API_KEY · GEMINI_API_KEY · ANTHROPIC_API_KEY · OPENROUTER_API_KEY", "each provider's key, used with --model"], ["SCREENDOCS_API_KEY", "a key for any provider, when the provider's own is not set"], ["OLLAMA_HOST", "Ollama's address, when it is not localhost:11434"], ["OPENAI_BASE_URL", "another OpenAI-compatible server, used with --model openai/<model>"], ["CHROMIUM_PATH", "use another Chromium-based browser instead of Chrome or Edge"], ["SCREENDOCS_DEBUG", "set to 1 to see the full error"], ["SCREENDOCS_LANGUAGE", "the language of screendocs for this run: en, pt or es"], ["SCREENDOCS_HOME", "another folder for your defaults and keys (default ~/.screendocs)"]],
+  cfgH: "Options for one folder only (optional)",
+  cfgP: "If one project needs options different from your defaults, create a file named <code>screendocs.config.json</code> in the folder where you run the command for it. The names are the flags' in camelCase, without the two dashes. Nobody needs to create this file: without it, your defaults apply.",
+  orderH: "What wins", order: ["Flag in the command", "The folder's <code>screendocs.config.json</code> (optional)", "Your defaults (<code>npx screendocs config</code>)", "ScreenDocs' default"],
+});
+
+Object.assign(L.es.u, {
+  secH: "Seguridad",
+  secIntro: "ScreenDocs maneja tres cosas sensibles: la clave de la API de la IA, la sesión de los sitios y las capturas de las pantallas. Esta sección dice dónde queda cada una, de qué está protegida y qué queda en tus manos.",
+  keyH: "1. Clave de la API",
+  keyP: "Por defecto la clave vale solo para esa ejecución: cuando ScreenDocs pide la clave, “¿Guardarla para la próxima vez?” viene marcado No. La clave nunca va en el comando ni en un archivo de opciones, y no queda en la carpeta donde ejecutas el comando. Así que no aparece en el historial de la terminal y no va junto si mandas esa carpeta a alguien. Antes de la captura, se prueba con el proveedor: si la escribiste mal, la pide de nuevo en el momento, y si una clave guardada o de variable es rechazada, dice de dónde vino y pide una nueva. La clave se busca en este orden: la variable del proveedor (<code>GEMINI_API_KEY</code>, <code>OPENAI_API_KEY</code>...), luego <code>SCREENDOCS_API_KEY</code>, luego la clave guardada.",
+  whereH: "Dónde queda una clave guardada",
+  where: [["macOS", "El Keychain del sistema, el mismo almacén de las contraseñas de Safari."], ["Windows", "Un archivo en tu carpeta de usuario, cifrado con tu cuenta de Windows. Solo tu cuenta, en esta computadora, puede abrirlo."], ["Linux", "El llavero del sistema (<code>secret-tool</code>)."], ["Sin ninguno de estos", "Un archivo en tu carpeta de usuario (<code>keys.json</code>) que solo tu usuario puede leer."]],
+  whereNote: "<code>npx screendocs keys list</code> muestra dónde está cada clave, y <code>keys remove &lt;proveedor&gt;</code> la borra.",
+  yesH: "Protege contra",
+  yes: ["Quien solo lee el archivo: ve un código revuelto, no la clave.", "Una IA o herramienta que abra el archivo de la clave.", "Un respaldo o una copia del archivo que se filtre.", "Otra persona que use la misma computadora con otra cuenta.", "Llevar el archivo a otra computadora."],
+  noH: "No protege contra",
+  no: ["Un programa malicioso que corre con tu cuenta, como un paquete npm infectado o un virus. Puede pedirle al sistema que abra la clave igual que lo hace ScreenDocs.", "Una IA a la que diste permiso de ejecutar comandos y que decida hacerlo."],
+  noNote: "Este límite vale para todo programa que guarda contraseñas sin pedir una contraseña maestra, incluidos los navegadores y el Administrador de credenciales de Windows. La defensa es impedir que ese programa llegue a ejecutarse.",
+  tipsH: "Buenas prácticas",
+  tips: ["Crea una clave solo para ScreenDocs, con límite de gasto en el panel del proveedor (Google AI Studio, OpenAI, Anthropic...). Si algo sale mal, el daño queda chico.", "Si no la usas seguido, no la guardes: deja el No marcado y escribe la clave cuando la necesites.", "¿Sospechas algo? Borra la clave en el panel del proveedor. La anterior deja de funcionar en el momento. Después ejecuta <code>keys remove</code>.", "Instala solo paquetes confiables y mantén el antivirus encendido.", "Con Ollama o LM Studio no hay clave, y las capturas no salen de tu computadora."],
+  authH: "2. Sesión de los sitios",
+  authP: "<code>npx screendocs login</code> guarda la sesión de cada sitio en un archivo de tu carpeta de usuario que solo tu usuario puede leer. Ese archivo da acceso a tu cuenta en el sitio, igual que un navegador con la sesión abierta.",
+  auth: ["Nada del inicio de sesión queda en la carpeta donde ejecutas el comando, así que no va junto si mandas esa carpeta a alguien.", "Para cerrar la sesión, ejecuta <code>npx screendocs login</code> de nuevo o ciérrala en el propio sitio.", "En paneles de clientes, prefiere una cuenta de prueba, sin datos reales."],
+  shotsH: "3. Capturas y videos",
+  shotsP: "Los correos, teléfonos, CPF/CNPJ y campos completados se difuminan en la página antes de cada captura y durante el video, pero el difuminado busca patrones y puede dejar pasar algo, como un nombre o un monto.",
+  shots: ["Revisa las capturas y los videos antes de publicarlos o mandarlos a alguien.", "Usa <code>--mask</code> para difuminar lo que ScreenDocs no reconoce solo, como <code>.nombre-cliente</code> o <code>#saldo</code>.", "Cuando una IA describe, las capturas van a ella: al proveedor de la API, al chat en el navegador o a la herramienta instalada. Con Ollama o LM Studio quedan en tu computadora."],
+  padH: "Tus valores predeterminados y el idioma",
+  cfgIntro: "Tus valores predeterminados son las elecciones que valen siempre, en cualquier carpeta donde ejecutes ScreenDocs: el idioma, cuántas páginas buscar, si graba video, quién describe las pantallas y lo demás. Los eliges con <code>npx screendocs config</code> y quedan guardados en tu computadora, en tu carpeta de usuario. Siguen ahí cuando ScreenDocs se actualiza.",
+  cfgMenuH: "El menú de valores",
+  cfgMenuP: "<code>npx screendocs config</code> abre una lista con cada configuración y su valor actual. Elige una, cámbiala y repite hasta elegir Listo. Los valores en gris son los predeterminados de ScreenDocs.",
+  cfgCmdH: "Desde la terminal, sin el menú",
+  cfgCmds: [["config list", "muestra lo que está guardado"], ["config set maxPages 40", "guarda un valor"], ["config unset maxPages", "vuelve un valor al predeterminado"], ["config reset", "borra todo (el idioma se pregunta de nuevo)"], ["config path", "muestra dónde está el archivo"]],
+  langH: "Dos idiomas distintos",
+  langP: "<b>El idioma de la terminal</b> es el que ScreenDocs usa para hablarte. Solo lo pregunta la primera vez que lo ejecutas y luego queda guardado. Para cambiarlo, ejecuta <code>npx screendocs config</code> y elige <i>Idioma de screendocs</i>; vale para todas las próximas veces.<br><br><b>El idioma de las descripciones</b> es el que usa la IA para escribir. Es el que el menú pregunta cada vez. Si no eliges uno, es el mismo de la terminal. Para cambiarlo solo una vez, agrega <code>--lang en</code> al comando; para siempre, elige <i>Idioma de las descripciones</i> en el mismo menú.",
+  tipNone: "<b>Una vez sin IA.</b> Si guardaste una IA en tus valores, se usa en cada ejecución. Para que una vez salgan solo las capturas, agrega <code>--describe none</code> al comando. La próxima vez, la IA vuelve.", layH: "Qué vale más: piensa en capas", layP: "Una opción puede venir de cuatro lugares, uno encima del otro. Cuando dos dicen cosas distintas, vale el de arriba.", layers: [["El comando", "Lo que escribes ahora. Vale solo esta vez.", "--max-pages 5", "5"], ["Opciones de la carpeta (opcional)", "Un <code>screendocs.config.json</code> en la carpeta donde lo ejecutas. Vale solo ahí.", "\"maxPages\": 10", "10"], ["Tus valores", "Lo que guardaste con <code>npx screendocs config</code>. Vale en cualquier carpeta.", "config set maxPages 40", "40"], ["Valor de ScreenDocs", "Lo que ya viene en el paquete.", "", "20"]], layEx: "<b>Ejemplo con el número de páginas.</b> En cualquier carpeta busca 40, porque guardaste 40. En la carpeta <code>cliente-x</code>, que tiene un archivo que dice 10, busca 10. Si ahí escribes <code>--max-pages 5</code>, busca 5, solo esta vez.", layTip: "En la práctica, casi todos usan solo dos capas: guardan lo que quieren siempre con <code>npx screendocs config</code> y cambian una vez con una flag en el comando.", filesH: "Lo que queda en tu computadora", runH: "En la carpeta donde ejecutas el comando", run: [["screendocs-output/", "Las capturas, los videos y el informe, una carpeta por sitio. Es lo único que ScreenDocs crea aquí."]], homeH: "En tu carpeta de usuario", home: [["Tus valores", "Todo lo que guardaste con <code>npx screendocs config</code>, el idioma incluido. <code>npx screendocs config path</code> muestra dónde."], ["Inicios de sesión", "Un archivo por sitio, guardado por <code>npx screendocs login</code>. Nunca los compartas."], ["Claves de API", "Solo si elegiste guardar una, y solo cuando el sistema no tiene almacén de contraseñas. Mira <a href=\"#seguranca\">Seguridad</a>."]], filesNote: "ScreenDocs nunca crea <code>screendocs.config.json</code>. Solo lee ese archivo, si creas uno.", devH: "¿Lo vas a ejecutar desde el código de GitHub?", devP: "Este manual es para quien lo usa desde npm. Para descargar el código de GitHub, ejecutar ScreenDocs desde él o mandar una corrección, mira la <a href=\"https://github.com/RuBeNsMoTa13/screendocs/blob/main/CONTRIBUTING.es.md\">guía para desarrolladores</a>.",
+  mapH: "Cómo se mapea el sitio",
+  mapP: "De la dirección al informe, ScreenDocs pasa por estas etapas. Buscar las páginas y cortarlas en secciones es lo que decide qué entra en el informe.",
+  flow: [
+    ["Comprueba la dirección", "Verifica que el sitio responda y sugiere correcciones."],
+    ["Carga la sesión", "Usa la sesión guardada y avisa si expiró."],
+    ["Busca las páginas", "Sigue los enlaces, nivel por nivel."],
+    ["Captura cada página", "En cada pantalla: desplaza, graba y corta en secciones."],
+    ["Difumina datos personales", "Antes de cada captura y durante el video."],
+    ["Arma el informe", "index.html, screens.json y for-ai/."],
+    ["La IA describe (opcional)", "Título y descripción de cada pantalla."],
+  ],
+  bfsH: "1. Buscando las páginas",
+  bfsP: "Abre la página de inicio (nivel 0), junta todos sus enlaces y visita cada uno (nivel 1), luego los enlaces de esos (nivel 2), y así sigue. Esto se llama búsqueda en anchura: las páginas más cercanas al inicio entran primero. Se detiene cuando llega a <code>--max-pages</code> páginas (20) o cuando no quedan enlaces hasta el nivel <code>--depth</code> (3). Los enlaces hallados en el último nivel no se siguen.",
+  lvl: (n, last) => (n === 0 ? "Nivel 0 · página de inicio" : `Nivel ${n}${last ? " · último (--depth 3)" : ""}`),
+  legend: [["ok", "se vuelve una pantalla del informe"], ["same", "ya está en el informe"], ["no", "queda afuera"]],
+  why: {
+    logout: "enlace de cerrar sesión", file: "un archivo, no una página", other: "otro sitio", sub: "un subdominio cuenta como otro sitio",
+    query: "es /blog: lo que sigue a ? se ignora", id: "números y códigos se vuelven :id → /blog/:id", sameId: "misma pantalla que /blog/12",
+    excl: "--exclude /admin", login: "solo aparece con la sesión guardada", redirect: "redirige a /login, que ya se vio", noFollow: "los enlaces de esta página no se siguen",
+  },
+  rulesH: "Reglas para toda la búsqueda",
+  rules: [
+    "<b>Mismo sitio:</b> <code>misitio.com</code> y <code>www.misitio.com</code> cuentan como uno. Los subdominios (<code>app.</code>, <code>blog.</code>) y otros dominios quedan afuera; para capturar un subdominio, ejecuta ScreenDocs en él.",
+    "<b>Sin pantallas repetidas:</b> las partes de la ruta que son números o códigos largos se vuelven <code>:id</code>, así que <code>/blog/12</code> y <code>/blog/13</code> cuentan como una sola pantalla.",
+    "<b>Direcciones limpias:</b> lo que sigue a <code>?</code> y a <code>#</code> se ignora. La excepción son las apps con rutas en <code>#/</code> (como <code>#/panel</code>), que cuentan como páginas.",
+    "<b>Siempre se saltan:</b> enlaces de cerrar sesión (logout, sign out, sair) y archivos (PDF, imágenes, planillas, ZIP...).",
+    "<b>Con sesión:</b> la búsqueda usa la sesión guardada, así que las páginas del área privada aparecen como cualquier otra.",
+    "<b>Sin búsqueda:</b> con <code>--pages</code> captura solo las rutas de la lista, sin seguir enlaces.",
+  ],
+  cutH: "2. Cortando cada página en secciones",
+  cutP: "En cada página y en cada pantalla (computadora y celular), desplaza hasta el final para cargar imágenes y animaciones, graba ese desplazamiento, vuelve arriba y busca los bloques grandes de la página. Cada bloque se vuelve una captura numerada.",
+  cutRules: [
+    "Bloques que busca: <code>header</code>, <code>section</code>, <code>article</code>, <code>footer</code>, <code>[data-section]</code> y los hijos directos de <code>main</code>.",
+    "Un bloque cuenta solo si mide al menos 1/4 del alto de la pantalla y 60% del ancho; los bloques dentro de otro bloque no se capturan aparte.",
+    "Una captura mide como máximo 1,6 pantallas de alto, y cada página tiene como máximo 10 capturas. La página entera también se guarda en <code>full.jpg</code>.",
+    "Si la página no tiene esos bloques, se corta en franjas del tamaño de la pantalla.",
+    "El título y el primer párrafo de cada bloque son la primera descripción de la pantalla, hasta que una IA escriba la suya.",
+  ],
+  withBlocks: "Página con bloques", noBlocks: "Página sin bloques",
+  slice: "franja", full: "página entera",
+  blocks: ["header", "section · hero", "section · precios", "section · testimonios", "footer"],
+
+  flagsH: "Manual de las flags",
+  flagsP: "Escribe las flags después de la dirección, en cualquier orden. Sin ninguna, valen tus valores. Una flag vale solo esa vez y gana sobre cualquier valor guardado (mira <a href=\"#padroes\">Qué vale más</a>).",
+  defLabel: "Por defecto", exLabel: "Ejemplo", cfgLabel: "En el archivo",
+  groups: [
+    ["Qué páginas", [
+      ["--max-pages <n>", "20", "Cuántas páginas junta la búsqueda como máximo. Se detiene al llegar a ese número.", "--max-pages 50", "\"maxPages\": 50", "Cada página da hasta 10 capturas por pantalla, así que 50 páginas pueden superar las mil imágenes."],
+      ["--depth <n>", "3", "A cuántos clics de la página de inicio busca. 1 toma solo los enlaces del inicio.", "--depth 1", "\"depth\": 1", ""],
+      ["--pages <a,b,c>", "", "Captura solo esas rutas, sin buscar. Úsala para elegir las pantallas a mano o en apps donde la búsqueda no encuentra los enlaces.", "--pages /,/precios,/panel", "\"pages\": [\"/\", \"/precios\"]", "Con --pages, --max-pages, --depth y --exclude no hacen nada."],
+      ["--exclude <a,b>", "", "Salta direcciones que contengan cualquiera de esos textos. Los enlaces de esas páginas tampoco se siguen.", "--exclude /admin,/checkout", "\"exclude\": [\"/admin\"]", ""],
+    ]],
+    ["Pantallas y video", [
+      ["--viewports <lista>", "desktop,mobile", "En qué pantallas capturar: desktop (1440×900), mobile (390×844, como un celular táctil) o las dos.", "--viewports desktop", "\"viewports\": [\"desktop\"]", ""],
+      ["--no-video", "", "No graba el video desplazando cada página. La captura es más rápida y la carpeta, más chica. Si tus valores apagaron el video, --video lo vuelve a encender esa vez.", "--no-video", "\"video\": false", ""],
+    ]],
+    ["Datos personales", [
+      ["--mask <selectores>", "", "Difumina también los elementos de esos selectores CSS, además de lo que ya se difumina solo.", "--mask .nombre-cliente,#saldo", "\"mask\": [\".nombre-cliente\"]", ""],
+      ["--no-auto-mask", "", "No difumina correos, teléfonos, CPF/CNPJ ni campos completados. Úsala solo en sitios sin datos reales. Si tus valores apagaron el difuminado, --auto-mask lo vuelve a encender.", "--no-auto-mask", "\"autoMask\": false", ""],
+    ]],
+    ["Descripciones", [
+      ["--describe <cómo>", "", "Quién escribe las descripciones: claude, codex, antigravity (herramienta instalada, usa tu plan) o chat (un chat en el navegador, guiado en la terminal). Para usar una API, usa --model. Sin ninguna de las dos, cada pantalla queda con el texto de la página.", "--describe claude", "\"describe\": \"claude\"", "<b>none</b>: sin IA solo esta vez. Sirve cuando tus valores ya tienen una IA y ejecutas directo desde el comando (<code>npx screendocs misitio.com --describe none</code>). En el menú no hace falta: basta con elegir “Por ahora, solo el escaneo de la página”."],
+      ["--model <proveedor/modelo>", "", "La única flag de API: describe con el modelo elegido, que tiene que leer imágenes. El proveedor va siempre adelante: openai/gpt-4o-mini, gemini/gemini-2.5-flash, anthropic/claude-sonnet-4-5, openrouter/…, ollama/llama3.2-vision o lmstudio/… (los dos últimos corren en tu computadora, sin clave). La clave sale de la variable del proveedor o de screendocs keys set.", "--model gemini/gemini-2.5-flash", "\"model\": \"gemini/gemini-2.5-flash\"", "No se combina con --describe claude, codex, antigravity ni chat: es uno u otro. Para otro servidor compatible con OpenAI, define OPENAI_BASE_URL con la dirección y usa --model openai/<modelo>."],
+      ["--instructions <texto>", "", "Qué más deben tener en cuenta las descripciones. Vale para cualquier IA (herramienta, chat o API).", "--instructions \"enfócate en lo que gana el cliente\"", "\"instructions\": \"...\"", ""],
+      ["--docs <ruta>", "", "Una carpeta o un archivo con la documentación del proyecto para que la IA lo lea antes de describir. Lee md, txt, html, json, yaml, csv, PDF, Word, Excel, PowerPoint y OpenDocument.", "--docs ./manual.pdf", "\"docs\": \"./manual.pdf\"", ""],
+      ["--lang <código>", "el idioma de screendocs", "Idioma en que la IA escribe las descripciones: pt, en o es. Sin ella, es el mismo idioma en que ScreenDocs te habla.", "--lang es", "\"lang\": \"es\"", ""],
+    ]],
+    ["Carpeta e informe", [
+      ["--out <carpeta>", "screendocs-output", "Dónde guardar. Cada sitio recibe una subcarpeta con su nombre.", "--out ./capturas", "\"out\": \"./capturas\"", ""],
+      ["--keep", "", "Guarda la captura anterior del mismo sitio, renombrada con la fecha, en vez de reemplazarla. --no-keep la reemplaza cuando tus valores la guardan.", "--keep", "\"keep\": true", ""],
+      ["--open", "", "Abre el informe en el navegador al terminar. El menú siempre lo abre.", "--open", "", ""],
+    ]],
+    ["Navegador y dirección", [
+      ["--headed", "", "Muestra la ventana del navegador durante la captura. Sirve para ver dónde se trabó algo. --no-headed lo vuelve a ocultar cuando tus valores lo muestran.", "--headed", "\"headed\": true", ""],
+      ["--no-url-check", "", "No comprueba que la dirección abra antes de empezar. Úsala para sitios que solo abren en tu red o VPN.", "--no-url-check", "", ""],
+      ["--config <archivo>", "screendocs.config.json", "Lee las opciones de otro archivo de configuración.", "--config cliente.json", "", ""],
+    ]],
+    ["Ayuda", [
+      ["-h, --help", "", "Muestra la ayuda con todas las flags.", "--help", "", ""],
+      ["-v, --version", "", "Muestra la versión instalada.", "--version", "", ""],
+    ]],
+  ],
+  envH: "Variables de entorno",
+  env: [["OPENAI_API_KEY · GEMINI_API_KEY · ANTHROPIC_API_KEY · OPENROUTER_API_KEY", "clave de cada proveedor, usada con --model"], ["SCREENDOCS_API_KEY", "clave para cualquier proveedor, cuando no existe la del proveedor"], ["OLLAMA_HOST", "dirección de Ollama, si no es localhost:11434"], ["OPENAI_BASE_URL", "otro servidor compatible con OpenAI, usado con --model openai/<modelo>"], ["CHROMIUM_PATH", "usa otro navegador basado en Chromium en lugar de Chrome o Edge"], ["SCREENDOCS_DEBUG", "pon 1 para ver el error completo"], ["SCREENDOCS_LANGUAGE", "el idioma de screendocs en esta ejecución: en, pt o es"], ["SCREENDOCS_HOME", "otra carpeta para tus valores y claves (predeterminado ~/.screendocs)"]],
+  cfgH: "Opciones solo para una carpeta (opcional)",
+  cfgP: "Si un proyecto necesita opciones distintas de tus valores, crea un archivo llamado <code>screendocs.config.json</code> en la carpeta donde ejecutas el comando para él. Los nombres son los de las flags en camelCase, sin los dos guiones. Nadie necesita crear este archivo: sin él, valen tus valores.",
+  orderH: "Qué vale más", order: ["Flag en el comando", "El <code>screendocs.config.json</code> de la carpeta (opcional)", "Tus valores (<code>npx screendocs config</code>)", "Valor de ScreenDocs"],
+});
+
+/* The example crawl, the same in every language; the reason keys point into u.why */
+const WORDS = {
+  pt: { about: "sobre", menu: "cardapio", dash: "painel", acc: "conta", cfg: "config", rep: "relatorios", out: "sair" },
+  en: { about: "about", menu: "menu", dash: "dashboard", acc: "account", cfg: "settings", rep: "reports", out: "logout" },
+  es: { about: "nosotros", menu: "menu", dash: "panel", acc: "cuenta", cfg: "ajustes", rep: "informes", out: "logout" },
+};
+const CRAWL = (site, w) => [
+  [[`/`, OK]],
+  [[`/${w.about}`, OK], [`/blog`, OK], [`/login`, OK], [`/blog?page=2`, SAME, "query"], [`/${w.out}`, NO, "logout"], [`/${w.menu}.pdf`, NO, "file"], [`instagram.com/...`, NO, "other"], [`app.${site}`, NO, "sub"]],
+  [[`/blog/12`, OK, "id"], [`/blog/13`, SAME, "sameId"], [`/${w.dash}`, OK, "login"], [`/${w.acc}`, SAME, "redirect"], [`/admin`, NO, "excl"]],
+  [[`/${w.dash}/${w.cfg}`, OK, "noFollow"], [`/${w.dash}/${w.rep}`, OK, "noFollow"]],
+];
+
+function mapSection(u, site, lang) {
+  const mark = { ok: "✓", same: "=", no: "✕" };
+  const levels = CRAWL(site, WORDS[lang]).map((nodes, i, all) => `
+    <div class="lvl">
+      <div class="lvl-h">${u.lvl(i, i === all.length - 1)}</div>
+      ${nodes.map(([p, s, w]) => `<div class="node ${s}"><span class="m">${mark[s]}</span><span class="p">${p}</span>${w ? `<span class="w">${u.why[w]}</span>` : ""}</div>`).join("")}
+    </div>`).join("");
+  const page = (labels, sliced) => `
+    <div class="mock">
+      <div class="mock-h">${sliced ? u.noBlocks : u.withBlocks}</div>
+      <div class="browser"><div class="bar3"><i></i><i></i><i></i></div>
+        ${labels.map((l, i) => `<div class="blk ${sliced ? "sl" : ""}" style="height:${sliced ? 62 : [34, 70, 56, 52, 30][i]}px"><span>${l}</span><b>${String(i + 1).padStart(2, "0")}.jpg</b></div>`).join("")}
+      </div>
+    </div>`;
+  return `
+    <section class="part" id="mapa">
+      <h2>${u.mapH}</h2>
+      <p class="intro">${u.mapP}</p>
+      <ol class="flow">${u.flow.map(([t, d], i) => `<li class="${i === 2 || i === 3 ? "hot" : ""}"><b>${t}</b><span>${d}</span></li>`).join("")}</ol>
+
+      <h3 class="sub">${u.bfsH}</h3>
+      <p>${u.bfsP}</p>
+      <div class="legend">${u.legend.map(([k, t]) => `<span class="node ${k}"><span class="m">${mark[k]}</span>${t}</span>`).join("")}</div>
+      <div class="crawl" role="img" aria-label="${u.bfsH}">${levels}</div>
+      <p class="cap"><code>npx screendocs ${site} --exclude /admin</code></p>
+      <div class="card rules"><h3>${u.rulesH}</h3><ul>${u.rules.map((r) => `<li>${r}</li>`).join("")}</ul></div>
+
+      <h3 class="sub">${u.cutH}</h3>
+      <p>${u.cutP}</p>
+      <div class="cut">
+        ${page(u.blocks, false)}
+        ${page([1, 2, 3, 4].map((n) => `${u.slice} ${n}`), true)}
+        <ul class="cutrules">${u.cutRules.map((r) => `<li>${r}</li>`).join("")}</ul>
+      </div>
+    </section>`;
+}
+
+
+function configSection(u, f) {
+  return `
+    <section class="part" id="padroes">
+      <h2>${u.padH}</h2>
+      <p class="intro">${u.cfgIntro}</p>
+      <div class="step" style="border-top:0">
+        <div><h3>${u.cfgMenuH}</h3>${cmd("npx screendocs config", u)}<p>${u.cfgMenuP}</p></div>
+        <div style="min-width:0">${f.config}</div>
+      </div>
+      <div class="two">
+        <div class="card"><h3>${u.cfgCmdH}</h3>
+          <dl class="env">${u.cfgCmds.map(([c2, d]) => `<dt><code>npx screendocs ${c2}</code></dt><dd>${d}</dd>`).join("")}</dl>
+        </div>
+        <div class="card"><h3>${u.langH}</h3><p>${u.langP}</p></div>
+      </div>
+
+      <h3 class="sub">${u.layH}</h3>
+      <p>${u.layP}</p>
+      <ol class="layers">${u.layers.map(([n, d, ex, v], i) => `<li><span class="ln">${4 - i}</span><div class="lt"><b>${n}</b><span>${d}</span>${ex ? `<code>${ex}</code>` : ""}</div><span class="lv">${v}</span></li>`).join("")}</ol>
+      <p>${u.layEx}</p>
+      <p>${u.layTip}</p>
+
+      <h3 class="sub">${u.filesH}</h3>
+      <div class="two">
+        <div class="card"><h3>${u.runH}</h3><dl class="where">${u.run.map(([f2, d]) => `<dt><code>${f2}</code></dt><dd>${d}</dd>`).join("")}</dl></div>
+        <div class="card"><h3>${u.homeH}</h3><dl class="where">${u.home.map(([f2, d]) => `<dt>${f2}</dt><dd>${d}</dd>`).join("")}</dl></div>
+      </div>
+      <p class="cap" style="margin-top:10px">${u.filesNote}</p>
+      <div class="card dev" style="margin-top:16px"><h3>${u.devH}</h3><p style="margin:0">${u.devP}</p></div>
+    </section>`;
+}
+
+function securitySection(u) {
+  const li = (xs) => `<ul class="sec-list">${xs.map((x) => `<li>${x}</li>`).join("")}</ul>`;
+  return `
+    <section class="part" id="seguranca">
+      <h2>${u.secH}</h2>
+      <p class="intro">${u.secIntro}</p>
+
+      <h3 class="sub">${u.keyH}</h3>
+      <p>${u.keyP}</p>
+      <div class="card">
+        <h3>${u.whereH}</h3>
+        <dl class="where">${u.where.map(([os, d]) => `<dt>${os}</dt><dd>${d}</dd>`).join("")}</dl>
+        <p class="cap" style="margin:10px 0 0">${u.whereNote}</p>
+      </div>
+      <div class="two" style="margin-top:12px">
+        <div class="card guard yes"><h3><span class="m">✓</span> ${u.yesH}</h3>${li(u.yes)}</div>
+        <div class="card guard no"><h3><span class="m">✕</span> ${u.noH}</h3>${li(u.no)}<p class="note">${u.noNote}</p></div>
+      </div>
+      <div class="card" style="margin-top:12px"><h3>${u.tipsH}</h3>${li(u.tips)}</div>
+
+      <div class="two" style="margin-top:8px">
+        <div><h3 class="sub">${u.authH}</h3><p>${u.authP}</p>${li(u.auth)}</div>
+        <div><h3 class="sub">${u.shotsH}</h3><p>${u.shotsP}</p>${li(u.shots)}</div>
+      </div>
+    </section>`;
+}
+
+function flagsSection(u, site) {
+  return `
+    <section class="part" id="opcoes">
+      <h2>${u.flagsH}</h2>
+      <p class="intro">${u.flagsP}</p>
+      <div class="chips">${u.groups.flatMap(([, items]) => items).map(([f]) => `<a href="#f-${f.split(" ")[0].replace(/^-+/, "").replace(/,$/, "")}"><code>${f.split(" ")[0].replace(/,$/, "")}</code></a>`).join("")}</div>
+      ${u.groups.map(([g, items]) => `
+        <h3 class="sub">${g}</h3>
+        <div class="flags">
+          ${items.map(([f, def, desc, ex, cfg, note]) => `
+            <article class="flag" id="f-${f.split(" ")[0].replace(/^-+/, "").replace(/,$/, "")}">
+              <div class="fh"><code class="fn">${f.replace(/</g, "&lt;")}</code>${def ? `<span class="def">${u.defLabel}: <code>${def}</code></span>` : ""}</div>
+              <p>${desc}</p>
+              ${cmd(`npx screendocs ${f.startsWith("-h") || f.startsWith("-v") ? "" : site + " "}${ex}`, u)}
+              ${cfg ? `<div class="cfg">${u.cfgLabel}: <code>${cfg}</code></div>` : ""}
+              ${note ? `<p class="note">${note}</p>` : ""}
+            </article>`).join("")}
+        </div>`).join("")}
+      <div class="two" style="margin-top:20px">
+        <div class="card">
+          <h3>${u.cfgH}</h3><p>${u.cfgP}</p>
+          ${frame([`{`, `  <span class="r2">"maxPages"</span>: 30,`, `  <span class="r2">"exclude"</span>: [<span class="d">"/admin"</span>, <span class="d">"/blog/"</span>],`, `  <span class="r2">"viewports"</span>: [<span class="d">"desktop"</span>, <span class="d">"mobile"</span>],`, `  <span class="r2">"mask"</span>: [<span class="d">".nome-cliente"</span>],`, `  <span class="r2">"model"</span>: <span class="d">"gemini/gemini-2.5-flash"</span>,`, `  <span class="r2">"lang"</span>: <span class="d">"pt"</span>`, `}`])}
+          <div class="win"><h3>${u.orderH}</h3><ol>${u.order.map((o) => `<li>${o}</li>`).join("")}</ol></div>
+        </div>
+        <div class="card">
+          <h3>${u.envH}</h3>
+          <dl class="env">${u.env.map(([k, d]) => `<dt><code>${k}</code></dt><dd>${d}</dd>`).join("")}</dl>
+        </div>
+      </div>
+    </section>`;
+}
+
+/* ---------- frames, built from the CLI texts of each language ---------- */
+function frames(c, site, code) {
+  const h = c.hints;
+  const descOpts = (sel) => [
+    opt("Claude Code", sel === 0, c.yourPlan), opt("Codex", sel === 1, c.yourPlan), opt("Antigravity CLI", sel === 2, c.notInstalled),
+    opt(c.api, sel === 3, "OpenAI, Gemini, OpenRouter, Anthropic, Ollama..."), opt(c.chat, sel === 4, c.chatHint), opt(c.later, sel === 5),
+  ];
+  return {
+    banner: frame([
+      `<span class="r">${SMALL}</span>`,
+      `<span class="d">  ${c.tagline}</span>`,
+      `  <span class="d">${c.by}</span> <span class="w">Rubens Mota</span>  <span class="r">https://github.com/RuBeNsMoTa13</span>`,
+      "",
+      `<span class="b">┌</span>  <span class="pill"> ScreenDocs </span>`,
+      B,
+      active(c.url),
+      input("", c.ph),
+      end(h.text),
+    ]),
+    url: frame([
+      ...doneQ(c.url, site),
+      `<span class="r2">◇</span>  ${c.ok}`,
+      B,
+    ]),
+    urlFail: frame([
+      `<span class="y">▲</span>  <span class="y">${c.fail}</span>`,
+      B,
+      active(c.pick),
+      opt(site, true), opt(`www.${site}`, false), opt(c.retype, false), opt(c.anyway, false),
+      end(h.sel),
+    ]),
+    login: frame([
+      active(c.hasLogin),
+      confirm(c.yes, c.no, true),
+      end(h.conf),
+      "",
+      `<span class="r2">◇</span>  ${c.loginNow}`,
+    ]),
+    screens: frame([
+      ...doneQ(c.viewports, c.both),
+      ...doneQ(c.video, c.yes),
+      active(c.headed),
+      confirm(c.yes, c.no, false),
+      end(h.conf),
+    ]),
+    mode: frame([
+      active(c.mode),
+      opt(c.discover, true, c.discoverHint),
+      opt(c.list, false),
+      end(h.sel),
+    ]),
+    limit: frame([
+      ...doneQ(c.maxPages, "20"),
+      active(c.exclude),
+      input("", c.none),
+      end(h.text),
+    ]),
+    mask: frame([active(c.mask), confirm(c.yes, c.no, true), end(h.conf)]),
+    out: frame([active(c.out), input("screendocs-output", ""), end(h.text)]),
+    api: frame([
+      ...doneQ(c.describe, c.api),
+      ...doneQ(c.provider, "Google Gemini"),
+      ...doneQ(c.model, "gemini-2.5-flash"),
+      active(c.keyFor),
+      bar(`<span class="d">▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪</span><span class="cur"> </span>`),
+      end(h.text),
+      "",
+      active(c.keySave),
+      confirm(c.yes, c.no, false),
+      end(h.conf),
+    ]),
+    focus: frame([
+      ...doneQ(c.instructions, c.instructionsVal),
+      active(c.docs),
+      input(c.docsVal, ""),
+      end(h.text),
+    ]),
+    firstrun: frame([
+      active("Language · Idioma"),
+      opt("English", code === "en"), opt("Português", code === "pt"), opt("Español", code === "es"),
+      end(h.sel),
+      "",
+      `<span class="bl">●</span>  <span class="d">${c.langSaved}</span>`,
+    ]),
+    config: frame([
+      `<span class="b">┌</span>  <span class="w">${c.cfgTitle}</span>`,
+      B,
+      `<span class="bl">●</span>  <span class="d">${c.cfgFile}</span>`,
+      B,
+      active(c.cfgPick),
+      ...c.cfgRows.map(([label, val, key], i) => opt(`${label}  <span class="d">·</span> ${val.startsWith(c.cfgDef) ? `<span class="d">${val}</span>` : val}`, i === 4)),
+      opt(c.cfgReset, false), opt(c.cfgDone, false),
+      end(h.sel),
+    ]),
+
+    describe: frame([active(c.describe), ...descOpts(0), end(h.sel)]),
+    lang: frame([active(c.lang), opt("Português", code === "pt"), opt("English", code === "en"), opt("Español", code === "es"), end(h.sel)]),
+    advanced: frame([active(c.advanced), confirm(c.yes, c.no, false), end(h.conf)]),
+    previous: frame([active(c.previous), opt(c.keepOld, false), opt(c.replace, true), end(h.sel)]),
+    start: frame([
+      `<span class="bl">●</span>  <span class="d">${c.usingUser}</span>`,
+      B,
+      `<span class="r2">◇</span>  ${c.command} <span class="b">──────────────────────────</span>`,
+      B,
+      `${B}  npx screendocs ${site} --describe chat --lang ${code}`,
+      B,
+      `<span class="b">├──────────────────────────────────────────────</span>`,
+      active(c.start),
+      confirm(c.yes, c.no, true),
+      end(h.conf),
+    ]),
+    run: frame([
+      `screendocs https://${site}/`,
+      "",
+      `<span class="d">${c.looking}</span>`,
+      `  [1/20 max] ${c.found} https://${site}/`,
+      `  [2/20 max] ${c.found} https://${site}/blog`,
+      `  [3/20 max] ${c.found} https://${site}/login`,
+      "",
+      c.toCapture,
+      `  [1/3] desktop https://${site}/  6 ${c.sections}`,
+      `  [1/3] mobile  https://${site}/  6 ${c.sections}`,
+      `  [2/3] desktop https://${site}/blog  4 ${c.sections}`,
+      `  <span class="d">...</span>`,
+      "",
+      `<span class="r">${c.doneRun}</span>`,
+      `${c.report}: screendocs-output/${site}/index.html`,
+    ]),
+    chat: frame([
+      `<span class="r2">◇</span>  <span class="w">${c.part}</span>`,
+      B,
+      `${B}  1. ${c.s1}`,
+      `${B}  2. ${c.s2}`,
+      `${B}  3. ${c.s3}`,
+      B,
+      `<span class="r">◆</span>  ${c.got}`,
+    ]),
+    pick: frame([
+      active(c.pickCap),
+      opt(`${site}  <span class="d">16/10/2026 14:02 · 30 ${c.screens}</span>`, true),
+      opt(`blog.${site}  <span class="d">15/10/2026 21:40 · 12 ${c.screens}</span>`, false),
+      end(h.sel),
+    ]),
+  };
+}
+
+const cmd = (t, u) => `<div class="cmd"><span class="t">${t}</span><button type="button" class="copy" data-copy="${t.replace(/"/g, "&quot;")}">${u.copy}</button></div>`;
+
+function render(lang) {
+  const { c, u } = L[lang];
+  const site = lang === "pt" ? "meusite.com.br" : lang === "es" ? "misitio.com" : "mysite.com";
+  const f = frames(c, site, lang);
+  const ids = ["comecar", "jeitos", "menu", "teclas", "descrever", "comandos", "opcoes", "resultado"];
+  const toc = ids.map((id, i) => [id, id === "opcoes" ? u.flagsH : u.toc[i]]);
+  toc.splice(2, 0, ["mapa", u.mapH]);
+  toc.splice(toc.findIndex(([id]) => id === "opcoes"), 0, ["padroes", u.padH], ["seguranca", u.secH]);
+  const order = [
+    ["firstrun", u.only.first], ["banner"], ["url"], ["urlFail"], ["login"], ["screens"], ["mode"], ["limit", u.only.disc], ["mask"], ["out"],
+    ["describe"], ["api", u.only.api], ["lang"], ["focus", u.only.ai], ["advanced"], ["previous", u.only.prev], ["start"], ["run"],
+  ];
+  const step = ([k, when], i) => `
+    <div class="step">
+      <div><div class="n">${String(i + 1).padStart(2, "0")}</div><h3>${u.steps[k][0]}</h3>${when ? `<span class="when">${when}</span>` : ""}<p>${u.steps[k][1]}</p></div>
+      <div style="min-width:0">${f[k]}</div>
+    </div>`;
+  return `
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">${u.eyebrow}</div>
+        <h1>${u.h1}</h1>
+        <p class="lead">${u.lead}</p>
+        ${u.notice ? `<p class="notice">${u.notice}</p>` : ""}
+      </div>
+      <div style="min-width:0">${f.banner}</div>
+    </div>
+    <div class="layout">
+      <nav class="toc" aria-label="${u.eyebrow}"><ol>${toc.map(([id, t]) => `<li><a href="#${id}">${t}</a></li>`).join("")}</ol></nav>
+      <div>
+        <section class="part" id="comecar">
+          <h2>${u.s1h}</h2>
+          ${u.s1p.map((x) => `<p>${x}</p>`).join("")}
+        </section>
+
+        <section class="part" id="jeitos">
+          <h2>${u.s2h}</h2>
+          <p class="intro">${u.s2p}</p>
+          <div class="two">
+            <div class="card"><span class="tag">1</span><h3>${u.menuT}</h3>${cmd("npx screendocs", u)}<p>${u.menuP}</p></div>
+            <div class="card"><span class="tag">2</span><h3>${u.directT}</h3>${cmd(`npx screendocs ${site}`, u)}<p>${u.directP}</p></div>
+          </div>
+        </section>
+
+        ${mapSection(u, site, lang)}
+
+        <section class="part" id="menu">
+          <h2>${u.s3h}</h2>
+          <p class="intro">${u.s3p}</p>
+          ${order.map(step).join("")}
+        </section>
+
+        <section class="part" id="teclas">
+          <h2>${u.s4h}</h2>
+          <p class="intro">${u.s4p}</p>
+          <div class="keys">${u.keys.map(([k, d]) => `<div><kbd>${k}</kbd><br>${d}</div>`).join("")}</div>
+        </section>
+
+        <section class="part" id="descrever">
+          <h2>${u.s5h}</h2>
+          <p class="intro">${u.s5p}</p>
+          <div class="opts">${u.ways.map(([t, d, k]) => `<div class="card"><h3>${t}</h3><p>${d}</p><code>${k}</code></div>`).join("")}</div>
+          <div class="step" style="border-top:0;margin-top:12px">
+            <div><h3>${u.chatH}</h3><p>${u.chatP}</p>${cmd(`npx screendocs ${site} --describe chat`, u)}</div>
+            <div style="min-width:0">${f.chat}</div>
+          </div>
+          <h3>${u.apiH}</h3>
+          <p>${u.apiP}</p>
+          ${cmd(`npx screendocs ${site} --model gemini/gemini-2.5-flash`, u)}
+          ${cmd(`npx screendocs ${site} --model ollama/llama3.2-vision`, u)}
+        </section>
+
+        <section class="part" id="comandos">
+          <h2>${u.s6h}</h2>
+          <div class="two">
+            <div class="card"><h3>${u.loginH}</h3>${cmd(`npx screendocs login ${site}`, u)}<p>${u.loginP}</p></div>
+            <div class="card"><h3>${u.mcpH}</h3>${cmd("claude mcp add screendocs -- npx -y screendocs mcp", u)}<p>${u.mcpP}</p></div>
+          </div>
+          <div class="step" style="margin-top:12px">
+            <div><h3>${u.descH}</h3>${cmd(`npx screendocs describe ${site}`, u)}<p>${u.descP}</p></div>
+            <div style="min-width:0">${f.pick}</div>
+          </div>
+          <div class="two" style="margin-top:12px">
+            <div class="card"><h3>${u.keysH}</h3>${cmd("npx screendocs keys set gemini", u)}<p>${u.keysP}</p></div>
+            <div class="card"><h3>${u.helpH}</h3><p>${u.helpP}</p></div>
+          </div>
+        </section>
+
+        ${configSection(u, f)}
+
+        ${securitySection(u)}
+
+        ${flagsSection(u, site)}
+
+        <section class="part" id="resultado">
+          <h2>${u.s8h}</h2>
+          <p class="intro">${u.s8p}</p>
+          <div class="tree">${frame([
+            `<span class="w">screendocs-output/${site}/</span>`,
+            ...u.tree.map(([n, d], i) => `${i === u.tree.length - 1 ? "└──" : "├──"} <span class="f">${n.replace(/</g, "&lt;")}</span>${" ".repeat(Math.max(2, 22 - n.length))}<span class="d">${d}</span>`),
+          ])}</div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <footer><div class="wrap">${u.foot} <a href="https://github.com/RuBeNsMoTa13/screendocs" style="color:var(--accent)">github.com/RuBeNsMoTa13/screendocs</a></div></footer>`;
+}
+
+/* ---------- language switch: remembered per viewer, otherwise the browser's language ---------- */
+function pickInitial() {
+  try { const s = localStorage.getItem("sd-manual-lang"); if (L[s]) return s; } catch (e) {}
+  const n = (navigator.language || "pt").slice(0, 2).toLowerCase();
+  return L[n] ? n : "pt";
+}
+function setLang(lang) {
+  document.getElementById("app").innerHTML = render(lang);
+  document.documentElement.lang = lang === "pt" ? "pt-BR" : lang;
+  document.querySelectorAll(".langs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  try { localStorage.setItem("sd-manual-lang", lang); } catch (e) {}
+}
+document.querySelectorAll(".langs button").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".copy");
+  if (!btn) return;
+  const lang = document.querySelector('.langs button[aria-pressed="true"]').dataset.lang;
+  const done = () => { btn.textContent = L[lang].u.copied; setTimeout(() => (btn.textContent = L[lang].u.copy), 1400); };
+  const text = btn.dataset.copy;
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents(btn.previousElementSibling); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+});
+setLang(pickInitial());
+</script>
+
+</html>

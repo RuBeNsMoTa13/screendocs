@@ -4,9 +4,24 @@ Point it at a website and get every screen documented: a screenshot of each sect
 
 Works with any site, in any stack. Nothing is installed in the project being documented.
 
-[Português](README.pt-BR.md)
+[Português](README.pt-BR.md) · [Español](README.es.md)
+
+> **This README is for people who use screendocs from npm** (`npx screendocs`): how to use it, with nothing to download or build. To run it from the GitHub code, change it or send a fix, see the [developer guide](CONTRIBUTING.md).
 
 ## Quick start
+
+**User manual (npm):** the images below come from [docs/user-manual.html](docs/user-manual.html), a one-page manual in English, Portuguese and Spanish. Download it and open it in your browser to see everything, including every flag.
+
+![Two ways to use it](docs/images/en/ways.png)
+
+<details>
+<summary>The menu, step by step</summary>
+
+![The menu: language, site and address check](docs/images/en/menu-start.png)
+
+![The menu: review, start and the capture](docs/images/en/menu-run.png)
+
+</details>
 
 ```bash
 npx screendocs
@@ -42,11 +57,22 @@ With just the link (`npx screendocs mysite.com`), it asks nothing and uses the d
 There are four ways to change the defaults:
 
 1. **On the command**, for that run only: `npx screendocs mysite.com --no-video --describe chat --lang pt --open`. Every option is in [Options](#options) and in `npx screendocs --help`.
-2. **In a `screendocs.config.json` file**, in the folder where you run the command, to apply every time there. See [Config file](#config-file).
-3. **With `npx screendocs config`**, your own defaults wherever you run screendocs, also when it comes from npm. See [Your defaults and language](#your-defaults-and-language).
+2. **With `npx screendocs config`**, your own defaults, in every folder. See [Your defaults and language](#your-defaults-and-language).
+3. **In a `screendocs.config.json` file** (optional), in the folder where you run the command, to apply only there. See [Config file](#config-file).
 4. **With the menu** (`npx screendocs` with no link): it asks about each thing, starting from your defaults, and shows the equivalent command at the end, to repeat later without the questions.
 
-When more than one sets the same option, the command wins, then `screendocs.config.json`, then your defaults, then screendocs' own.
+When more than one sets the same option, think of layers, each one on top of the one below. The higher one wins:
+
+1. **screendocs' own defaults** (bottom): what comes in the package, like up to 20 pages.
+2. **Your defaults**, saved with `npx screendocs config`: they apply in every folder.
+3. **A `screendocs.config.json` in the folder** (optional): applies only in that folder.
+4. **The command** (top): what you type now, for this run only.
+
+For example, with the number of pages: screendocs says 20. You saved 40 with `npx screendocs config`, so it uses 40 everywhere. The folder `client-x` has a `screendocs.config.json` that says 10, so there it uses 10. Typing `--max-pages 5` in that folder uses 5, this time only.
+
+Most people only need layers 2 and 4: save what you always want with `npx screendocs config`, and change one run with an option on the command.
+
+![What wins: the four layers](docs/images/en/layers.png)
 
 ## Pages behind a login
 
@@ -54,13 +80,24 @@ When more than one sets the same option, the command wins, then `screendocs.conf
 npx screendocs login https://your-site.com
 ```
 
-A browser window opens. Log in as usual (Google login works), go back to the terminal and press Enter. The session is saved in `.screendocs/auth/` and every later run on that site uses it, so the pages it finds after login are captured too.
+A browser window opens. Log in as usual (Google login works), go back to the terminal and press Enter. The session is saved in your user folder, next to your defaults, and every later run on that site uses it, so the pages it finds after login are captured too.
 
 Before each run it opens the page you were on when you logged in; if the site sends it elsewhere or asks for a password, it warns that the login has expired (the menu offers to log in again).
 
-`.screendocs/` gives access to your account. It is added to `.gitignore` automatically; never commit or share it.
+Because it is saved in your user folder, the login works from any folder where you run screendocs. The saved session gives access to your account, so only your user can read it. To log out of a site, run `npx screendocs login` again or log out on the site itself.
 
 ## What it does
+
+![How the site is mapped](docs/images/en/mapping-steps.png)
+
+<details>
+<summary>How the pages and sections are found</summary>
+
+![Finding the pages](docs/images/en/mapping-pages.png)
+
+![Cutting each page into sections](docs/images/en/mapping-sections.png)
+
+</details>
 
 - **Checks the address** before starting: if the site does not open, it tries close addresses (with or without `www.`, other endings like `.com`, `.com.br`, `.net`, `.org`, `.io`, `.app`, `.dev`, typos like `.con`) and suggests the ones that open, with examples like `mysite.com`, `mysite.io` or `app.mysite.dev/login`.
 - **Finds the pages by itself**: follows the site's own links from the start page, skips logout links and files, and treats `/posts/12` and `/posts/13` as one screen.
@@ -85,7 +122,7 @@ Before each run it opens the page you were on when you logged in; if the site se
 | `--keep` | | keep the previous capture of the site (renamed with its date) instead of replacing it |
 | `--mask <selectors>` | | extra CSS selectors to blur |
 | `--no-auto-mask` | | don't blur emails, phones, documents |
-| `--describe <how>` | | who writes the descriptions: `claude`, `codex`, `antigravity` or `chat` (see below) |
+| `--describe <how>` | | who writes the descriptions: `claude`, `codex`, `antigravity` or `chat` (see below). `none`: no AI this time only, for when your defaults name an AI and you run straight from the command (in the menu, pick "Just the page scan for now") |
 | `--model <provider/model>` | | describe with an API (e.g. `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; see below) |
 | `--instructions <text>` | | what else the descriptions should take into account, e.g. `"focus on what the customer gains"` |
 | `--docs <path>` | | the project's documentation for the AI to read: a folder or one file (see [Extra request and documentation](#extra-request-and-documentation)) |
@@ -114,7 +151,7 @@ Environment variables:
 
 screendocs talks in English, Portuguese or Spanish. The first time it runs in a terminal it asks which one (the computer's language comes selected) and saves the answer.
 
-Whoever installs from npm cannot change the package's files, so your own defaults live in your user folder: `~/.screendocs/config.json` (on Windows `C:\Users\<you>\.screendocs\config.json`), next to the saved API keys and outside any project. They apply in every folder, and `screendocs.config.json` or an option typed on the command still win over them.
+Your defaults are saved on your computer, in your user folder (`npx screendocs config path` shows where), not in the folder where you run the command. They apply in every folder and stay when screendocs is updated. An option typed on the command, or a `screendocs.config.json` in the folder, still wins over them.
 
 ```bash
 npx screendocs config                         # menu: pick a setting, change it, Done
@@ -129,11 +166,11 @@ npx screendocs config reset                   # erase everything (the language i
 npx screendocs config path                    # where the file is
 ```
 
-The settings are the same names as in `screendocs.config.json` (`maxPages` or `max-pages` both work), plus `language`. When your defaults name an AI and one run should skip it, use `--describe none`.
+The settings are the same names as in `screendocs.config.json` (`maxPages` or `max-pages` both work), plus `language`.
 
 ## Config file
 
-Put `screendocs.config.json` where you run the command and keep the options there. They replace the defaults every time you run screendocs in that folder, and an option typed on the command still wins over the file:
+Optional, for when one project needs options different from your defaults. Create a file named `screendocs.config.json` in the folder where you run the command for that project, with the options it needs. They apply every time you run screendocs in that folder, and an option typed on the command still wins over the file. Nobody needs to create it: without it, your defaults apply.
 
 ```json
 {
@@ -150,6 +187,8 @@ Put `screendocs.config.json` where you run the command and keep the options ther
 
 ## Output
 
+![What you get](docs/images/en/output.png)
+
 ```
 screendocs-output/your-site.com/
   index.html          report
@@ -164,6 +203,8 @@ screendocs-output/your-site.com/
 ```
 
 ## Descriptions with any AI
+
+![Who writes the descriptions](docs/images/en/describe.png)
 
 Choose who writes the descriptions in the menu ("Who writes the descriptions of the screens?") or with `--describe`. To describe a capture you already made, without capturing again:
 
@@ -207,6 +248,8 @@ For OpenAI, Gemini and Anthropic the prefix can be left out (`--model gemini-2.5
 The key is tried with the provider before the capture starts. A typo is asked again right away. If a saved key or the one in a variable was refused (it expired or was changed), screendocs says which one it was and, in a terminal, asks for the new one and offers to replace the saved one.
 
 A saved key goes to the system's own safe place: the Keychain on macOS, encrypted with your Windows account on Windows (only you, on this computer, can read it back), or the desktop keyring on Linux (`secret-tool`). When none is available it stays in `~/.screendocs/keys.json`, readable only by your user. Either way it is in your user folder, outside any project, so it never goes to Git. `npx screendocs keys list` shows which providers have a saved key and where, and `keys remove <provider>` deletes one. A key saved by an older version stays in the file until you save it again with `keys set`.
+
+![Where a saved key lives and what it protects against](docs/images/en/keys.png)
 
 **Local models** (Ollama, LM Studio) need no key. Before capturing, screendocs checks that the server answers and, on Ollama, that the model is downloaded (if not, it shows the `ollama pull` command). If Ollama runs on another address, set `OLLAMA_HOST`. The model must read images (e.g. `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) and needs a computer with enough memory.
 
@@ -276,6 +319,22 @@ A capture takes one to several minutes; with `video: false` it is faster.
 
 > **Which AI apps work.** Any app that runs MCP servers on your computer: Claude Desktop, Claude Code, Cursor, VS Code (Copilot), Windsurf, Codex, Gemini CLI, Cline, LM Studio and others. AI chats that only run in the browser (ChatGPT, Claude.ai, Gemini on the web) cannot start a program on your computer, so they don't work. The model must also **read images**: it looks at each screenshot to describe it. A text-only model can capture the site but not describe the screens.
 
+## What it leaves on your computer
+
+![What it leaves on your computer](docs/images/en/files.png)
+
+In the folder where you run the command, only `screendocs-output/`: the captures and the reports, one folder per site. Everything else is in your user folder (`npx screendocs config path` shows where):
+
+| What | |
+|---|---|
+| Your defaults | what you saved with `npx screendocs config`, the language included |
+| Site logins | one file per site, saved by `npx screendocs login`. Never share them |
+| API keys | only if you chose to save one, and only when the system has no password store |
+
+Deleting that folder erases all three: you log in to the sites again, and the language is asked again on the next run.
+
+A `screendocs.config.json` is only read, if you created one; screendocs never creates it.
+
 ## Real data
 
 Logged-in areas often show real people's data. The automatic blur covers the common cases, not all of them: use a test account when you can and check the images before publishing.
@@ -283,6 +342,10 @@ Logged-in areas often show real people's data. The automatic blur covers the com
 ## Requirements
 
 Node.js 18 or newer. Google Chrome or Microsoft Edge installed (Edge comes with Windows). To use another Chromium-based browser, set `CHROMIUM_PATH` to its executable.
+
+## Running from the code
+
+To download the code from GitHub and run it, change it or send a fix, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

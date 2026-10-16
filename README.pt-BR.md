@@ -4,9 +4,24 @@ Aponte para um site e receba todas as telas documentadas: uma foto de cada seç�
 
 Funciona com qualquer site, em qualquer stack. Nada é instalado no projeto documentado.
 
-[English](README.md)
+[English](README.md) · [Español](README.es.md)
+
+> **Este README é para quem usa o screendocs pelo npm** (`npx screendocs`): como usar, sem baixar nem compilar nada. Para rodar pelo código do GitHub, mudar ou mandar uma correção, veja o [guia para desenvolvedores](CONTRIBUTING.pt-BR.md).
 
 ## Começo rápido
+
+**Manual do usuário (npm):** as imagens abaixo vêm do [docs/user-manual.html](docs/user-manual.html), um manual de uma página em inglês, português e espanhol. Baixe e abra no navegador para ver tudo, inclusive cada flag.
+
+![Dois jeitos de usar](docs/images/pt/ways.png)
+
+<details>
+<summary>O menu, passo a passo</summary>
+
+![O menu: idioma, site e conferência do endereço](docs/images/pt/menu-start.png)
+
+![O menu: revisão, início e a captura](docs/images/pt/menu-run.png)
+
+</details>
 
 ```bash
 npx screendocs
@@ -42,11 +57,22 @@ Com só o link (`npx screendocs meusite.com.br`), ele não pergunta nada e usa o
 Há quatro jeitos de mudar os padrões:
 
 1. **No comando**, só para essa vez: `npx screendocs meusite.com.br --no-video --describe chat --lang pt --open`. Todas as opções estão em [Opções](#opções) e em `npx screendocs --help`.
-2. **No arquivo `screendocs.config.json`**, na pasta onde roda o comando, para valer sempre ali. Veja [Arquivo de configuração](#arquivo-de-configuração).
-3. **Com `npx screendocs config`**, os seus padrões em qualquer pasta, inclusive quando o screendocs vem do npm. Veja [Seus padrões e idioma](#seus-padrões-e-idioma).
+2. **Com `npx screendocs config`**, os seus padrões, em qualquer pasta. Veja [Seus padrões e idioma](#seus-padrões-e-idioma).
+3. **No arquivo `screendocs.config.json`** (opcional), na pasta onde roda o comando, para valer só ali. Veja [Arquivo de configuração](#arquivo-de-configuração).
 4. **Pelo menu** (`npx screendocs` sem link): ele pergunta cada coisa, partindo dos seus padrões, e mostra no fim o comando equivalente, para repetir depois sem as perguntas.
 
-Quando mais de um define a mesma opção, vale o que estiver no comando, depois o `screendocs.config.json`, depois os seus padrões, depois os do screendocs.
+Quando mais de um define a mesma opção, pense em camadas, uma por cima da outra. A de cima ganha:
+
+1. **Os padrões do screendocs** (embaixo): o que vem no pacote, como até 20 páginas.
+2. **Os seus padrões**, salvos com `npx screendocs config`: valem em qualquer pasta.
+3. **Um `screendocs.config.json` na pasta** (opcional): vale só naquela pasta.
+4. **O comando** (em cima): o que você digita agora, só nesta vez.
+
+Por exemplo, com o número de páginas: o screendocs diz 20. Você salvou 40 com `npx screendocs config`, então ele usa 40 em qualquer lugar. A pasta `cliente-x` tem um `screendocs.config.json` que diz 10, então ali ele usa 10. Digitando `--max-pages 5` nessa pasta, ele usa 5, só desta vez.
+
+A maioria só precisa das camadas 2 e 4: salve o que quer sempre com `npx screendocs config` e mude uma vez com uma opção no comando.
+
+![Quem vale mais: as quatro camadas](docs/images/pt/layers.png)
 
 ## Páginas com login
 
@@ -54,13 +80,24 @@ Quando mais de um define a mesma opção, vale o que estiver no comando, depois 
 npx screendocs login https://seu-site.com
 ```
 
-Abre uma janela do navegador. Faça login normalmente (login com Google funciona), volte ao terminal e aperte Enter. A sessão fica salva em `.screendocs/auth/` e as próximas execuções nesse site usam ela, então as páginas que ele encontra depois do login também são fotografadas.
+Abre uma janela do navegador. Faça login normalmente (login com Google funciona), volte ao terminal e aperte Enter. A sessão fica salva na sua pasta de usuário, junto dos seus padrões, e as próximas execuções nesse site usam ela, então as páginas que ele encontra depois do login também são fotografadas.
 
 Antes de cada captura ele abre a página em que você estava quando fez login; se o site mandar para outro lugar ou pedir senha, ele avisa que o login expirou (o menu oferece fazer login de novo).
 
-A pasta `.screendocs/` dá acesso à sua conta. Ela entra no `.gitignore` automaticamente; nunca faça commit nem compartilhe.
+Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você rodar o screendocs. A sessão salva dá acesso à sua conta, por isso só o seu usuário consegue ler. Para sair de um site, rode `npx screendocs login` de novo ou saia da conta pelo próprio site.
 
 ## O que ele faz
+
+![Como o site é mapeado](docs/images/pt/mapping-steps.png)
+
+<details>
+<summary>Como as páginas e as seções são encontradas</summary>
+
+![Procurando as páginas](docs/images/pt/mapping-pages.png)
+
+![Cortando cada página em seções](docs/images/pt/mapping-sections.png)
+
+</details>
 
 - **Confere o endereço** antes de começar: se o site não abrir, testa endereços parecidos (com ou sem `www.`, outros finais como `.com.br`, `.com`, `.net`, `.org`, `.io`, `.app`, `.dev`, erros como `.con`) e sugere os que abrirem, com exemplos como `meusite.com.br`, `meusite.app` ou `app.meusite.io/login`.
 - **Acha as páginas sozinho**: segue os links do próprio site a partir da página inicial, pula links de sair/logout e arquivos, e trata `/posts/12` e `/posts/13` como uma tela só.
@@ -85,7 +122,7 @@ A pasta `.screendocs/` dá acesso à sua conta. Ela entra no `.gitignore` automa
 | `--keep` | | guarda a captura anterior do site (renomeada com a data) em vez de substituir |
 | `--mask <seletores>` | | seletores CSS extras para borrar |
 | `--no-auto-mask` | | não borra e-mails, telefones, documentos |
-| `--describe <como>` | | quem escreve as descrições: `claude`, `codex`, `antigravity` ou `chat` (veja abaixo) |
+| `--describe <como>` | | quem escreve as descrições: `claude`, `codex`, `antigravity` ou `chat` (veja abaixo). `none`: sem IA só nesta vez, para quando os seus padrões têm uma IA e você roda direto pelo comando (no menu, escolha "Por enquanto, só o scan da página") |
 | `--model <provedor/modelo>` | | descreve com uma API (ex.: `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; veja abaixo) |
 | `--instructions <texto>` | | o que mais as descrições devem levar em conta, ex.: `"fale do que o cliente ganha"` |
 | `--docs <caminho>` | | documentação do projeto para a IA ler: uma pasta ou um arquivo (veja [Pedido extra e documentação](#pedido-extra-e-documentação)) |
@@ -114,7 +151,7 @@ Variáveis de ambiente:
 
 O screendocs fala inglês, português ou espanhol. Na primeira vez que roda num terminal ele pergunta qual (já vem marcado o idioma do computador) e guarda a resposta.
 
-Quem instala pelo npm não consegue mudar os arquivos do pacote, então os seus padrões ficam na sua pasta de usuário: `~/.screendocs/config.json` (no Windows `C:\Users\<você>\.screendocs\config.json`), junto das chaves de API salvas e fora de qualquer projeto. Eles valem em qualquer pasta, e o `screendocs.config.json` ou uma opção digitada no comando ainda ganham deles.
+Os seus padrões ficam salvos no seu computador, na sua pasta de usuário (`npx screendocs config path` mostra onde), e não na pasta onde você roda o comando. Eles valem em qualquer pasta e continuam lá quando o screendocs atualiza. Uma opção digitada no comando, ou um `screendocs.config.json` na pasta, ainda ganham deles.
 
 ```bash
 npx screendocs config                         # menu: escolha uma opção, mude, Pronto
@@ -129,11 +166,11 @@ npx screendocs config reset                   # apaga tudo (o idioma é pergunta
 npx screendocs config path                    # onde fica o arquivo
 ```
 
-As opções têm os mesmos nomes do `screendocs.config.json` (`maxPages` ou `max-pages`, tanto faz), mais `language`. Quando os seus padrões escolhem uma IA e uma execução não deve usá-la, use `--describe none`.
+As opções têm os mesmos nomes do `screendocs.config.json` (`maxPages` ou `max-pages`, tanto faz), mais `language`.
 
 ## Arquivo de configuração
 
-Crie um `screendocs.config.json` na pasta onde roda o comando e deixe as opções nele. Elas trocam os padrões sempre que você roda o screendocs nessa pasta, e uma opção passada no comando ainda vale mais que o arquivo:
+Opcional, para quando um projeto precisa de opções diferentes dos seus padrões. Crie um arquivo chamado `screendocs.config.json` na pasta onde você roda o comando para esse projeto, com as opções dele. Elas valem sempre que você roda o screendocs nessa pasta, e uma opção digitada no comando ainda vale mais que o arquivo. Ninguém precisa criar esse arquivo: sem ele, valem os seus padrões.
 
 ```json
 {
@@ -150,6 +187,8 @@ Crie um `screendocs.config.json` na pasta onde roda o comando e deixe as opçõe
 
 ## Resultado
 
+![O que você recebe](docs/images/pt/output.png)
+
 ```
 screendocs-output/seu-site.com/
   index.html          relatório
@@ -164,6 +203,8 @@ screendocs-output/seu-site.com/
 ```
 
 ## Descrições com qualquer IA
+
+![Quem escreve as descrições](docs/images/pt/describe.png)
 
 Escolha quem escreve as descrições no menu ("Quem escreve as descrições das telas?") ou com `--describe`. Para descrever uma captura que você já fez, sem capturar de novo:
 
@@ -207,6 +248,8 @@ Para OpenAI, Gemini e Anthropic o prefixo pode ficar de fora (`--model gemini-2.
 A chave é testada com o provedor antes de a captura começar. Se você digitar errado, ele pede de novo na hora. Se uma chave guardada ou a de uma variável for recusada (expirou ou foi trocada), o screendocs diz qual foi e, num terminal, pede a nova e oferece trocar a guardada.
 
 Uma chave guardada vai para o lugar seguro do próprio sistema: o Keychain no macOS, criptografada com a sua conta do Windows no Windows (só você, neste computador, consegue ler), ou o chaveiro do Linux (`secret-tool`). Quando nenhum existe, ela fica em `~/.screendocs/keys.json`, que só o seu usuário pode ler. Nos dois casos ela fica na sua pasta de usuário, fora de qualquer projeto, então nunca vai para o Git. `npx screendocs keys list` mostra quais provedores têm chave guardada e onde, e `keys remove <provedor>` apaga uma. Uma chave guardada por uma versão anterior continua no arquivo até você guardá-la de novo com `keys set`.
+
+![Onde fica uma chave guardada e do que ela está protegida](docs/images/pt/keys.png)
 
 **Modelos locais** (Ollama, LM Studio) não precisam de chave. Antes de capturar, o screendocs confere se o servidor responde e, no Ollama, se o modelo foi baixado (se não foi, mostra o comando `ollama pull`). Se o Ollama roda em outro endereço, defina `OLLAMA_HOST`. O modelo precisa ler imagens (ex.: `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) e precisa de um computador com memória suficiente.
 
@@ -276,6 +319,22 @@ Uma captura leva de um a vários minutos; com `video: false` é mais rápida.
 
 > **Quais IAs funcionam.** Qualquer app que roda servidores MCP no seu computador: Claude Desktop, Claude Code, Cursor, VS Code (Copilot), Windsurf, Codex, Gemini CLI, Cline, LM Studio e outros. Chats de IA que rodam só no navegador (ChatGPT, Claude.ai, Gemini na web) não conseguem abrir um programa no seu computador, então não funcionam. O modelo também precisa **ler imagens**: ele olha cada foto para descrevê-la. Um modelo só de texto consegue capturar o site, mas não descrever as telas.
 
+## O que fica no seu computador
+
+![O que fica no seu computador](docs/images/pt/files.png)
+
+Na pasta onde você roda o comando, só a `screendocs-output/`: as capturas e os relatórios, uma pasta por site. Todo o resto fica na sua pasta de usuário (`npx screendocs config path` mostra onde):
+
+| O quê | |
+|---|---|
+| Seus padrões | o que você salvou com `npx screendocs config`, inclusive o idioma |
+| Logins dos sites | um arquivo por site, salvo pelo `npx screendocs login`. Nunca compartilhe |
+| Chaves de API | só se você escolheu guardar, e só quando o sistema não tem cofre de senhas |
+
+Apagar essa pasta apaga os três: você faz login nos sites de novo, e o idioma é perguntado de novo na próxima vez.
+
+Um `screendocs.config.json` só é lido, se você criou um; o screendocs nunca cria esse arquivo.
+
 ## Dados reais
 
 Áreas logadas costumam mostrar dados de pessoas reais. O borrão automático cobre os casos comuns, não todos: use uma conta de teste quando puder e confira as imagens antes de publicar.
@@ -283,6 +342,10 @@ Uma captura leva de um a vários minutos; com `video: false` é mais rápida.
 ## Requisitos
 
 Node.js 18 ou mais novo. Google Chrome ou Microsoft Edge instalado (o Edge já vem no Windows). Para usar outro navegador baseado em Chromium, aponte `CHROMIUM_PATH` para o executável dele.
+
+## Rodar pelo código
+
+Para baixar o código do GitHub e rodar, mudar ou mandar uma correção, veja o [CONTRIBUTING.pt-BR.md](CONTRIBUTING.pt-BR.md).
 
 ## Licença
 

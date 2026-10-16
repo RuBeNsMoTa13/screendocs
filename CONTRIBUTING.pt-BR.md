@@ -1,0 +1,85 @@
+# Guia para desenvolvedores (repositório)
+
+> **Este guia é para quem mexe no código deste repositório.** Para usar o screendocs pelo npm, veja o [README](README.pt-BR.md) e o manual do usuário em `docs/user-manual.html`.
+
+[English](CONTRIBUTING.md) · [Español](CONTRIBUTING.es.md)
+
+## Rodar
+
+Precisa do Node.js 18 ou mais novo e do Chrome ou Edge instalado.
+
+```bash
+git clone https://github.com/RuBeNsMoTa13/screendocs.git
+cd screendocs
+npm install
+node bin/screendocs.mjs https://seu-site.com
+```
+
+Para digitar `screendocs` em qualquer pasta, como se tivesse vindo do npm, rode `npm link` uma vez dentro da pasta do código. Depois disso, toda mudança no código já vale na hora. `npm unlink -g screendocs` desfaz.
+
+Defina `SCREENDOCS_DEBUG=1` para ver o erro completo quando algo falhar.
+
+## O que muda rodando pelo código
+
+Nada no comportamento: ele lê e grava as mesmas coisas que o pacote do npm. A diferença é onde você está quando roda.
+
+- **Na pasta onde você roda o comando**, ele cria só `screendocs-output/` (as capturas). Se você roda dentro da pasta do código, ela aparece no repositório; o `.gitignore` do repositório já deixa ela de fora, junto com `dist/`.
+- **Na sua pasta de usuário**, `~/.screendocs/` guarda os seus padrões (`config.json`), os logins dos sites (`auth/`) e, quando não existe cofre de senhas do sistema, as chaves de API salvas (`keys.json`). Arquivos temporários, como o teste do codificador de vídeo, vão para a pasta temporária do sistema. É a mesma pasta que o pacote do npm usa, então um teste pelo código muda os seus padrões de verdade. Para testar sem mexer neles, aponte para outro lugar:
+
+```bash
+SCREENDOCS_HOME=/tmp/sd-teste node bin/screendocs.mjs config
+```
+
+## De onde vem cada opção
+
+Cada camada substitui a de baixo (`loadConfig` em `src/config.mjs`):
+
+1. `DEFAULTS` em `src/config.mjs`: os valores de fábrica. Mude aqui para mudar o que todo mundo recebe.
+2. Os padrões do usuário, `~/.screendocs/config.json`, gravados pelo `screendocs config` (`src/userconfig.mjs`, `src/configcmd.mjs`).
+3. O `screendocs.config.json` da pasta onde roda, ou o arquivo passado com `--config`.
+4. As opções digitadas no comando.
+
+`describe` e `model` dizem os dois quem escreve as descrições, então uma camada que define um apaga o outro das camadas de baixo.
+
+## Onde fica cada coisa no código
+
+| Arquivo | O que faz |
+|---|---|
+| `bin/screendocs.mjs` | ponto de entrada; chama `run()` |
+| `src/cli.mjs` | lê o comando, o `--help` nos três idiomas, roda a captura |
+| `src/interactive.mjs` | o menu (`npx screendocs` sem link); cada pergunta é um passo, `Esc` volta |
+| `src/hud.mjs`, `src/theme.mjs` | a aparência do menu: dicas de teclas embaixo de cada pergunta e as cores |
+| `src/config.mjs` | valores de fábrica e a ordem das camadas |
+| `src/userconfig.mjs`, `src/configcmd.mjs` | os padrões do usuário e o `screendocs config` |
+| `src/i18n.mjs` | idioma do terminal (`SCREENDOCS_LANGUAGE`, escolha salva, idioma do computador) |
+| `src/checkurl.mjs` | confere se o endereço abre e sugere correções |
+| `src/discover.mjs` | encontra as páginas seguindo os links |
+| `src/browser.mjs`, `src/capture.mjs`, `src/mask.mjs` | abre o Chrome ou Edge, tira as fotos e vídeos, borra dados pessoais |
+| `src/login.mjs`, `src/session.mjs`, `src/paths.mjs` | login nos sites e a sessão salva |
+| `src/report.mjs` | `screens.json`, `prompt.md`, o relatório HTML e o `for-ai/` |
+| `src/agents.mjs`, `src/chat.mjs`, `src/providers.mjs` | descrições por uma ferramenta de IA instalada, um chat no navegador ou uma API |
+| `src/answers.mjs` | acha uma captura antiga e coloca nela as respostas da IA (`screendocs describe`) |
+| `src/secrets.mjs` | chaves salvas: Keychain, Windows (DPAPI), `secret-tool` ou `keys.json` |
+| `src/docs.mjs` | lê o `--docs` (texto, PDF, Office) para a IA |
+| `src/mcp.mjs` | o servidor MCP (`screendocs mcp`) |
+| `scripts/build-mcpb.mjs`, `mcpb/` | o instalador do Claude Desktop (`npm run build:mcpb`) |
+
+Todo texto que o usuário vê está escrito em inglês, português e espanhol, junto do código que o mostra. Ao criar ou mudar um, escreva os três.
+
+## O manual visual
+
+O `docs/user-manual.html` é o manual do usuário, para quem usa pelo npm, uma página em inglês, português e espanhol. As imagens dos READMEs são pedaços dele, em `docs/images/<idioma>/`. Nenhum dos dois entra no pacote do npm.
+
+O manual não acompanha o código sozinho: as telas de terminal dele são desenhadas na página, com os textos copiados do CLI. Então, quando uma mudança mexe em algo que o manual mostra (uma pergunta do menu, uma opção, uma mensagem no terminal):
+
+1. Mude o mesmo texto no `docs/user-manual.html`, nos três idiomas.
+2. Rode `npm run manual:images`. Ele abre o manual no seu Chrome ou Edge, tira os 11 pedaços em cada idioma e salva, já comprimidos, por cima das imagens antigas.
+3. Confira as imagens novas e faça o commit junto com a mudança.
+
+## Mandar uma mudança
+
+1. Crie uma branch, faça a mudança e teste com `node bin/screendocs.mjs` num site de verdade.
+2. Se mudar uma opção, uma pergunta do menu ou o que aparece no terminal, atualize também o `README.md`, o `README.pt-BR.md`, o `README.es.md` e o `docs/user-manual.html`.
+3. Abra um pull request dizendo o que estava errado antes e o que acontece agora.
+
+A publicação no npm está em [PUBLICAR.md](PUBLICAR.md).

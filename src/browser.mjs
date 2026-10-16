@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
 import { chromium } from "playwright-core";
 import { tr } from "./i18n.mjs";
@@ -48,7 +49,7 @@ export function launchForLogin() {
  * Downloads it the first time a video is recorded; the browser itself is never downloaded.
  */
 export async function ensureVideoEncoder(browser) {
-  const dir = path.join(".screendocs", ".tmp-video");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "screendocs-video-"));
   const context = await browser.newContext({ recordVideo: { dir } });
   try {
     await context.newPage();
