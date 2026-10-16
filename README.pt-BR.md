@@ -84,10 +84,10 @@ A pasta `.screendocs/` dá acesso à sua conta. Ela entra no `.gitignore` automa
 | `--keep` | | guarda a captura anterior do site (renomeada com a data) em vez de substituir |
 | `--mask <seletores>` | | seletores CSS extras para borrar |
 | `--no-auto-mask` | | não borra e-mails, telefones, documentos |
-| `--describe <como>` | | quem escreve as descrições: `claude`, `codex`, `antigravity`, `api` ou `chat` (veja abaixo) |
-| `--api-url <url>` | | endereço da API compatível com OpenAI, para `--describe api` |
-| `--model <id>` | | modelo para `--describe api` (um que leia imagens) |
-| `--api-key <chave>` | | chave para `--describe api` (prefira `SCREENDOCS_API_KEY`) |
+| `--describe <como>` | | quem escreve as descrições: `claude`, `codex`, `antigravity` ou `chat` (veja abaixo) |
+| `--model <modelo>` | | descreve com uma API, dizendo só o modelo (ex.: `gemini-2.5-flash`, `ollama/llama3.2-vision`; veja abaixo) |
+| `--api-url <url>` | | com `--model`: um servidor fora da lista (qualquer endereço compatível com OpenAI) |
+| `--api-key <chave>` | | com `--model`: a chave (último recurso, ela fica no histórico do terminal) |
 | `--docs <pasta>` | | documentação em Markdown que a IA lê para descrever |
 | `--lang <código>` | `en` | idioma das descrições (`pt`, `es`...) |
 | `--config <arquivo>` | `screendocs.config.json` | arquivo de configuração (veja abaixo) |
@@ -101,7 +101,9 @@ Variáveis de ambiente:
 
 | Variável | |
 |---|---|
-| `SCREENDOCS_API_KEY` | chave da API para `--describe api` |
+| `OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY` | a chave do provedor para `--model` |
+| `SCREENDOCS_API_KEY` | uma chave para `--model`, qualquer que seja o provedor |
+| `OLLAMA_HOST` | onde o Ollama roda, quando não é `localhost:11434` |
 | `CHROMIUM_PATH` | usa outro navegador baseado em Chromium no lugar do Chrome ou Edge |
 | `SCREENDOCS_DEBUG` | defina como `1` para ver o erro completo |
 
@@ -157,22 +159,28 @@ Os títulos e descrições vão para o `screens.json` e o `index.html`, e as tel
 npx screendocs https://seu-site.com.br --describe claude   # ou codex, antigravity
 ```
 
-**3. Qualquer API (para devs).** Funciona com qualquer provedor que tenha API compatível com OpenAI, chamada direto, sem instalar SDK:
+**3. Qualquer API (para devs).** Diga só o modelo; o provedor sai do nome e é chamado direto, sem instalar SDK:
 
 ```bash
-export SCREENDOCS_API_KEY=...        # PowerShell: $env:SCREENDOCS_API_KEY="..."
-npx screendocs https://seu-site.com.br --describe api --api-url https://api.openai.com/v1 --model <modelo>
+npx screendocs seu-site.com.br --model gemini-2.5-flash
 ```
 
-| Provedor | `--api-url` |
-|---|---|
-| OpenAI | `https://api.openai.com/v1` |
-| Google Gemini | `https://generativelanguage.googleapis.com/v1beta/openai` |
-| OpenRouter | `https://openrouter.ai/api/v1` |
-| Anthropic | `https://api.anthropic.com/v1` |
-| Ollama (local, grátis, sem chave) | `http://localhost:11434/v1` |
+| Modelo | Provedor | Chave |
+|---|---|---|
+| `gpt-4o-mini`, `o4-mini`... | OpenAI | `OPENAI_API_KEY` |
+| `gemini-2.5-flash`... | Google Gemini | `GEMINI_API_KEY` |
+| `claude-sonnet-4-5`... | Anthropic | `ANTHROPIC_API_KEY` |
+| `openrouter/<modelo>` | OpenRouter | `OPENROUTER_API_KEY` |
+| `ollama/<modelo>` | Ollama no seu computador (grátis) | nenhuma |
+| `lmstudio/<modelo>` | LM Studio no seu computador (grátis) | nenhuma |
 
-Escolha um modelo que leia imagens (ex.: `gpt-4o-mini`, `gemini-2.5-flash`, `llama3.2-vision`); se escolher um que não lê, o screendocs avisa. O menu pergunta tudo isso e nunca mostra a chave.
+**A chave** é procurada nesta ordem: `--api-key`, a variável do provedor acima (se você já usa outra ferramenta de IA, provavelmente ela já existe), `SCREENDOCS_API_KEY` e a chave guardada com `npx screendocs keys set <provedor>`. Se não achar nenhuma, o screendocs pede a chave sem mostrar o que você digita e oferece guardar em `~/.screendocs/keys.json`, na sua pasta de usuário, fora de qualquer projeto, então ela nunca vai para o Git. `npx screendocs keys list` mostra quais provedores têm chave guardada e `keys remove <provedor>` apaga uma.
+
+**Modelos locais** (Ollama, LM Studio) não precisam de chave. Antes de capturar, o screendocs confere se o servidor responde e, no Ollama, se o modelo foi baixado (se não foi, mostra o comando `ollama pull`). Se o Ollama roda em outro endereço, defina `OLLAMA_HOST`. O modelo precisa ler imagens (ex.: `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) e precisa de um computador com memória suficiente.
+
+Para um servidor fora da lista, informe o endereço compatível com OpenAI: `--model <modelo> --api-url https://.../v1`. O jeito antigo, `--describe api --api-url ... --model ...`, continua funcionando.
+
+Escolha um modelo que leia imagens; se escolher um que não lê, o screendocs avisa. O menu pergunta o provedor e o modelo, usa a chave guardada quando houver e nunca mostra a chave.
 
 ## Usar por uma IA (MCP)
 

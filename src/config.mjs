@@ -55,6 +55,14 @@ export function loadConfig(url, flags) {
   const config = { ...DEFAULTS, ...fromFile, url };
   for (const [k, v] of Object.entries(fromFlags)) if (v !== undefined) config[k] = v;
 
+  // --model alone is enough: it means describing with an API
+  if (config.model && !config.describe) config.describe = "api";
+  if (config.describe === "api" && !config.model) throw new Error("--describe api needs --model (e.g. --model gemini-2.5-flash, --model gpt-4o-mini, --model ollama/llama3.2-vision)");
+  if (!config.model && (config.apiUrl || config.apiKey))
+    throw new Error(`${config.apiUrl ? "--api-url" : "--api-key"} only works with --model, which says which model describes the screens (e.g. --model gemini-2.5-flash)`);
+  if (config.model && config.describe !== "api")
+    throw new Error(`--model is for describing with an API, and --describe ${config.describe} uses the tool's own model. Drop one of the two.`);
+
   const bad = config.viewports.filter((v) => !VIEWPORTS[v]);
   if (bad.length) throw new Error(`unknown viewport "${bad[0]}" (use desktop, mobile)`);
   return config;

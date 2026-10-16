@@ -12,7 +12,7 @@ Nasceu porque eu precisava das fotos e descrições das telas dos meus projetos 
 - Regra: só mexer na pasta do screendocs; não tocar nas outras pastas de projetinhos.
 
 ## Stack e decisões
-- Node.js 18+, playwright-core 1.56.1 (sem baixar Chromium: usa o Chrome ou Edge instalado; só baixa o ffmpeg do Playwright na primeira gravação de vídeo), ES modules, sem build. Sem SDK de IA: descrições por `--describe claude|codex|antigravity` (ferramenta instalada, plano da pessoa), `--describe api` (qualquer API compatível com OpenAI via fetch) ou `--describe chat` (chat no navegador, guiado no terminal).
+- Node.js 18+, playwright-core 1.56.1 (sem baixar Chromium: usa o Chrome ou Edge instalado; só baixa o ffmpeg do Playwright na primeira gravação de vídeo), ES modules, sem build. Sem SDK de IA: descrições por `--describe claude|codex|antigravity` (ferramenta instalada, plano da pessoa), `--model <modelo>` (API: provedor pelo nome do modelo ou prefixo `openrouter/`, `ollama/`, `lmstudio/`; compatível com OpenAI via fetch) ou `--describe chat` (chat no navegador, guiado no terminal).
 - Só npm (decidido não fazer versão Python). Uso: `npx screendocs <url>`.
 - Licença MIT, README em inglês (README.md) e português (README.pt-BR.md), PUBLICAR.md com o passo a passo do npm.
 - Recusei rodar isso por GitHub Actions; a ferramenta roda no meu PC.
@@ -26,7 +26,7 @@ Nasceu porque eu precisava das fotos e descrições das telas dos meus projetos 
 - `src/discover.mjs`: percorre os links do mesmo site (busca em largura; com e sem www conta como o mesmo site, subdomínios e outros domínios ficam de fora), pula sair/logout e arquivos, ignora query string e trata `/posts/12` e `/posts/13` como uma tela só.
 - `src/capture.mjs`: por página e tela, rola a página (filma), corta em seções (header/section/footer/article/main > div; se não houver, fatias da altura da tela), salva `01.jpg...`, `full.jpg`, `video.webm`.
 - `src/mask.mjs`: borra (CSS blur) e-mails, telefones, CPF, CNPJ, campos de e-mail/telefone/senha preenchidos e seletores do `--mask`; vale para fotos e vídeos.
-- `src/agents.mjs`: `--describe claude|codex` (roda `claude -p` / `codex exec` na pasta da captura, em lotes de 10) e `--describe api` (`--api-url`, `--model`, chave em `SCREENDOCS_API_KEY`). `--describe antigravity` roda `agy -p` e pede para também gravar a resposta num arquivo (versões antigas perdiam a saída fora do terminal). Gemini CLI descartado (login pessoal desativado pelo Google).
+- `src/agents.mjs`: `--describe claude|codex` (roda `claude -p` / `codex exec` na pasta da captura, em lotes de 10) e a API (`src/providers.mjs`: `--model` sozinho basta; chave por `--api-key`, variável do provedor, `SCREENDOCS_API_KEY` ou `~/.screendocs/keys.json` via `screendocs keys set`; Ollama/LM Studio conferidos antes de capturar; `--describe api --api-url` ainda vale). `--describe antigravity` roda `agy -p` e pede para também gravar a resposta num arquivo (versões antigas perdiam a saída fora do terminal). Gemini CLI descartado (login pessoal desativado pelo Google).
 - `src/chat.mjs`: `--describe chat` ("Um chat no navegador"): para cada parte de `for-ai/part-N` abre a pasta, copia o `prompt.txt` e lê a resposta colada no terminal. O comando `apply` foi removido; `src/answers.mjs` encaixa as respostas e grava quem descreveu cada tela (`describedBy`).
 - `prompt.md`: plano B para fazer a parte do chat por conta própria; texto neutro.
 - `src/report.mjs`: `screendocs-output/<site>/index.html`, `screens.json`, `prompt.md` e `for-ai/` (fotos com nomes únicos, até 10 por parte).

@@ -3,6 +3,7 @@ import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { primaryScreens, task } from "./report.mjs";
 import { parseAnswer, applyItems, sameFile } from "./answers.mjs";
+import { resolveModel, findKey, checkLocal, KEYS_FILE } from "./providers.mjs";
 
 /**
  * Two ways to describe the screens automatically (the third, an AI chat in the browser, is chat.mjs):
@@ -86,14 +87,7 @@ function addToPath(dirs) {
   if (add.length) process.env.PATH = [process.env.PATH, ...add].join(path.delimiter);
 }
 
-/** OpenAI-compatible endpoints of common providers, offered in the menu. */
-export const PROVIDERS = [
-  { name: "OpenAI", url: "https://api.openai.com/v1" },
-  { name: "Google Gemini", url: "https://generativelanguage.googleapis.com/v1beta/openai" },
-  { name: "OpenRouter", url: "https://openrouter.ai/api/v1" },
-  { name: "Anthropic", url: "https://api.anthropic.com/v1" },
-  { name: "Ollama (local)", url: "http://localhost:11434/v1", local: true },
-];
+export { PROVIDERS } from "./providers.mjs";
 
 const WIN = process.platform === "win32";
 const BATCH = 10; // screens per run, so each run stays small
@@ -119,11 +113,8 @@ export function installedAgents() {
   return list;
 }
 
-export function checkAgent(agent, config = {}) {
-  if (agent === "api") {
-    if (!config.apiUrl || !config.model) throw new Error("--describe api needs --api-url and --model (the key goes in SCREENDOCS_API_KEY)");
-    return;
-  }
+export async function checkAgent(agent, config = {}) {
+  if (agent === "api") return prepareApi(config);
   if (agent === "chat") {
     if (!process.stdin.isTTY) throw new Error("--describe chat is step by step, so it needs a terminal you can type in");
     return;
@@ -136,6 +127,33 @@ export function checkAgent(agent, config = {}) {
         `\n(or use --describe chat, an AI chat in your browser)`,
     );
   }
+}
+
+/**
+ * --model to an address, a model id and a key, before anything is captured. Without a key
+ * and with a terminal, asks for it (hidden) and offers to save it.
+ */
+async function prepareApi(config) {
+  if (config.provider !== undefined) return;
+  const { provider, url, model } = resolveModel(config.model, config.apiUrl);
+  Object.assign(config, { provider, apiUrl: url, model });
+  if (provider?.local) return checkLocal(provider, url, model);
+  const found = findKey(provider, config.apiKey);
+  if (found) {
+    config.apiKey = found.key;
+    return;
+  }
+  // An address of its own (--api-url) may be a server with no key
+  if (!provider) return;
+  if (process.stdin.isTTY && process.stdout.isTTY) {
+    const { askKey } = await import("./interactive.mjs");
+    config.apiKey = await askKey(provider);
+    return;
+  }
+  throw new Error(
+    `no API key for ${provider.name}. Set ${provider.env[0]}, or save it once with: npx screendocs keys set ${provider.id}` +
+      ` (it goes to ${KEYS_FILE}, outside the project).`,
+  );
 }
 
 export async function describeWith(agent, root, config) {
@@ -247,7 +265,8 @@ function run(agent, root, file, batch, docsDir) {
 
 /** One request per screen, 4 at a time, to an OpenAI-compatible /chat/completions. */
 async function describeWithApi(data, root, screens, config) {
-  const key = config.apiKey || process.env.SCREENDOCS_API_KEY || "";
+  await prepareApi(config);
+  const key = config.apiKey || "";
   const url = `${config.apiUrl.replace(/\/+$/, "")}/chat/completions`;
   const docs = config.docs ? readDocs(config.docs) : "";
   console.log(`\nDescribing ${screens.length} screen(s) with ${config.model}...`);
@@ -283,6 +302,12 @@ async function describeWithApi(data, root, screens, config) {
           // A model that only reads text rejects the screenshot; say so in plain words
           if (/image|vision|multimodal|modalit/i.test(msg) && !/401|403/.test(String(res.status)))
             throw new Error(`${config.model} does not seem to read images. Pick a model that does (e.g. gpt-4o-mini, gemini-2.5-flash). API said: ${msg}`);
+          // A wrong key fails every screen: say so once, with how to fix it
+          if (res.status === 401 || res.status === 403)
+            throw new Error(
+              `the API refused the key (HTTP ${res.status}: ${msg}).` +
+                (config.provider && !config.provider.local ? ` Save the right one with: npx screendocs keys set ${config.provider.id}` : ""),
+            );
           throw new Error(msg);
         }
         const text = body.choices?.[0]?.message?.content ?? "";

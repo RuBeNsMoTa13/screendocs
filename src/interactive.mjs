@@ -1,3 +1,4 @@
+import os from "node:os";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
@@ -7,7 +8,8 @@ import { login } from "./login.mjs";
 import { authFile } from "./paths.mjs";
 import { launch } from "./browser.mjs";
 import { sessionStatus } from "./session.mjs";
-import { AGENTS, PROVIDERS, installedAgents, installCommand, installAgent } from "./agents.mjs";
+import { AGENTS, installedAgents, installCommand, installAgent } from "./agents.mjs";
+import { PROVIDERS, providerById, resolveModel, findKey, saveKey, checkLocal, KEYS_FILE } from "./providers.mjs";
 import { checkUrl, EXAMPLES, URL_TEXT, short } from "./checkurl.mjs";
 import { setBack } from "./hud.mjs";
 
@@ -67,8 +69,14 @@ const T = {
     other: "Other (type the address)",
     apiUrl: "API address (OpenAI-compatible)",
     model: "Model (one that reads images)",
-    modelHint: "e.g. gpt-4o-mini, gemini-2.5-flash, llama3.2-vision",
-    apiKey: "API key (not saved and not shown; next time set SCREENDOCS_API_KEY)",
+    modelHint: (ex) => `e.g. ${ex}`,
+    apiKey: "API key (Enter if this server has none)",
+    keyFor: (n) => `${n} API key (it does not show while you type)`,
+    keySave: (f) => `Save it for next time? (in ${f}, outside the project)`,
+    keySaved: (f) => `Key saved in ${f}.`,
+    keyFound: (n, from) => `Using the ${n} key from ${from}.`,
+    checkingLocal: (n) => `Checking ${n}...`,
+    localOk: (n) => `${n} answered.`,
     noKey: "Descriptions will use each section's title and first paragraph. To have an AI write them later: npx screendocs describe <site>",
     lang: "Description language",
     previous: (h) => `There is already a capture of ${h}. What should happen to it?`,
@@ -126,8 +134,14 @@ const T = {
     other: "Outro (digitar o endereço)",
     apiUrl: "Endereço da API (compatível com OpenAI)",
     model: "Modelo (que leia imagens)",
-    modelHint: "ex.: gpt-4o-mini, gemini-2.5-flash, llama3.2-vision",
-    apiKey: "Chave da API (não é salva nem mostrada; da próxima vez defina SCREENDOCS_API_KEY)",
+    modelHint: (ex) => `ex.: ${ex}`,
+    apiKey: "Chave da API (Enter se esse servidor não usa)",
+    keyFor: (n) => `Chave da API do ${n} (não aparece enquanto você digita)`,
+    keySave: (f) => `Guardar para as próximas vezes? (em ${f}, fora do projeto)`,
+    keySaved: (f) => `Chave guardada em ${f}.`,
+    keyFound: (n, from) => `Usando a chave do ${n} de ${from}.`,
+    checkingLocal: (n) => `Conferindo o ${n}...`,
+    localOk: (n) => `${n} respondeu.`,
     noKey: "As descrições vão usar o título e o primeiro parágrafo de cada seção. Para uma IA escrever depois: npx screendocs describe <site>",
     lang: "Idioma das descrições",
     previous: (h) => `Já existe uma captura de ${h}. O que fazer com ela?`,
@@ -366,9 +380,12 @@ function toArgs(s) {
     args.push("--pages", s.paths.split(",").map((x) => x.trim()).filter(Boolean).join(","));
   }
   if (!s.autoMask) args.push("--no-auto-mask");
-  if (s.how.describe) {
+  // --model alone already means an API; --api-url only for an address outside the list
+  if (s.how.describe === "api") {
+    args.push("--model", s.how.model);
+    if (s.how.apiUrl) args.push("--api-url", s.how.apiUrl);
+  } else if (s.how.describe) {
     args.push("--describe", s.how.describe);
-    if (s.how.describe === "api") args.push("--api-url", s.how.apiUrl, "--model", s.how.model);
   }
   if (s.descLang !== "en") args.push("--lang", s.descLang);
   if (s.advanced) {
@@ -407,21 +424,61 @@ export async function chooseDescriber({ t = T[uiLang()], a = ask(t), later = fal
   }
 }
 
-/** Which API, which model and, when needed, the key. */
+/** Which API, which model and, when needed, the key (found, typed or saved). */
 async function askApi(t, a) {
-  const url = await a(p.select({
+  const id = await a(p.select({
     message: t.provider,
-    options: [...PROVIDERS.map((pr) => ({ value: pr.url, label: pr.name, hint: pr.url })), { value: "", label: t.other }],
+    options: [...PROVIDERS.map((pr) => ({ value: pr.id, label: pr.name })), { value: "", label: t.other }],
   }));
-  const apiUrl = url || (await a(p.text({ message: t.apiUrl, placeholder: "https://.../v1", validate: (v) => ((v ?? "").trim() ? undefined : t.apiUrl) }))).trim();
-  const model = (await a(p.text({ message: t.model, placeholder: t.modelHint, validate: (v) => ((v ?? "").trim() ? undefined : t.model) }))).trim();
-  const local = PROVIDERS.find((pr) => pr.url === apiUrl)?.local;
-  if (!local && !process.env.SCREENDOCS_API_KEY) {
-    // Kept out of the arguments so it never shows in a printed command
-    const key = await a(p.password({ message: t.apiKey, validate: (v) => ((v ?? "").trim() ? undefined : t.apiKey) }));
-    process.env.SCREENDOCS_API_KEY = key.trim();
+  const provider = providerById(id);
+  const apiUrl = provider ? undefined : (await a(p.text({ message: t.apiUrl, placeholder: "https://.../v1", validate: (v) => ((v ?? "").trim() ? undefined : t.apiUrl) }))).trim();
+  const typed = (await a(p.text({
+    message: t.model,
+    placeholder: t.modelHint(provider ? provider.example.replace(`${provider.id}/`, "") : "gpt-4o-mini"),
+    validate: (v) => ((v ?? "").trim() ? undefined : t.model),
+  }))).trim();
+  // The name the command line understands: the provider in front when the name does not say it
+  const model = !provider || typed.startsWith(`${provider.id}/`) || provider.match?.test(typed) ? typed : `${provider.id}/${typed}`;
+  if (provider?.local) {
+    const spin = p.spinner();
+    spin.start(t.checkingLocal(provider.name));
+    try {
+      const r = resolveModel(model);
+      await checkLocal(r.provider, r.url, r.model);
+      spin.stop(t.localOk(provider.name));
+    } catch (e) {
+      spin.stop(pc.yellow(e.message));
+      return null;
+    }
+  } else if (provider) {
+    const found = findKey(provider);
+    if (found) p.log.info(t.keyFound(provider.name, found.from === KEYS_FILE ? shortHome(KEYS_FILE) : found.from));
+    else process.env.SCREENDOCS_API_KEY = await askKey(provider, { t, a });
+  } else {
+    const key = (await a(p.password({ message: t.apiKey }))) ?? "";
+    if (key.trim()) process.env.SCREENDOCS_API_KEY = key.trim();
   }
   return { describe: "api", apiUrl, model };
+}
+
+const shortHome = (f) => f.replace(os.homedir(), "~");
+
+/**
+ * Asks for a provider's key without showing it and offers to save it in the user's folder.
+ * Also used by the command line when no key is found and there is a terminal.
+ */
+export async function askKey(provider, { t = T[uiLang()], a } = {}) {
+  const run = a ?? (async (q) => {
+    const v = await q;
+    if (p.isCancel(v)) throw new Error("cancelled");
+    return v;
+  });
+  const key = String(await run(p.password({ message: t.keyFor(provider.name), validate: (v) => ((v ?? "").trim() ? undefined : t.keyFor(provider.name)) }))).trim();
+  if (await run(p.confirm({ message: t.keySave(shortHome(KEYS_FILE)), active: t.yes, inactive: t.no, initialValue: true }))) {
+    saveKey(provider.id, key);
+    p.log.success(t.keySaved(shortHome(KEYS_FILE)));
+  }
+  return key;
 }
 
 /** Installs a missing AI tool with its official installer and has the person log in. False: back to the list. */
