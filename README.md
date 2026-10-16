@@ -94,7 +94,7 @@ Because it is saved in your user folder, the login works from any folder where y
 | `--keep` | | keep the previous capture of the site (renamed with its date) instead of replacing it |
 | `--mask <selectors>` | | extra CSS selectors to blur |
 | `--no-auto-mask` | | don't blur emails, phones, documents |
-| `--describe <how>` | | who writes the descriptions: `claude`, `codex`, `antigravity` or `chat` (see below) |
+| `--describe <how>` | | who writes the descriptions: `claude`, `codex`, `antigravity` or `chat` (see below). `none`: no AI this time only, for when your defaults name an AI and you run straight from the command (in the menu, pick "Just the page scan for now") |
 | `--model <provider/model>` | | describe with an API (e.g. `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; see below) |
 | `--instructions <text>` | | what else the descriptions should take into account, e.g. `"focus on what the customer gains"` |
 | `--docs <path>` | | the project's documentation for the AI to read: a folder or one file (see [Extra request and documentation](#extra-request-and-documentation)) |
@@ -138,7 +138,7 @@ npx screendocs config reset                   # erase everything (the language i
 npx screendocs config path                    # where the file is
 ```
 
-The settings are the same names as in `screendocs.config.json` (`maxPages` or `max-pages` both work), plus `language`. When your defaults name an AI and one run should skip it, use `--describe none`.
+The settings are the same names as in `screendocs.config.json` (`maxPages` or `max-pages` both work), plus `language`.
 
 ## Config file
 

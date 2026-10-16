@@ -94,7 +94,7 @@ Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você ro
 | `--keep` | | guarda a captura anterior do site (renomeada com a data) em vez de substituir |
 | `--mask <seletores>` | | seletores CSS extras para borrar |
 | `--no-auto-mask` | | não borra e-mails, telefones, documentos |
-| `--describe <como>` | | quem escreve as descrições: `claude`, `codex`, `antigravity` ou `chat` (veja abaixo) |
+| `--describe <como>` | | quem escreve as descrições: `claude`, `codex`, `antigravity` ou `chat` (veja abaixo). `none`: sem IA só nesta vez, para quando os seus padrões têm uma IA e você roda direto pelo comando (no menu, escolha "Por enquanto, só o scan da página") |
 | `--model <provedor/modelo>` | | descreve com uma API (ex.: `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; veja abaixo) |
 | `--instructions <texto>` | | o que mais as descrições devem levar em conta, ex.: `"fale do que o cliente ganha"` |
 | `--docs <caminho>` | | documentação do projeto para a IA ler: uma pasta ou um arquivo (veja [Pedido extra e documentação](#pedido-extra-e-documentação)) |
@@ -138,7 +138,7 @@ npx screendocs config reset                   # apaga tudo (o idioma é pergunta
 npx screendocs config path                    # onde fica o arquivo
 ```
 
-As opções têm os mesmos nomes do `screendocs.config.json` (`maxPages` ou `max-pages`, tanto faz), mais `language`. Quando os seus padrões escolhem uma IA e uma execução não deve usá-la, use `--describe none`.
+As opções têm os mesmos nomes do `screendocs.config.json` (`maxPages` ou `max-pages`, tanto faz), mais `language`.
 
 ## Arquivo de configuração
 
