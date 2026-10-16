@@ -51,17 +51,14 @@ Options
                                 an AI tool installed and logged in here (uses your plan)
                           chat  an AI chat in your browser, step by step (ChatGPT, Gemini...)
   --model <model>       describe with an API, naming only the model (one that reads images).
-                        The provider comes from the name:
-                          gpt-4o-mini, o4-mini       OpenAI     (key: OPENAI_API_KEY)
-                          gemini-2.5-flash           Gemini     (key: GEMINI_API_KEY)
-                          claude-sonnet-4-5          Anthropic  (key: ANTHROPIC_API_KEY)
-                          openrouter/<model>         OpenRouter (key: OPENROUTER_API_KEY)
-                          ollama/llama3.2-vision     Ollama on this computer, no key (OLLAMA_HOST for another address)
+                        The provider comes from the name, the key from its usual variable:
+                          gpt-4o-mini, o4-mini       OpenAI     OPENAI_API_KEY
+                          gemini-2.5-flash           Gemini     GEMINI_API_KEY
+                          claude-sonnet-4-5          Anthropic  ANTHROPIC_API_KEY
+                          openrouter/<model>         OpenRouter OPENROUTER_API_KEY
+                          ollama/<model>             Ollama on this computer, no key
                           lmstudio/<model>           LM Studio on this computer, no key
-                        Key order: --api-key, the variable above, SCREENDOCS_API_KEY, the key saved
-                        with "screendocs keys set". With none, it asks (hidden) and offers to save it.
-  --api-url <url>       with --model: a server outside the list (any OpenAI-compatible address)
-  --api-key <key>       with --model: the key (last resort: it stays in the terminal history)
+                        No key set: it asks once (hidden) and can save it (screendocs keys set).
   --docs <dir>          project docs the AI reads when describing
   --lang <code>         description language (default en)
   --config <file>       config file (default screendocs.config.json if present)
@@ -136,7 +133,7 @@ export async function run(argv) {
       if (!process.stdin.isTTY) throw new Error("choose who describes: --describe claude, codex, antigravity or chat, or --model <model> for an API");
       p.intro(`${data.site} · ${new Date(data.createdAt).toLocaleString()}`);
       const how = await chooseDescriber();
-      Object.assign(values, { describe: how.describe, "api-url": how.apiUrl, model: how.model });
+      Object.assign(values, { describe: how.describe, model: how.model });
       open = true;
     }
     const config = loadConfig(data.url, { ...values, lang: values.lang ?? data.lang });

@@ -86,8 +86,6 @@ Before each run it opens the page you were on when you logged in; if the site se
 | `--no-auto-mask` | | don't blur emails, phones, documents |
 | `--describe <how>` | | who writes the descriptions: `claude`, `codex`, `antigravity` or `chat` (see below) |
 | `--model <model>` | | describe with an API, naming only the model (e.g. `gemini-2.5-flash`, `ollama/llama3.2-vision`; see below) |
-| `--api-url <url>` | | with `--model`: a server outside the list (any OpenAI-compatible address) |
-| `--api-key <key>` | | with `--model`: the key (last resort, it stays in the terminal history) |
 | `--docs <dir>` | | Markdown docs the AI reads when describing |
 | `--lang <code>` | `en` | description language (`pt`, `es`...) |
 | `--config <file>` | `screendocs.config.json` | config file (see below) |
@@ -103,6 +101,7 @@ Environment variables:
 |---|---|
 | `OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY` | the provider's key for `--model` |
 | `SCREENDOCS_API_KEY` | a key for `--model`, whatever the provider |
+| `OPENAI_BASE_URL` | another OpenAI-compatible server, with `--model openai/<model>` |
 | `OLLAMA_HOST` | where Ollama runs, when it is not `localhost:11434` |
 | `CHROMIUM_PATH` | use another Chromium-based browser instead of Chrome or Edge |
 | `SCREENDOCS_DEBUG` | set to `1` to print the full error |
@@ -174,11 +173,11 @@ npx screendocs your-site.com --model gemini-2.5-flash
 | `ollama/<model>` | Ollama on your computer (free) | none |
 | `lmstudio/<model>` | LM Studio on your computer (free) | none |
 
-**The key** is looked for in this order: `--api-key`, the provider's variable above (if you already use another AI tool, it is probably set), `SCREENDOCS_API_KEY`, and the key saved with `npx screendocs keys set <provider>`. If there is none, screendocs asks for it without showing what you type and offers to save it in `~/.screendocs/keys.json`, in your user folder, outside any project, so it never goes to Git. `npx screendocs keys list` shows which providers have a saved key and `keys remove <provider>` deletes one.
+**The key** is looked for in this order: the provider's variable above (if you already use another AI tool, it is probably set), `SCREENDOCS_API_KEY`, and the key saved with `npx screendocs keys set <provider>`. If there is none, screendocs asks for it without showing what you type and offers to save it in `~/.screendocs/keys.json`, in your user folder, outside any project, so it never goes to Git. `npx screendocs keys list` shows which providers have a saved key and `keys remove <provider>` deletes one.
 
 **Local models** (Ollama, LM Studio) need no key. Before capturing, screendocs checks that the server answers and, on Ollama, that the model is downloaded (if not, it shows the `ollama pull` command). If Ollama runs on another address, set `OLLAMA_HOST`. The model must read images (e.g. `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) and needs a computer with enough memory.
 
-For a server outside the list, add its OpenAI-compatible address: `--model <model> --api-url https://.../v1`. The old form, `--describe api --api-url ... --model ...`, still works.
+For another OpenAI-compatible server, do as the OpenAI tools do: set `OPENAI_BASE_URL` to its address and use `--model openai/<model>`. Commands from older versions (`--describe api --api-url ... --api-key ...`) still work.
 
 Pick a model that reads images; with one that doesn't, screendocs tells you. The menu asks for the provider and the model, uses the saved key when there is one, and never shows the key.
 

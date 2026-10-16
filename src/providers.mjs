@@ -29,6 +29,12 @@ const ALIASES = { google: "gemini", claude: "anthropic", "lm-studio": "lmstudio"
 
 export const providerById = (id) => PROVIDERS.find((p) => p.id === (ALIASES[String(id).toLowerCase()] ?? String(id).toLowerCase()));
 
+/** Another OpenAI-compatible server, the usual way: OPENAI_BASE_URL (OPENAI_API_BASE in older tools). */
+export function openaiBase() {
+  const u = (process.env.OPENAI_BASE_URL || process.env.OPENAI_API_BASE || "").trim().replace(/\/+$/, "");
+  return u || null;
+}
+
 /** Ollama's own variable: "127.0.0.1:11434", "http://192.168.0.10:11434" or just a host. */
 function ollamaUrl() {
   const h = process.env.OLLAMA_HOST?.trim();
@@ -62,11 +68,11 @@ export function resolveModel(model, apiUrl) {
     throw new Error(
       `I do not know which provider "${full}" is from. Put the provider in front of the name: ` +
         PROVIDERS.filter((p) => !p.match).map((p) => `${p.id}/${full}`).join(", ") +
-        `, or give its address with --api-url.`,
+        `. For another OpenAI-compatible server, use openai/${full} and set OPENAI_BASE_URL to its address.`,
     );
   }
-  const url = provider.id === "ollama" ? (ollamaUrl() ?? provider.url) : provider.url;
-  return { provider, url, model: id };
+  const url = provider.id === "ollama" ? (ollamaUrl() ?? provider.url) : provider.id === "openai" ? (openaiBase() ?? provider.url) : provider.url;
+  return { provider, url, model: id, custom: provider.id === "openai" && !!openaiBase() };
 }
 
 /** ~/.screendocs/keys.json: outside any project, so it never goes to Git. */

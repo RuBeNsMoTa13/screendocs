@@ -71,6 +71,7 @@ const T = {
     model: "Model (one that reads images)",
     modelHint: (ex) => `e.g. ${ex}`,
     apiKey: "API key (Enter if this server has none)",
+    baseUrl: (u) => `To run the printed command again later, first set OPENAI_BASE_URL=${u}`,
     keyFor: (n) => `${n} API key (it does not show while you type)`,
     keySave: (f) => `Save it for next time? (in ${f}, outside the project)`,
     keySaved: (f) => `Key saved in ${f}.`,
@@ -136,6 +137,7 @@ const T = {
     model: "Modelo (que leia imagens)",
     modelHint: (ex) => `ex.: ${ex}`,
     apiKey: "Chave da API (Enter se esse servidor não usa)",
+    baseUrl: (u) => `Para repetir o comando depois, defina antes OPENAI_BASE_URL=${u}`,
     keyFor: (n) => `Chave da API do ${n} (não aparece enquanto você digita)`,
     keySave: (f) => `Guardar para as próximas vezes? (em ${f}, fora do projeto)`,
     keySaved: (f) => `Chave guardada em ${f}.`,
@@ -380,10 +382,9 @@ function toArgs(s) {
     args.push("--pages", s.paths.split(",").map((x) => x.trim()).filter(Boolean).join(","));
   }
   if (!s.autoMask) args.push("--no-auto-mask");
-  // --model alone already means an API; --api-url only for an address outside the list
+  // --model alone already means an API
   if (s.how.describe === "api") {
     args.push("--model", s.how.model);
-    if (s.how.apiUrl) args.push("--api-url", s.how.apiUrl);
   } else if (s.how.describe) {
     args.push("--describe", s.how.describe);
   }
@@ -438,7 +439,12 @@ async function askApi(t, a) {
     validate: (v) => ((v ?? "").trim() ? undefined : t.model),
   }))).trim();
   // The name the command line understands: the provider in front when the name does not say it
-  const model = !provider || typed.startsWith(`${provider.id}/`) || provider.match?.test(typed) ? typed : `${provider.id}/${typed}`;
+  // Another server: the OpenAI way, its address in OPENAI_BASE_URL and the model as openai/<model>
+  if (apiUrl) {
+    process.env.OPENAI_BASE_URL = apiUrl;
+    p.log.info(t.baseUrl(apiUrl));
+  }
+  const model = !provider ? `openai/${typed.replace(/^openai\//, "")}` : typed.startsWith(`${provider.id}/`) || provider.match?.test(typed) ? typed : `${provider.id}/${typed}`;
   if (provider?.local) {
     const spin = p.spinner();
     spin.start(t.checkingLocal(provider.name));
@@ -458,7 +464,7 @@ async function askApi(t, a) {
     const key = (await a(p.password({ message: t.apiKey }))) ?? "";
     if (key.trim()) process.env.SCREENDOCS_API_KEY = key.trim();
   }
-  return { describe: "api", apiUrl, model };
+  return { describe: "api", model };
 }
 
 const shortHome = (f) => f.replace(os.homedir(), "~");

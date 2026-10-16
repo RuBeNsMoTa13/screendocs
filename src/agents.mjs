@@ -135,7 +135,7 @@ export async function checkAgent(agent, config = {}) {
  */
 async function prepareApi(config) {
   if (config.provider !== undefined) return;
-  const { provider, url, model } = resolveModel(config.model, config.apiUrl);
+  const { provider, url, model, custom } = resolveModel(config.model, config.apiUrl);
   Object.assign(config, { provider, apiUrl: url, model });
   if (provider?.local) return checkLocal(provider, url, model);
   const found = findKey(provider, config.apiKey);
@@ -143,8 +143,8 @@ async function prepareApi(config) {
     config.apiKey = found.key;
     return;
   }
-  // An address of its own (--api-url) may be a server with no key
-  if (!provider) return;
+  // A server of its own (OPENAI_BASE_URL) may have no key
+  if (!provider || custom) return;
   if (process.stdin.isTTY && process.stdout.isTTY) {
     const { askKey } = await import("./interactive.mjs");
     config.apiKey = await askKey(provider);
