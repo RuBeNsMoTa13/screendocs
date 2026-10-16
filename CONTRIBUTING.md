@@ -23,8 +23,8 @@ Set `SCREENDOCS_DEBUG=1` to see the full error when something fails.
 
 Nothing in the behavior: it reads and writes the same things as the npm package. The difference is where you are when you run it.
 
-- **In the folder where you run the command**, it creates `screendocs-output/` (the captures) and, when you log in to a site, `.screendocs/auth/` (the session) and a `.gitignore` line for it. If you run it inside the code folder, these show up in the repository. The repository's `.gitignore` already leaves out `screendocs-output/`, `.screendocs/` and `dist/`, so none of it is committed.
-- **In your user folder**, `~/.screendocs/` keeps your defaults (`config.json`) and, when there is no system password store, the saved API keys (`keys.json`). It is the same folder the npm package uses, so a test from the code changes your real defaults. To test without touching them, point it somewhere else:
+- **In the folder where you run the command**, it creates only `screendocs-output/` (the captures). If you run it inside the code folder, it shows up in the repository; the repository's `.gitignore` already leaves it out, along with `dist/`.
+- **In your user folder**, `~/.screendocs/` keeps your defaults (`config.json`), the site logins (`auth/`) and, when there is no system password store, the saved API keys (`keys.json`). Temporary files, like the video encoder check, go to the system's temp folder. It is the same folder the npm package uses, so a test from the code changes your real defaults. To test without touching them, point it somewhere else:
 
 ```bash
 SCREENDOCS_HOME=/tmp/sd-test node bin/screendocs.mjs config

@@ -63,11 +63,11 @@ A maioria só precisa das camadas 2 e 4: salve o que quer sempre com `npx screen
 npx screendocs login https://seu-site.com
 ```
 
-Abre uma janela do navegador. Faça login normalmente (login com Google funciona), volte ao terminal e aperte Enter. A sessão fica salva em `.screendocs/auth/` e as próximas execuções nesse site usam ela, então as páginas que ele encontra depois do login também são fotografadas.
+Abre uma janela do navegador. Faça login normalmente (login com Google funciona), volte ao terminal e aperte Enter. A sessão fica salva na sua pasta de usuário, junto dos seus padrões, e as próximas execuções nesse site usam ela, então as páginas que ele encontra depois do login também são fotografadas.
 
 Antes de cada captura ele abre a página em que você estava quando fez login; se o site mandar para outro lugar ou pedir senha, ele avisa que o login expirou (o menu oferece fazer login de novo).
 
-A sessão fica numa pasta `.screendocs` dentro da pasta onde você rodou o comando, então rode o screendocs da mesma pasta nas próximas vezes. Essa pasta dá acesso à sua conta: nunca mande para ninguém nem deixe onde outras pessoas possam abrir.
+Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você rodar o screendocs. A sessão salva dá acesso à sua conta, por isso só o seu usuário consegue ler. Para sair de um site, rode `npx screendocs login` de novo ou saia da conta pelo próprio site.
 
 ## O que ele faz
 
@@ -287,15 +287,15 @@ Uma captura leva de um a vários minutos; com `video: false` é mais rápida.
 
 ## O que fica no seu computador
 
-Na pasta onde você roda o comando:
+Na pasta onde você roda o comando, só a `screendocs-output/`: as capturas e os relatórios, uma pasta por site. Todo o resto fica na sua pasta de usuário (`npx screendocs config path` mostra onde):
 
-| O quê | Quando |
+| O quê | |
 |---|---|
-| `screendocs-output/` | sempre: as capturas e os relatórios, uma pasta por site |
-| `.screendocs/` | quando você faz login num site: a sessão salva. Nunca compartilhe. Gravar vídeos também pode deixar essa pasta, vazia |
-| `.gitignore` | quando você faz login num site: uma linha que deixa a `.screendocs/` fora do Git, caso essa pasta seja um projeto Git |
+| Seus padrões | o que você salvou com `npx screendocs config`, inclusive o idioma |
+| Logins dos sites | um arquivo por site, salvo pelo `npx screendocs login`. Nunca compartilhe |
+| Chaves de API | só se você escolheu guardar, e só quando o sistema não tem cofre de senhas |
 
-Na sua pasta de usuário (`npx screendocs config path` mostra onde): os seus padrões e, quando o sistema não tem cofre de senhas, as chaves de API salvas. Apagar essa pasta apaga os dois, e o idioma é perguntado de novo na próxima vez.
+Apagar essa pasta apaga os três: você faz login nos sites de novo, e o idioma é perguntado de novo na próxima vez.
 
 Um `screendocs.config.json` só é lido, se você criou um; o screendocs nunca cria esse arquivo.
 

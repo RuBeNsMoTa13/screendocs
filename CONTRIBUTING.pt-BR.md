@@ -23,8 +23,8 @@ Defina `SCREENDOCS_DEBUG=1` para ver o erro completo quando algo falhar.
 
 Nada no comportamento: ele lê e grava as mesmas coisas que o pacote do npm. A diferença é onde você está quando roda.
 
-- **Na pasta onde você roda o comando**, ele cria `screendocs-output/` (as capturas) e, quando você faz login num site, `.screendocs/auth/` (a sessão) e uma linha para ela no `.gitignore`. Se você roda dentro da pasta do código, isso aparece no repositório. O `.gitignore` do repositório já deixa de fora `screendocs-output/`, `.screendocs/` e `dist/`, então nada disso vai para o commit.
-- **Na sua pasta de usuário**, `~/.screendocs/` guarda os seus padrões (`config.json`) e, quando não existe cofre de senhas do sistema, as chaves de API salvas (`keys.json`). É a mesma pasta que o pacote do npm usa, então um teste pelo código muda os seus padrões de verdade. Para testar sem mexer neles, aponte para outro lugar:
+- **Na pasta onde você roda o comando**, ele cria só `screendocs-output/` (as capturas). Se você roda dentro da pasta do código, ela aparece no repositório; o `.gitignore` do repositório já deixa ela de fora, junto com `dist/`.
+- **Na sua pasta de usuário**, `~/.screendocs/` guarda os seus padrões (`config.json`), os logins dos sites (`auth/`) e, quando não existe cofre de senhas do sistema, as chaves de API salvas (`keys.json`). Arquivos temporários, como o teste do codificador de vídeo, vão para a pasta temporária do sistema. É a mesma pasta que o pacote do npm usa, então um teste pelo código muda os seus padrões de verdade. Para testar sem mexer neles, aponte para outro lugar:
 
 ```bash
 SCREENDOCS_HOME=/tmp/sd-teste node bin/screendocs.mjs config

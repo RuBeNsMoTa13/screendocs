@@ -34,14 +34,15 @@ export async function openLogin(url) {
 /** Saves the session of a window opened by openLogin, closes it and returns the session file. */
 export async function saveLogin({ host, browser, context, page }) {
   const file = authFile(host);
-  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
   // indexedDB: Firebase and similar SDKs keep the session there, not in cookies
   await context.storageState({ path: file, indexedDB: true });
+  // Only your user can read it, like keys.json (no effect on Windows, where your user folder is already yours)
+  fs.chmodSync(file, 0o600);
   // The tab you ended on (logins sometimes open a new one) tells later runs whether the session still works
   const current = [...context.pages()].reverse().find((p) => hostOf(p.url()) === host) ?? page;
   saveSessionInfo(host, current.url());
   await browser.close();
-  ensureGitignored();
   return file;
 }
 
@@ -51,13 +52,4 @@ function hostOf(url) {
   } catch {
     return "";
   }
-}
-
-/** Adds .screendocs/ to the project's .gitignore so the session is never committed. */
-function ensureGitignored() {
-  if (!fs.existsSync(".git")) return;
-  const gi = fs.existsSync(".gitignore") ? fs.readFileSync(".gitignore", "utf8") : "";
-  if (/^\/?\.screendocs\/?$/m.test(gi)) return;
-  fs.appendFileSync(".gitignore", `${gi && !gi.endsWith("\n") ? "\n" : ""}.screendocs/\n`);
-  console.log(tr({ en: "Added .screendocs/ to .gitignore.", pt: "Adicionei .screendocs/ ao .gitignore.", es: "Agregué .screendocs/ al .gitignore." }));
 }

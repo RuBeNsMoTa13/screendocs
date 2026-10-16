@@ -63,11 +63,11 @@ Most people only need layers 2 and 4: save what you always want with `npx screen
 npx screendocs login https://your-site.com
 ```
 
-A browser window opens. Log in as usual (Google login works), go back to the terminal and press Enter. The session is saved in `.screendocs/auth/` and every later run on that site uses it, so the pages it finds after login are captured too.
+A browser window opens. Log in as usual (Google login works), go back to the terminal and press Enter. The session is saved in your user folder, next to your defaults, and every later run on that site uses it, so the pages it finds after login are captured too.
 
 Before each run it opens the page you were on when you logged in; if the site sends it elsewhere or asks for a password, it warns that the login has expired (the menu offers to log in again).
 
-The session lives in a `.screendocs` folder inside the folder where you ran the command, so run screendocs from the same folder next time. That folder gives access to your account: never send it to anyone or put it where others can open it.
+Because it is saved in your user folder, the login works from any folder where you run screendocs. The saved session gives access to your account, so only your user can read it. To log out of a site, run `npx screendocs login` again or log out on the site itself.
 
 ## What it does
 
@@ -287,15 +287,15 @@ A capture takes one to several minutes; with `video: false` it is faster.
 
 ## What it leaves on your computer
 
-In the folder where you run the command:
+In the folder where you run the command, only `screendocs-output/`: the captures and the reports, one folder per site. Everything else is in your user folder (`npx screendocs config path` shows where):
 
-| What | When |
+| What | |
 |---|---|
-| `screendocs-output/` | always: the captures and the reports, one folder per site |
-| `.screendocs/` | when you log in to a site: the saved session. Never share it. Recording videos can also leave it there, empty |
-| `.gitignore` | when you log in to a site: a line that keeps `.screendocs/` out of Git, in case that folder is a Git project |
+| Your defaults | what you saved with `npx screendocs config`, the language included |
+| Site logins | one file per site, saved by `npx screendocs login`. Never share them |
+| API keys | only if you chose to save one, and only when the system has no password store |
 
-In your user folder (`npx screendocs config path` shows where): your defaults and, when the system has no password store, the saved API keys. Deleting that folder erases both; the language is asked again on the next run.
+Deleting that folder erases all three: you log in to the sites again, and the language is asked again on the next run.
 
 A `screendocs.config.json` is only read, if you created one; screendocs never creates it.
 
