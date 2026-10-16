@@ -7,11 +7,12 @@ import { describeWith, checkAgent } from "./agents.mjs";
 import { writeReport, writeForAi } from "./report.mjs";
 import { locateCapture, listCaptures } from "./answers.mjs";
 import { chatFlow } from "./chat.mjs";
+import { saveBrief, docsSummary, DOC_TYPES } from "./docs.mjs";
 import { launch, ensureVideoEncoder } from "./browser.mjs";
 import { authFile, normalizeUrl } from "./paths.mjs";
 import { checkUrl, URL_TEXT, short } from "./checkurl.mjs";
 import { sessionStatus } from "./session.mjs";
-import { interactive, banner, chooseDescriber, uiLang, askKey } from "./interactive.mjs";
+import { interactive, banner, chooseDescriber, askBrief, uiLang, askKey } from "./interactive.mjs";
 import { PROVIDERS, providerById, savedKeys, removeKey, KEYS_FILE } from "./providers.mjs";
 import pc from "./theme.mjs";
 import * as p from "@clack/prompts";
@@ -59,7 +60,10 @@ Options
                           ollama/llama3.2-vision         Ollama on this computer, no key
                           lmstudio/<model>               LM Studio on this computer, no key
                         No key set: it asks once (hidden) and can save it (screendocs keys set).
-  --docs <dir>          project docs the AI reads when describing
+  --instructions <text> what else the descriptions should take into account,
+                        e.g. "focus on what the customer gains"
+  --docs <path>         the project's documentation for the AI to read: a folder or one file
+                        (${DOC_TYPES.join(", ")})
   --lang <code>         description language (default en)
   --config <file>       config file (default screendocs.config.json if present)
   --headed              show the browser while capturing
@@ -98,6 +102,7 @@ export async function run(argv) {
       "no-url-check": { type: "boolean" },
       describe: { type: "string" },
       docs: { type: "string" },
+      instructions: { type: "string" },
       model: { type: "string" },
       lang: { type: "string" },
       config: { type: "string" },
@@ -132,6 +137,9 @@ export async function run(argv) {
       p.intro(`${data.site} · ${new Date(data.createdAt).toLocaleString()}`);
       const how = await chooseDescriber();
       Object.assign(values, how.describe === "api" ? { model: how.model } : { describe: how.describe });
+      // What the capture already has comes filled in
+      const brief = await askBrief({ instructions: values.instructions ?? data.instructions, docs: values.docs ?? data.docs });
+      Object.assign(values, brief);
       open = true;
     }
     const config = loadConfig(data.url, { ...values, lang: values.lang ?? data.lang });
@@ -140,6 +148,7 @@ export async function run(argv) {
       fs.writeFileSync(path.join(root, "screens.json"), JSON.stringify(data, null, 2) + "\n");
     }
     await checkAgent(config.describe, config);
+    await brief(root, config);
     const r = await describe(config, root);
     console.log(`Report: ${r.report}`);
     if (open) openFile(r.report);
@@ -161,6 +170,7 @@ export async function run(argv) {
   const auth = authFile(start.host);
   const storageState = fs.existsSync(auth) ? auth : undefined;
   console.log(`screendocs ${start.href}${storageState ? " (using saved login)" : ""}`);
+  console.log(pc.dim(SAVING[uiLang()](path.resolve(config.out))));
 
   if (config.describe) await checkAgent(config.describe, config);
   const browser = await launch({ headless: !config.headed });
@@ -186,6 +196,7 @@ export async function run(argv) {
     // The report is rewritten after every page, so stopping halfway still leaves one
     const result = await capture(browser, config, pages, storageState, (partial) => writeReport(partial, config));
     let report = writeReport(result, config);
+    await brief(result.root, config);
     writeForAi(result.root);
     // Closed first: the chat step can take a while and does not need it
     await browser.close();
@@ -199,6 +210,17 @@ export async function run(argv) {
   } finally {
     await browser.close();
   }
+}
+
+const SAVING = {
+  pt: (dir) => `Salvando em ${dir} (mude com --out)`,
+  en: (dir) => `Saving to ${dir} (change it with --out)`,
+};
+
+/** Saves the extra request and the documentation text with the capture, and says what was read. */
+async function brief(root, config) {
+  const read = await saveBrief(root, { instructions: config.instructions ?? undefined, docs: config.docs ?? undefined });
+  if (read) console.log(docsSummary(read));
 }
 
 /** Describes a capture with the chosen AI and says how it went. */

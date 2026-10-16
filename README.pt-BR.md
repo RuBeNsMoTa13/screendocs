@@ -35,7 +35,7 @@ Com só o link (`npx screendocs meusite.com.br`), ele não pergunta nada e usa o
 | Dados pessoais | borra e-mails, telefones, CPF/CNPJ e campos preenchidos | `--mask`, `--no-auto-mask` |
 | Descrições | nenhuma IA: cada tela fica com o texto da página (título e primeiro parágrafo) | `--describe`, ou depois `npx screendocs describe <site>` |
 | Idioma das descrições | inglês | `--lang pt` |
-| Pasta | `screendocs-output/<site>/`, substituindo a captura anterior do mesmo site | `--out`, `--keep` |
+| Pasta | `screendocs-output/<site>/` dentro da pasta onde você roda o comando (o terminal mostra o caminho completo no começo), substituindo a captura anterior do mesmo site | `--out`, `--keep` |
 | Navegador | escondido | `--headed` |
 | Relatório | não abre sozinho; o terminal mostra o caminho do `index.html` | `--open` |
 
@@ -86,7 +86,8 @@ A pasta `.screendocs/` dá acesso à sua conta. Ela entra no `.gitignore` automa
 | `--no-auto-mask` | | não borra e-mails, telefones, documentos |
 | `--describe <como>` | | quem escreve as descrições: `claude`, `codex`, `antigravity` ou `chat` (veja abaixo) |
 | `--model <provedor/modelo>` | | descreve com uma API (ex.: `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; veja abaixo) |
-| `--docs <pasta>` | | documentação em Markdown que a IA lê para descrever |
+| `--instructions <texto>` | | o que mais as descrições devem levar em conta, ex.: `"fale do que o cliente ganha"` |
+| `--docs <caminho>` | | documentação do projeto para a IA ler: uma pasta ou um arquivo (veja [Pedido extra e documentação](#pedido-extra-e-documentação)) |
 | `--lang <código>` | `en` | idioma das descrições (`pt`, `es`...) |
 | `--config <arquivo>` | `screendocs.config.json` | arquivo de configuração (veja abaixo) |
 | `--headed` | | mostra o navegador |
@@ -118,6 +119,7 @@ Crie um `screendocs.config.json` na pasta onde roda o comando e deixe as opçõe
   "mask": [".nome-cliente", "#saldo"],
   "describe": "claude",
   "docs": "./docs",
+  "instructions": "fale do que o cliente ganha em cada tela",
   "lang": "pt"
 }
 ```
@@ -131,6 +133,7 @@ screendocs-output/seu-site.com/
   screens.json        todas as páginas e telas com título e descrição
   screens-original.json  o mesmo, como foi capturado
   prompt.md           como descrever as telas com um chat de IA por conta própria
+  docs-for-ai.md      o texto tirado da documentação (só com --docs)
   for-ai/part-1/...   as telas a descrever, com nomes únicos, e o texto para a IA
   desktop/<pagina>/01.jpg, 02.jpg ... full.jpg, video.webm
   mobile/<pagina>/...
@@ -183,6 +186,19 @@ Para outro servidor compatível com OpenAI, faça como as ferramentas da OpenAI:
 
 Escolha um modelo que leia imagens; se escolher um que não lê, o screendocs avisa. O menu pergunta o provedor e o modelo, usa a chave guardada quando houver e nunca mostra a chave.
 
+O screendocs manda até 10 telas por pedido, então a documentação vai poucas vezes e a conta sai menor. As telas que um pedido deixar de fora (ou todas, se o modelo só aceitar uma imagem por vez) são pedidas de novo uma a uma.
+
+### Pedido extra e documentação
+
+Todos os jeitos de descrever (chat, Claude Code, Codex, Antigravity, API e MCP) recebem o mesmo texto com as regras. Depois de escolher quem descreve, o menu faz duas perguntas opcionais, e Enter pula cada uma:
+
+- **"Quer que as descrições falem de algo específico?"**: o que você digitar vai junto para a IA, por exemplo *"fale do que o cliente ganha em cada tela"*. No comando: `--instructions "..."`.
+- **"Tem uma pasta ou arquivo com documentação do site para a IA ler?"**: um manual, um README, as notas do projeto. No comando: `--docs <caminho>`.
+
+A documentação pode ser uma pasta (com subpastas) ou um arquivo só, em `.md`, `.mdx`, `.txt`, `.html`, `.rst`, `.adoc`, `.json`, `.yaml`, `.csv`, PDF, Word (`.docx`), Excel (`.xlsx`), PowerPoint (`.pptx`) e OpenDocument (`.odt`, `.ods`, `.odp`). O screendocs não resume nada: tira o texto, guarda em `docs-for-ai.md` na pasta da captura e manda inteiro para a IA, até uns 150 KB (cerca de 40 páginas); o que passar disso é cortado. PDF escaneado (só imagem) não tem texto e fica de fora.
+
+Os dois ficam salvos com a captura, então um `npx screendocs describe <site>` depois usa os mesmos. Para trocar, passe outro valor; para tirar, passe vazio (`--instructions ""`, `--docs ""`).
+
 ## Usar por uma IA (MCP)
 
 `screendocs mcp` transforma o screendocs em ferramentas para clientes de IA que falam [MCP](https://modelcontextprotocol.io) (Claude Code, Cursor, VS Code, Claude Desktop, Codex...). Você pede com suas palavras, por exemplo *"documente as telas de meusite.com.br em português"*, e a IA captura o site, olha cada foto e escreve as descrições ela mesma, pelo seu plano, sem chave de API.
@@ -221,9 +237,9 @@ As capturas e os logins salvos ficam na pasta em que o cliente inicia o servidor
 
 | Ferramenta | O que faz |
 |---|---|
-| `capture_site` | Captura um site (mesmas opções da linha de comando: `pages`, `exclude`, `viewports`, `maxPages`, `depth`, `video`, `keep`, `mask`, `lang`...) |
+| `capture_site` | Captura um site (mesmas opções da linha de comando: `pages`, `exclude`, `viewports`, `maxPages`, `depth`, `video`, `keep`, `mask`, `lang`, `instructions`, `docs`...) |
 | `list_captures` | Os sites já capturados |
-| `get_capture` | As telas de uma captura, com o caminho de cada imagem e a descrição atual |
+| `get_capture` | As telas de uma captura, com o caminho de cada imagem, a descrição atual e o mesmo texto com as regras que os outros modos recebem (aceita `instructions` e `docs`) |
 | `view_screens` | Mostra até 10 fotos para a IA |
 | `save_descriptions` | Salva títulos e descrições no `screens.json` e no relatório, marcados com o nome da IA |
 | `login`, `save_login` | Abre uma janela do navegador para você fazer login e depois salva a sessão para as próximas capturas |

@@ -6,7 +6,8 @@ import { z } from "zod";
 import { loadConfig } from "./config.mjs";
 import { discover } from "./discover.mjs";
 import { capture } from "./capture.mjs";
-import { writeReport, writeForAi, primaryScreens, aiName, langName } from "./report.mjs";
+import { writeReport, writeForAi, primaryScreens, aiName, task } from "./report.mjs";
+import { saveBrief, docsText, docsSummary, DOC_TYPES } from "./docs.mjs";
 import { findCapture, applyItems } from "./answers.mjs";
 import { launch, ensureVideoEncoder } from "./browser.mjs";
 import { openLogin, saveLogin } from "./login.mjs";
@@ -24,7 +25,7 @@ import { sessionStatus } from "./session.mjs";
 
 const INSTRUCTIONS = `screendocs captures every screen of a website with the Chrome or Edge installed on this computer: one screenshot per section of each page, on desktop and mobile, plus a full-page image and a scrolling video, with emails, phones and form fields blurred. It writes a report (index.html) and screens.json.
 
-To document a site: call capture_site, then get_capture to list the screens, look at them with view_screens (or read the image files directly if you can), and save a title and description for each screen with save_descriptions. Only the first viewport (usually desktop) is described; the other viewports get the same texts automatically.
+To document a site: call capture_site, then get_capture to list the screens, look at them with view_screens (or read the image files directly if you can), and save a title and description for each screen with save_descriptions. Follow the "instructions" that get_capture returns: they are the same rules every way of describing uses. If the person asks the descriptions to focus on something, or gives their project's documentation, pass it as instructions or docs to capture_site or get_capture. Only the first viewport (usually desktop) is described; the other viewports get the same texts automatically.
 
 For pages behind a login: call login, ask the person to log in in the window that opens, then call save_login once they say they are done. Later captures of that site reuse the session.`;
 
@@ -59,6 +60,8 @@ export async function startMcp({ dir } = {}) {
         mask: z.array(z.string()).optional().describe("Extra CSS selectors to blur"),
         autoMask: z.boolean().optional().describe("Blur emails, phones, CPF/CNPJ and form fields (default true)"),
         lang: z.string().optional().describe("Language of the descriptions, e.g. en, pt (default en)"),
+        instructions: z.string().optional().describe("What else the descriptions should take into account, in the person's words (e.g. 'focus on what the customer gains'). Saved with the capture; an empty text removes it"),
+        docs: z.string().optional().describe(`The project's documentation for the descriptions: the path of a folder or of one file (${DOC_TYPES.join(", ")}). Its text is saved with the capture; an empty text removes it`),
         out: z.string().optional().describe("Output folder (default screendocs-output)"),
       },
     },
@@ -112,12 +115,16 @@ export async function startMcp({ dir } = {}) {
       inputSchema: {
         site: z.string().describe("The site (e.g. mysite.com), its URL or the capture folder"),
         onlyMissing: z.boolean().optional().describe("Only the screens no AI has described yet"),
+        instructions: z.string().optional().describe("What else the descriptions should take into account, in the person's words (e.g. 'focus on what the customer gains'). Saved with the capture; an empty text removes it"),
+        docs: z.string().optional().describe(`The project's documentation for the descriptions: the path of a folder or of one file (${DOC_TYPES.join(", ")}). Its text is saved with the capture; an empty text removes it`),
         out: z.string().optional().describe("Output folder (default screendocs-output)"),
       },
     },
-    tool(async ({ site, onlyMissing, out }) => {
+    tool(async ({ site, onlyMissing, instructions, docs, out }) => {
       const root = findCapture(site, out);
-      return captureInfo(root, readData(root), { onlyMissing });
+      const read = await saveBrief(root, { instructions, docs });
+      if (read) writeForAi(root);
+      return { ...captureInfo(root, readData(root), { onlyMissing }), ...(read ? { notes: [docsSummary(read)] } : {}) };
     }),
   );
 
@@ -277,6 +284,8 @@ async function captureSite(args, extra) {
     if (config.video) await ensureVideoEncoder(browser);
     const result = await capture(browser, config, pages, storageState, (partial) => writeReport(partial, config));
     writeReport(result, config);
+    const read = await saveBrief(result.root, { instructions: args.instructions, docs: args.docs });
+    if (read) notes.push(docsSummary(read));
     writeForAi(result.root);
     return { ...captureInfo(result.root, readData(result.root)), ...(notes.length ? { notes } : {}) };
   } finally {
@@ -330,7 +339,8 @@ function captureInfo(root, data, { onlyMissing = false } = {}) {
       description: s.description,
       describedBy: s.describedBy,
     })),
-    next: `Look at each screen (view_screens, or read its path) and save a title and description in ${langName(data.lang)} with save_descriptions.`,
+    // The same text the other ways of describing get, with the extra request and the documentation
+    instructions: task(data, toDescribe, { what: "screen (look at it with view_screens, or read its path)", docs: { text: docsText(root) }, reply: "tool" }),
   };
 }
 
