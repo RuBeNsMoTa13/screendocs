@@ -12,7 +12,7 @@ Funciona com qualquer site, em qualquer stack. Nada é instalado no projeto docu
 npx screendocs
 ```
 
-Sem argumentos, ele abre um menu interativo que pergunta o site e as opções (login, computador/celular, vídeo, quais páginas) e mostra no fim o comando equivalente. `Esc` volta para a pergunta anterior e `Ctrl+C` sai. Ou passe tudo de uma vez:
+Sem argumentos, ele abre um menu interativo que pergunta o site e as opções (login, computador/celular, vídeo, quais páginas) e mostra no fim o comando equivalente. Embaixo de cada pergunta, uma linha mostra o que cada tecla faz: setas para escolher, `Enter` confirma, `Esc` volta para a pergunta anterior e `Ctrl+C` sai. Ou passe tudo de uma vez:
 
 ```bash
 npx screendocs https://seu-site.com
@@ -140,6 +140,8 @@ Escolha quem escreve as descrições no menu ("Quem escreve as descrições das 
 ```bash
 npx screendocs describe seu-site.com.br
 ```
+
+Sem o site (ou com um site que não tem captura), ele lista as capturas que existem para você escolher.
 
 Os títulos e descrições vão para o `screens.json` e o `index.html`, e as telas do celular reaproveitam a descrição da mesma seção no computador. O relatório marca em cada tela quem a descreveu (por exemplo "Claude Code" ou "AI chat"), ou "page text" quando nenhuma IA descreveu, e o terminal lista as telas que ficaram de fora. Use `--lang pt` (ou o menu) para descrições em português.
 

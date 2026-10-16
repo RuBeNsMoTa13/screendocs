@@ -4,9 +4,39 @@ import { writeData, aiName } from "./report.mjs";
 
 /** The capture folder of a site ("mysite.com", its URL or the folder itself). */
 export function findCapture(target, out = "screendocs-output") {
-  const root = [target, path.join(out, target), path.join(out, hostOf(target))].find((d) => d && fs.existsSync(path.join(d, "screens.json")));
-  if (!root) throw new Error(`no capture found for "${target}". Capture it first (npx screendocs ${target}) or give the capture folder.`);
-  return path.resolve(root);
+  const root = locateCapture(target, out);
+  if (root) return root;
+  const all = listCaptures(out).map((c) => c.name);
+  throw new Error(
+    `no capture found for "${target}". ` +
+      (all.length ? `Captures there are: ${all.join(", ")}.` : `Capture it first (npx screendocs ${target}) or give the capture folder.`),
+  );
+}
+
+/** Like findCapture, but null when there is none. */
+export function locateCapture(target, out = "screendocs-output") {
+  const root = target && [target, path.join(out, target), path.join(out, hostOf(target))].find((d) => d && fs.existsSync(path.join(d, "screens.json")));
+  return root ? path.resolve(root) : null;
+}
+
+/** Every capture in the output folder, newest first: { root, site, createdAt, screens }. */
+export function listCaptures(out = "screendocs-output") {
+  if (!fs.existsSync(out)) return [];
+  return fs
+    .readdirSync(out, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && fs.existsSync(path.join(out, d.name, "screens.json")))
+    .map((d) => {
+      const root = path.resolve(out, d.name);
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(root, "screens.json"), "utf8"));
+        const screens = data.pages?.reduce((n, pg) => n + (pg.viewports?.[data.viewports?.[0]]?.screens?.length ?? 0), 0) ?? 0;
+        return { root, name: d.name, site: data.site ?? d.name, createdAt: data.createdAt, screens };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 }
 
 /** The JSON array in an AI's answer, even with text or a code block around it. */

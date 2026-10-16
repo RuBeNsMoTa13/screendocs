@@ -12,7 +12,7 @@ Works with any site, in any stack. Nothing is installed in the project being doc
 npx screendocs
 ```
 
-With no arguments it opens an interactive menu that asks for the site and the options (login, desktop/mobile, video, which pages) and shows the equivalent command at the end. `Esc` goes back to the previous question and `Ctrl+C` quits. Or pass everything at once:
+With no arguments it opens an interactive menu that asks for the site and the options (login, desktop/mobile, video, which pages) and shows the equivalent command at the end. Under each question, a line shows what each key does: arrows to choose, `Enter` confirms, `Esc` goes back to the previous question and `Ctrl+C` quits. Or pass everything at once:
 
 ```bash
 npx screendocs https://your-site.com
@@ -140,6 +140,8 @@ Choose who writes the descriptions in the menu ("Who writes the descriptions of 
 ```bash
 npx screendocs describe your-site.com
 ```
+
+Without the site (or with a site that has no capture), it lists the captures there are so you can pick one.
 
 The titles and descriptions go into `screens.json` and `index.html`, and the mobile screens reuse the description of the same section on desktop. The report marks each screen with who described it (for example "Claude Code" or "AI chat"), or "page text" when no AI did, and the terminal lists the screens left out. Use `--lang pt` (or the menu) for another language.
 

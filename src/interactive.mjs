@@ -9,6 +9,7 @@ import { launch } from "./browser.mjs";
 import { sessionStatus } from "./session.mjs";
 import { AGENTS, PROVIDERS, installedAgents, installCommand, installAgent } from "./agents.mjs";
 import { checkUrl, EXAMPLES, URL_TEXT, short } from "./checkurl.mjs";
+import { setBack } from "./hud.mjs";
 
 const BIG = String.raw`
 ███████╗ ██████╗██████╗ ███████╗███████╗███╗   ██╗██████╗  ██████╗  ██████╗███████╗
@@ -82,7 +83,6 @@ const T = {
     start: "Start the capture?",
     command: "Same thing next time, without the questions",
     cancel: "Cancelled.",
-    keys: "Esc goes back to the previous question · Ctrl+C quits",
     yes: "Yes", no: "No", none: "none",
     number: "Type a number",
   },
@@ -142,7 +142,6 @@ const T = {
     start: "Começar a captura?",
     command: "Para repetir sem as perguntas",
     cancel: "Cancelado.",
-    keys: "Esc volta para a pergunta anterior · Ctrl+C sai",
     yes: "Sim", no: "Não", none: "nenhuma",
     number: "Digite um número",
   },
@@ -181,6 +180,7 @@ const back = (value) => (e) => {
  * capture menu), where it goes back to the previous question instead.
  */
 function ask(t, { back = false } = {}) {
+  setBack(back);
   if (back && lastKey === undefined) {
     // Clack reports Esc and Ctrl+C the same way, so the key itself is watched here
     readline.emitKeypressEvents(process.stdin);
@@ -210,7 +210,6 @@ export async function interactive() {
   const yesNo = (o) => p.confirm({ active: t.yes, inactive: t.no, ...o });
   banner(t);
   p.intro(pc.bold(bgCrimson(pc.white(" ScreenDocs "))));
-  p.log.message(pc.dim(t.keys));
 
   const s = { outDir: "screendocs-output", maxPages: "20", depth: "3" };
   const isNum = (v) => (/^\d+$/.test((v ?? "").trim()) ? undefined : t.number);

@@ -5,7 +5,7 @@ import { discover } from "./discover.mjs";
 import { capture } from "./capture.mjs";
 import { describeWith, checkAgent } from "./agents.mjs";
 import { writeReport, writeForAi } from "./report.mjs";
-import { findCapture } from "./answers.mjs";
+import { locateCapture, listCaptures } from "./answers.mjs";
 import { chatFlow } from "./chat.mjs";
 import { launch, ensureVideoEncoder } from "./browser.mjs";
 import { authFile, normalizeUrl } from "./paths.mjs";
@@ -24,7 +24,7 @@ Usage
   npx screendocs                       interactive menu
   npx screendocs <url> [options]       capture the site
   npx screendocs login <url>           log in once; later runs reuse the session
-  npx screendocs describe <site>       describe the screens of a capture you already made
+  npx screendocs describe [<site>]     describe the screens of a capture you already made (no site: pick from a list)
   npx screendocs mcp [--dir <folder>]  MCP server for AI clients (Claude Code, Cursor...); see the README
 
   <url> examples: mysite.com, www.mysite.com.br, app.mysite.io/login, http://localhost:3000
@@ -117,8 +117,7 @@ export async function run(argv) {
   if (positionals[0] === "apply") throw new Error("apply was replaced by: screendocs describe <site> (choose \"A chat in your browser\")");
 
   if (positionals[0] === "describe") {
-    if (!positionals[1]) throw new Error("use: screendocs describe <site>");
-    const root = findCapture(positionals[1], values.out);
+    const root = locateCapture(positionals[1], values.out) ?? (await pickCapture(positionals[1], values.out));
     const data = JSON.parse(fs.readFileSync(path.join(root, "screens.json"), "utf8"));
     let open = values.open;
     if (!values.describe) {
@@ -226,4 +225,36 @@ async function mustOpen(url) {
     return;
   }
   throw new Error(URL_TEXT[uiLang()].cliFail(short(url), r.reason, r.suggestions.map((s) => s.replace(/^https:\/\//, "").replace(/\/$/, ""))));
+}
+
+/**
+ * "describe" with a site that has no capture (or none at all): lists the captures there are.
+ * In a terminal the person picks one; otherwise the list goes in the error.
+ */
+async function pickCapture(target, out = "screendocs-output") {
+  const all = listCaptures(out);
+  const t = uiLang() === "pt"
+    ? {
+        none: (x) => (x ? `Não achei captura de "${x}".` : "Qual captura descrever?"),
+        empty: `Ainda não há capturas em ${out}. Capture um site primeiro: npx screendocs <site>`,
+        pick: "Qual captura descrever?",
+        list: "Capturas que existem:",
+        screens: (n) => `${n} tela(s)`,
+      }
+    : {
+        none: (x) => (x ? `No capture found for "${x}".` : "Which capture should be described?"),
+        empty: `There are no captures in ${out} yet. Capture a site first: npx screendocs <site>`,
+        pick: "Which capture should be described?",
+        list: "Captures there are:",
+        screens: (n) => `${n} screen(s)`,
+      };
+  if (!all.length) throw new Error(`${target ? t.none(target) + " " : ""}${t.empty}`);
+  const label = (c) => `${c.name}  ${pc.dim(`${new Date(c.createdAt).toLocaleString()} · ${t.screens(c.screens)}`)}`;
+  if (!process.stdin.isTTY) {
+    throw new Error(`${t.none(target)}\n${t.list}\n${all.map((c) => `  ${c.name}  (${new Date(c.createdAt).toLocaleString()})`).join("\n")}`);
+  }
+  if (target) p.log.warn(t.none(target));
+  const root = await p.select({ message: t.pick, options: all.map((c) => ({ value: c.root, label: label(c) })) });
+  if (p.isCancel(root)) process.exit(0);
+  return root;
 }
