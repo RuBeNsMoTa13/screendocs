@@ -13,13 +13,47 @@ export function findCapture(target, out = "screendocs-output") {
 export function parseAnswer(text) {
   const fenced = [...String(text).matchAll(/```(?:json)?\s*([\s\S]*?)```/g)].map((m) => m[1]);
   for (const t of [...fenced, String(text)]) {
-    try {
-      const items = JSON.parse(t.slice(t.indexOf("["), t.lastIndexOf("]") + 1));
-      // Skip the example of the text for the AI, when that text was pasted along with the answer
-      if (Array.isArray(items) && !items.every((it) => /^2 to 6 words$/i.test(String(it?.title ?? "").trim()))) return items;
-    } catch {}
+    const slice = t.slice(t.indexOf("["), t.lastIndexOf("]") + 1);
+    for (const json of [slice, joinBrokenLines(slice)]) {
+      try {
+        const items = JSON.parse(json);
+        // Skip the example of the text for the AI, when that text was pasted along with the answer
+        if (Array.isArray(items) && !items.every((it) => /^2 to 6 words$/i.test(String(it?.title ?? "").trim()))) return items.map(clean);
+      } catch {}
+    }
   }
   return null;
+}
+
+/**
+ * Chats sometimes break a long text in the middle ("a lis" / "ta de programas"), and a line
+ * break inside quotes is not valid JSON. Inside quotes, a break between two letters with a
+ * lowercase one after it is a cut word and is joined; any other break becomes a space.
+ */
+function joinBrokenLines(json) {
+  let out = "";
+  let inString = false;
+  for (let i = 0; i < json.length; i++) {
+    const c = json[i];
+    if (c === '"' && json[i - 1] !== "\\") inString = !inString;
+    if (inString && (c === "\n" || c === "\r" || c === "\t")) {
+      let j = i;
+      while (/\s/.test(json[j + 1] ?? "")) j++;
+      const cut = /\p{L}/u.test(out.at(-1) ?? "") && /\p{Ll}/u.test(json[j + 1] ?? "");
+      out = cut ? out : out.replace(/ *$/, " ");
+      i = j;
+      continue;
+    }
+    out += c;
+  }
+  return out;
+}
+
+/** Drops the source marks some chats add to the text, like [cite: 9] or [cite_start]. */
+function clean(it) {
+  if (!it || typeof it !== "object") return it;
+  const strip = (v) => (typeof v === "string" ? v.replace(/\s*\[cite(?:_start|_end)?(?::[^\]]*)?\]/g, "").trim() : v);
+  return { ...it, title: strip(it.title), description: strip(it.description) };
 }
 
 /**
