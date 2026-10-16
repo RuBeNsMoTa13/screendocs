@@ -145,6 +145,7 @@ export async function describeWith(agent, root, config) {
 
   const docsDir = config.docs ? path.resolve(config.docs) : "";
   console.log(`\nDescribing ${screens.length} screen(s) with ${AGENTS[agent].name}...`);
+  fs.rmSync(path.join(root, LOG), { force: true });
 
   const items = [];
   for (let i = 0; i < screens.length; i += BATCH) {
@@ -155,7 +156,7 @@ export async function describeWith(agent, root, config) {
     try {
       const answer = parseAnswer(await run(agent, root, file, batch, docsDir));
       if (answer) items.push(...answer);
-      console.log(answer ? "ok" : "no JSON in the answer, skipped");
+      console.log(answer ? "ok" : `no JSON in the answer, skipped (what it answered is in ${LOG})`);
     } catch (err) {
       console.log(`failed: ${err.message}`);
     } finally {
@@ -163,6 +164,25 @@ export async function describeWith(agent, root, config) {
     }
   }
   return applyItems(root, items, AGENTS[agent].name);
+}
+
+/** The last answer of an AI tool, kept in the capture folder to see what went wrong. */
+export const LOG = "screendocs-agent-log.txt";
+
+/**
+ * Antigravity CLI with --output-format json answers { status, response, ... }. An error
+ * (not logged in, no quota) comes as a status, which is shown instead of "no JSON".
+ */
+function envelope(out, err) {
+  try {
+    const e = JSON.parse(out.trim());
+    if (typeof e.response === "string" && e.response.trim()) return e.response;
+    if (e.status && !/^(ok|success|completed?)$/i.test(String(e.status))) throw new Error(`Antigravity CLI: ${e.error?.message ?? e.error ?? e.status}`);
+  } catch (x) {
+    if (x.message?.startsWith("Antigravity CLI:")) throw x;
+  }
+  if (!out.trim() && err.trim()) throw new Error(err.trim().split("\n").slice(-1)[0]);
+  return out;
 }
 
 function run(agent, root, file, batch, docsDir) {
@@ -179,7 +199,7 @@ function run(agent, root, file, batch, docsDir) {
       ? ["-p", q(ask), "--allowedTools", "Read", ...(docsDir ? ["--add-dir", q(docsDir)] : [])]
       : agent === "codex"
         ? ["exec", "--skip-git-repo-check", "--ephemeral", "-i", q(batch.map((s) => s.file).join(",")), "-o", q(outFile), q(ask)]
-        : [...(docsDir ? ["--add-dir", q(docsDir)] : []), "--print-timeout", "15m", "-p", q(ask)];
+        : [...(docsDir ? ["--add-dir", q(docsDir)] : []), "--print-timeout", "15m", "--output-format", "json", "-p", q(ask)];
 
   return new Promise((resolve, reject) => {
     const child = spawn(...cmd(AGENTS[agent].bin, args, { cwd: root, stdio: ["ignore", "pipe", "pipe"] }));
@@ -192,9 +212,15 @@ function run(agent, root, file, batch, docsDir) {
     child.on("close", (code) => {
       clearTimeout(timer);
       // Codex (and Antigravity, when asked) also write the answer to a file, which is cleaner than stdout
-      if (fs.existsSync(outFile)) {
-        out = fs.readFileSync(outFile, "utf8");
-        fs.rmSync(outFile, { force: true });
+      // What the tool said, to see why an answer had no descriptions
+      fs.appendFileSync(path.join(root, LOG), `\n$ ${AGENTS[agent].bin} ${args.join(" ")}\nexit code: ${code}\n\n--- output ---\n${out}\n\n--- errors ---\n${err}\n`);
+      try {
+        if (fs.existsSync(outFile)) {
+          out = fs.readFileSync(outFile, "utf8");
+          fs.rmSync(outFile, { force: true });
+        } else if (agent === "antigravity") out = envelope(out, err);
+      } catch (e) {
+        return reject(e);
       }
       if (code === 0) resolve(out);
       else reject(new Error((err || out).trim().split("\n").slice(-1)[0] || `exit code ${code}`));
