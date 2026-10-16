@@ -30,13 +30,14 @@ export function writeReport(result, config) {
 
 /**
  * screens.json, index.html and prompt.md from the report data. Also rewritten after describing.
- * The first time, before any AI has written anything, it also saves index-original.html and
- * screens-original.json: the report as captured, never rewritten afterwards.
+ * Until an AI writes anything, it also saves index-original.html and screens-original.json:
+ * the report as captured (kept up to date while the capture adds pages), frozen from the
+ * first AI description on.
  */
 export function writeData(root, data, lang = data.lang ?? "en") {
   data.lang = lang;
   const original = path.join(root, ORIGINAL);
-  if (!fs.existsSync(original) && !anyDescribed(data)) {
+  if (!anyDescribed(data)) {
     fs.writeFileSync(path.join(root, "screens-original.json"), JSON.stringify(data, null, 2) + "\n");
     fs.writeFileSync(original, html(data, { original: true }));
   }
