@@ -68,7 +68,13 @@ Every text the user sees is written in English, Portuguese and Spanish next to t
 
 ## The visual manual
 
-`docs/manual.html` is the visual manual, one page in English, Portuguese and Spanish. The images in the READMEs are pieces of it, in `docs/images/<language>/`. After changing the manual, run `npm run manual:images` to take them again (it uses your Chrome or Edge). Neither goes into the npm package.
+`docs/manual.html` is the visual manual, one page in English, Portuguese and Spanish. The images in the READMEs are pieces of it, in `docs/images/<language>/`. Neither goes into the npm package.
+
+The manual does not follow the code by itself: its terminal screens are drawn in the page, with the texts copied from the CLI. So when a change touches something the manual shows (a menu question, an option, a message in the terminal):
+
+1. Edit the same text in `docs/manual.html`, in the three languages.
+2. Run `npm run manual:images`. It opens the manual in your Chrome or Edge, takes the 11 pieces in each language and saves them, already compressed, over the old images.
+3. Look at the new images and commit them with the change.
 
 ## Sending a change
 

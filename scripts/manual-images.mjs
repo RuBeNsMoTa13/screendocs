@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /**
  * Takes the README images from docs/manual.html: one PNG per part of the manual, in each
- * language, in docs/images/<lang>/. Run after changing the manual: npm run manual:images
+ * language, in docs/images/<lang>/, reduced to 128 colors so the repository stays small.
+ * Run after changing the manual: npm run manual:images
  */
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import UPNG from "upng-js";
 import { launch } from "../src/browser.mjs";
 
 const docs = fileURLToPath(new URL("../docs/", import.meta.url));
@@ -41,7 +43,10 @@ try {
         const left = section.getBoundingClientRect().left;
         return { x: Math.max(0, left - 24), y: top - 24, width: section.offsetWidth + 48, height: bottom - top + 36 };
       }, part);
-      await page.screenshot({ path: `${docs}images/${lang}/${name}.png`, clip, fullPage: true });
+      const shot = await page.screenshot({ clip, fullPage: true });
+      const img = UPNG.decode(shot);
+      const small = UPNG.encode(UPNG.toRGBA8(img), img.width, img.height, 128);
+      fs.writeFileSync(`${docs}images/${lang}/${name}.png`, Buffer.from(small));
     }
     await page.close();
     console.log(`docs/images/${lang}/`);

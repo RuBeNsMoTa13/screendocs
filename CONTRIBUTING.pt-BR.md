@@ -68,7 +68,13 @@ Todo texto que o usuário vê está escrito em inglês, português e espanhol, j
 
 ## O manual visual
 
-O `docs/manual.html` é o manual visual, uma página em inglês, português e espanhol. As imagens dos READMEs são pedaços dele, em `docs/images/<idioma>/`. Depois de mudar o manual, rode `npm run manual:images` para tirar as imagens de novo (usa o seu Chrome ou Edge). Nenhum dos dois entra no pacote do npm.
+O `docs/manual.html` é o manual visual, uma página em inglês, português e espanhol. As imagens dos READMEs são pedaços dele, em `docs/images/<idioma>/`. Nenhum dos dois entra no pacote do npm.
+
+O manual não acompanha o código sozinho: as telas de terminal dele são desenhadas na página, com os textos copiados do CLI. Então, quando uma mudança mexe em algo que o manual mostra (uma pergunta do menu, uma opção, uma mensagem no terminal):
+
+1. Mude o mesmo texto no `docs/manual.html`, nos três idiomas.
+2. Rode `npm run manual:images`. Ele abre o manual no seu Chrome ou Edge, tira os 11 pedaços em cada idioma e salva, já comprimidos, por cima das imagens antigas.
+3. Confira as imagens novas e faça o commit junto com a mudança.
 
 ## Mandar uma mudança
 
