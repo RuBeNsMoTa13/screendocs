@@ -202,7 +202,11 @@ npx screendocs seu-site.com.br --model gemini/gemini-2.5-flash
 
 Para OpenAI, Gemini e Anthropic o prefixo pode ficar de fora (`--model gemini-2.5-flash` também funciona), porque o nome já diz o provedor.
 
-**A chave** é procurada nesta ordem: a variável do provedor acima (se você já usa outra ferramenta de IA, provavelmente ela já existe), `SCREENDOCS_API_KEY` e a chave guardada com `npx screendocs keys set <provedor>`. Se não achar nenhuma, o screendocs pede a chave sem mostrar o que você digita e oferece guardar em `~/.screendocs/keys.json`, na sua pasta de usuário, fora de qualquer projeto, então ela nunca vai para o Git. `npx screendocs keys list` mostra quais provedores têm chave guardada e `keys remove <provedor>` apaga uma.
+**A chave** é procurada nesta ordem: a variável do provedor acima (se você já usa outra ferramenta de IA, provavelmente ela já existe), `SCREENDOCS_API_KEY` e a chave guardada com `npx screendocs keys set <provedor>`. Se não achar nenhuma, o screendocs pede a chave sem mostrar o que você digita e pergunta se deve guardá-la (já vem marcado Não, então por padrão ela vale só para aquela execução).
+
+A chave é testada com o provedor antes de a captura começar. Se você digitar errado, ele pede de novo na hora. Se uma chave guardada ou a de uma variável for recusada (expirou ou foi trocada), o screendocs diz qual foi e, num terminal, pede a nova e oferece trocar a guardada.
+
+Uma chave guardada vai para o lugar seguro do próprio sistema: o Keychain no macOS, criptografada com a sua conta do Windows no Windows (só você, neste computador, consegue ler), ou o chaveiro do Linux (`secret-tool`). Quando nenhum existe, ela fica em `~/.screendocs/keys.json`, que só o seu usuário pode ler. Nos dois casos ela fica na sua pasta de usuário, fora de qualquer projeto, então nunca vai para o Git. `npx screendocs keys list` mostra quais provedores têm chave guardada e onde, e `keys remove <provedor>` apaga uma. Uma chave guardada por uma versão anterior continua no arquivo até você guardá-la de novo com `keys set`.
 
 **Modelos locais** (Ollama, LM Studio) não precisam de chave. Antes de capturar, o screendocs confere se o servidor responde e, no Ollama, se o modelo foi baixado (se não foi, mostra o comando `ollama pull`). Se o Ollama roda em outro endereço, defina `OLLAMA_HOST`. O modelo precisa ler imagens (ex.: `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) e precisa de um computador com memória suficiente.
 

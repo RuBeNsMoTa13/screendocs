@@ -9,7 +9,8 @@ import { authFile } from "./paths.mjs";
 import { launch } from "./browser.mjs";
 import { sessionStatus } from "./session.mjs";
 import { AGENTS, installedAgents, installCommand, installAgent } from "./agents.mjs";
-import { PROVIDERS, providerById, resolveModel, findKey, saveKey, checkLocal, KEYS_FILE } from "./providers.mjs";
+import { PROVIDERS, providerById, resolveModel, findKey, saveKey, checkLocal, checkKey, KEYS_FILE } from "./providers.mjs";
+import { storeOf } from "./secrets.mjs";
 import { checkUrl, EXAMPLES, URL_TEXT, short } from "./checkurl.mjs";
 import { setBack } from "./hud.mjs";
 import { DOC_TYPES } from "./docs.mjs";
@@ -79,6 +80,10 @@ const T = {
     keyFor: (n) => `${n} API key (it does not show while you type)`,
     keySave: (f) => `Save it for next time? (in ${f}, outside the project)`,
     keySaved: (f) => `Key saved in ${f}.`,
+    keyReplace: "Replace the saved key with this one?",
+    keyRefused: (n) => `${n} refused this key. Check it and type it again.`,
+    keySafe: (n) => `It goes to the ${n}, not in plain text.`,
+    stores: { keychain: "system keychain", encrypted: "file, encrypted with your Windows account", file: "file, readable only by you" },
     keyFound: (n, from) => `Using the ${n} key from ${from}.`,
     checkingLocal: (n) => `Checking ${n}...`,
     localOk: (n) => `${n} answered.`,
@@ -152,6 +157,10 @@ const T = {
     keyFor: (n) => `Chave da API do ${n} (não aparece enquanto você digita)`,
     keySave: (f) => `Guardar para as próximas vezes? (em ${f}, fora do projeto)`,
     keySaved: (f) => `Chave guardada em ${f}.`,
+    keyReplace: "Trocar a chave guardada por esta?",
+    keyRefused: (n) => `O ${n} recusou esta chave. Confira e digite de novo.`,
+    keySafe: (n) => `Ela vai para o ${n}, não em texto puro.`,
+    stores: { keychain: "cofre de senhas do sistema", encrypted: "arquivo, criptografado com a sua conta do Windows", file: "arquivo, que só você pode ler" },
     keyFound: (n, from) => `Usando a chave do ${n} de ${from}.`,
     checkingLocal: (n) => `Conferindo o ${n}...`,
     localOk: (n) => `${n} respondeu.`,
@@ -225,6 +234,10 @@ const T = {
     keyFor: (n) => `Clave de la API de ${n} (no se ve mientras escribes)`,
     keySave: (f) => `¿Guardarla para la próxima vez? (en ${f}, fuera del proyecto)`,
     keySaved: (f) => `Clave guardada en ${f}.`,
+    keyReplace: "¿Reemplazar la clave guardada por esta?",
+    keyRefused: (n) => `${n} rechazó esta clave. Revísala y escríbela de nuevo.`,
+    keySafe: (n) => `Va al ${n}, no en texto plano.`,
+    stores: { keychain: "llavero del sistema", encrypted: "archivo, cifrado con tu cuenta de Windows", file: "archivo, que solo tú puedes leer" },
     keyFound: (n, from) => `Usando la clave de ${n} de ${from}.`,
     checkingLocal: (n) => `Revisando ${n}...`,
     localOk: (n) => `${n} respondió.`,
@@ -606,7 +619,9 @@ async function askApi(t, a) {
   } else if (provider) {
     const found = findKey(provider);
     if (found) p.log.info(t.keyFound(provider.name, found.from === KEYS_FILE ? shortHome(KEYS_FILE) : found.from));
-    else process.env.SCREENDOCS_API_KEY = await askKey(provider, { t, a });
+    else {
+      process.env.SCREENDOCS_API_KEY = await askKey(provider, { t, a });
+    }
   } else {
     const key = (await a(p.password({ message: t.apiKey }))) ?? "";
     if (key.trim()) process.env.SCREENDOCS_API_KEY = key.trim();
@@ -620,16 +635,24 @@ const shortHome = (f) => f.replace(os.homedir(), "~");
  * Asks for a provider's key without showing it and offers to save it in the user's folder.
  * Also used by the command line when no key is found and there is a terminal.
  */
-export async function askKey(provider, { t = T[uiLang()], a } = {}) {
+export async function askKey(provider, { t = T[uiLang()], a, replace = false, save = false, check = true } = {}) {
   const run = a ?? (async (q) => {
     const v = await q;
     if (p.isCancel(v)) throw new Error("cancelled");
     return v;
   });
-  const key = String(await run(p.password({ message: t.keyFor(provider.name), validate: (v) => ((v ?? "").trim() ? undefined : t.keyFor(provider.name)) }))).trim();
-  if (await run(p.confirm({ message: t.keySave(shortHome(KEYS_FILE)), active: t.yes, inactive: t.no, initialValue: true }))) {
-    saveKey(provider.id, key);
-    p.log.success(t.keySaved(shortHome(KEYS_FILE)));
+  let key;
+  for (;;) {
+    key = String(await run(p.password({ message: t.keyFor(provider.name), validate: (v) => ((v ?? "").trim() ? undefined : t.keyFor(provider.name)) }))).trim();
+    // Tried before it is used or saved: a typo is fixed here, not after the capture.
+    // A key that cannot be tried (no network) goes on as typed
+    if (!check || (await checkKey(provider, provider.url, key)) !== "refused") break;
+    p.log.warn(t.keyRefused(provider.name));
+  }
+  // Saved only when the person wants; a wrong saved key is the one case where replacing is the default
+  if (save || await run(p.confirm({ message: replace ? t.keyReplace : t.keySave(shortHome(KEYS_FILE)), active: t.yes, inactive: t.no, initialValue: replace }))) {
+    const where = storeOf(saveKey(provider.id, key));
+    p.log.success(`${t.keySaved(shortHome(KEYS_FILE))} ${where === "file" ? `(${t.stores.file})` : t.keySafe(t.stores[where])}`);
   }
   return key;
 }

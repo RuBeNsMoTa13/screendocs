@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { USER_DIR } from "./userconfig.mjs";
+import { protect, reveal, forget } from "./secrets.mjs";
 
 /**
  * Describing with an API, the way tools like llm and aider do it: the person names only the
@@ -80,15 +81,26 @@ export function savedKeys() {
   }
 }
 
+/** Saves a key in the system's keychain (or encrypted on Windows) when it can; see secrets.mjs. Returns the keys.json entry. */
 export function saveKey(providerId, key) {
-  const keys = { ...savedKeys(), [providerId]: key };
+  const old = savedKeys()[providerId];
+  const entry = protect(providerId, key);
+  // A key that moved out of the keychain (or never got there) leaves nothing behind
+  if (old && typeof entry === "string") forget(providerId, old);
+  const keys = { ...savedKeys(), [providerId]: entry };
   fs.mkdirSync(path.dirname(KEYS_FILE), { recursive: true });
   fs.writeFileSync(KEYS_FILE, JSON.stringify(keys, null, 2) + "\n", { mode: 0o600 });
+  // mode only counts when the file is created; an older file may be open to others
+  try {
+    fs.chmodSync(KEYS_FILE, 0o600);
+  } catch {}
+  return entry;
 }
 
 export function removeKey(providerId) {
   const keys = savedKeys();
   if (!(providerId in keys)) return false;
+  forget(providerId, keys[providerId]);
   delete keys[providerId];
   fs.writeFileSync(KEYS_FILE, JSON.stringify(keys, null, 2) + "\n", { mode: 0o600 });
   return true;
@@ -101,9 +113,36 @@ export function removeKey(providerId) {
 export function findKey(provider) {
   for (const v of provider?.env ?? []) if (process.env[v]) return { key: process.env[v], from: v };
   if (process.env.SCREENDOCS_API_KEY) return { key: process.env.SCREENDOCS_API_KEY, from: "SCREENDOCS_API_KEY" };
-  const saved = provider && savedKeys()[provider.id];
+  const entry = provider && savedKeys()[provider.id];
+  const saved = entry && reveal(provider.id, entry);
   if (saved) return { key: saved, from: KEYS_FILE };
   return null;
+}
+
+/**
+ * Before the capture: does the provider accept the key? "refused" only for a clear 401/403;
+ * anything else (no network, a server without the check) is "unknown" and the run goes on.
+ */
+export async function checkKey(provider, url, key, { get = fetch } = {}) {
+  if (!provider || provider.local || !key) return "unknown";
+  const headers = { authorization: `Bearer ${key}` };
+  // Anthropic's own header; OpenRouter lists its models to anyone, so its key has its own endpoint
+  if (provider.id === "anthropic") Object.assign(headers, { "x-api-key": key, "anthropic-version": "2023-06-01" });
+  const at = provider.id === "openrouter" ? `${url}/key` : `${url}/models`;
+  try {
+    const res = await get(at, { headers, signal: AbortSignal.timeout(10_000) });
+    if (res.status === 401) return "refused";
+    // Gemini answers a wrong key with 400 "API key not valid"; a 403 may also be a proxy, so its text must say so
+    if (res.status === 400 || res.status === 403) {
+      const text = await res.text().catch(() => "");
+      if (/api[ _-]?key|unauthori|authenticat|permission/i.test(text)) return "refused";
+      return "unknown";
+    }
+    res.body?.cancel?.().catch(() => {});
+    return res.ok ? "ok" : "unknown";
+  } catch {
+    return "unknown";
+  }
 }
 
 /**

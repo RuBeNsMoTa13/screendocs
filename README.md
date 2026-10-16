@@ -202,7 +202,11 @@ npx screendocs your-site.com --model gemini/gemini-2.5-flash
 
 For OpenAI, Gemini and Anthropic the prefix can be left out (`--model gemini-2.5-flash` works too), since the name already says the provider.
 
-**The key** is looked for in this order: the provider's variable above (if you already use another AI tool, it is probably set), `SCREENDOCS_API_KEY`, and the key saved with `npx screendocs keys set <provider>`. If there is none, screendocs asks for it without showing what you type and offers to save it in `~/.screendocs/keys.json`, in your user folder, outside any project, so it never goes to Git. `npx screendocs keys list` shows which providers have a saved key and `keys remove <provider>` deletes one.
+**The key** is looked for in this order: the provider's variable above (if you already use another AI tool, it is probably set), `SCREENDOCS_API_KEY`, and the key saved with `npx screendocs keys set <provider>`. If there is none, screendocs asks for it without showing what you type and asks whether to save it (No comes selected, so by default it is used for that run only).
+
+The key is tried with the provider before the capture starts. A typo is asked again right away. If a saved key or the one in a variable was refused (it expired or was changed), screendocs says which one it was and, in a terminal, asks for the new one and offers to replace the saved one.
+
+A saved key goes to the system's own safe place: the Keychain on macOS, encrypted with your Windows account on Windows (only you, on this computer, can read it back), or the desktop keyring on Linux (`secret-tool`). When none is available it stays in `~/.screendocs/keys.json`, readable only by your user. Either way it is in your user folder, outside any project, so it never goes to Git. `npx screendocs keys list` shows which providers have a saved key and where, and `keys remove <provider>` deletes one. A key saved by an older version stays in the file until you save it again with `keys set`.
 
 **Local models** (Ollama, LM Studio) need no key. Before capturing, screendocs checks that the server answers and, on Ollama, that the model is downloaded (if not, it shows the `ollama pull` command). If Ollama runs on another address, set `OLLAMA_HOST`. The model must read images (e.g. `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) and needs a computer with enough memory.
 
