@@ -8,6 +8,19 @@ Works with any site, in any stack. Nothing is installed in the project being doc
 
 ## Quick start
 
+**Visual manual:** the images below come from [docs/manual.html](docs/manual.html), a one-page manual in English, Portuguese and Spanish. Download it and open it in your browser to see everything, including every flag.
+
+![Two ways to use it](docs/images/en/ways.png)
+
+<details>
+<summary>The menu, step by step</summary>
+
+![The menu: language, site and address check](docs/images/en/menu-start.png)
+
+![The menu: review, start and the capture](docs/images/en/menu-run.png)
+
+</details>
+
 ```bash
 npx screendocs
 ```
@@ -57,6 +70,8 @@ For example, with the number of pages: screendocs says 20. You saved 40 with `np
 
 Most people only need layers 2 and 4: save what you always want with `npx screendocs config`, and change one run with an option on the command.
 
+![What wins: the four layers](docs/images/en/layers.png)
+
 ## Pages behind a login
 
 ```bash
@@ -70,6 +85,17 @@ Before each run it opens the page you were on when you logged in; if the site se
 Because it is saved in your user folder, the login works from any folder where you run screendocs. The saved session gives access to your account, so only your user can read it. To log out of a site, run `npx screendocs login` again or log out on the site itself.
 
 ## What it does
+
+![How the site is mapped](docs/images/en/mapping-steps.png)
+
+<details>
+<summary>How the pages and sections are found</summary>
+
+![Finding the pages](docs/images/en/mapping-pages.png)
+
+![Cutting each page into sections](docs/images/en/mapping-sections.png)
+
+</details>
 
 - **Checks the address** before starting: if the site does not open, it tries close addresses (with or without `www.`, other endings like `.com`, `.com.br`, `.net`, `.org`, `.io`, `.app`, `.dev`, typos like `.con`) and suggests the ones that open, with examples like `mysite.com`, `mysite.io` or `app.mysite.dev/login`.
 - **Finds the pages by itself**: follows the site's own links from the start page, skips logout links and files, and treats `/posts/12` and `/posts/13` as one screen.
@@ -159,6 +185,8 @@ Optional, for when one project needs options different from your defaults. Creat
 
 ## Output
 
+![What you get](docs/images/en/output.png)
+
 ```
 screendocs-output/your-site.com/
   index.html          report
@@ -173,6 +201,8 @@ screendocs-output/your-site.com/
 ```
 
 ## Descriptions with any AI
+
+![Who writes the descriptions](docs/images/en/describe.png)
 
 Choose who writes the descriptions in the menu ("Who writes the descriptions of the screens?") or with `--describe`. To describe a capture you already made, without capturing again:
 
@@ -216,6 +246,8 @@ For OpenAI, Gemini and Anthropic the prefix can be left out (`--model gemini-2.5
 The key is tried with the provider before the capture starts. A typo is asked again right away. If a saved key or the one in a variable was refused (it expired or was changed), screendocs says which one it was and, in a terminal, asks for the new one and offers to replace the saved one.
 
 A saved key goes to the system's own safe place: the Keychain on macOS, encrypted with your Windows account on Windows (only you, on this computer, can read it back), or the desktop keyring on Linux (`secret-tool`). When none is available it stays in `~/.screendocs/keys.json`, readable only by your user. Either way it is in your user folder, outside any project, so it never goes to Git. `npx screendocs keys list` shows which providers have a saved key and where, and `keys remove <provider>` deletes one. A key saved by an older version stays in the file until you save it again with `keys set`.
+
+![Where a saved key lives and what it protects against](docs/images/en/keys.png)
 
 **Local models** (Ollama, LM Studio) need no key. Before capturing, screendocs checks that the server answers and, on Ollama, that the model is downloaded (if not, it shows the `ollama pull` command). If Ollama runs on another address, set `OLLAMA_HOST`. The model must read images (e.g. `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) and needs a computer with enough memory.
 
@@ -286,6 +318,8 @@ A capture takes one to several minutes; with `video: false` it is faster.
 > **Which AI apps work.** Any app that runs MCP servers on your computer: Claude Desktop, Claude Code, Cursor, VS Code (Copilot), Windsurf, Codex, Gemini CLI, Cline, LM Studio and others. AI chats that only run in the browser (ChatGPT, Claude.ai, Gemini on the web) cannot start a program on your computer, so they don't work. The model must also **read images**: it looks at each screenshot to describe it. A text-only model can capture the site but not describe the screens.
 
 ## What it leaves on your computer
+
+![What it leaves on your computer](docs/images/en/files.png)
 
 In the folder where you run the command, only `screendocs-output/`: the captures and the reports, one folder per site. Everything else is in your user folder (`npx screendocs config path` shows where):
 

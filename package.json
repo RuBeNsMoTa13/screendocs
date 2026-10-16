@@ -13,8 +13,14 @@
   "keywords": ["mcp", "screenshot", "documentation", "playwright", "portfolio", "crawler", "website"],
   "author": "Rubens Mota",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RuBeNsMoTa13/screendocs.git"
+  },
+  "homepage": "https://github.com/RuBeNsMoTa13/screendocs#readme",
   "scripts": {
-    "build:mcpb": "node scripts/build-mcpb.mjs"
+    "build:mcpb": "node scripts/build-mcpb.mjs",
+    "manual:images": "node scripts/manual-images.mjs"
   },
   "dependencies": {
     "@clack/core": "0.5.0",

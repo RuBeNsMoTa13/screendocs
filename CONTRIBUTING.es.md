@@ -66,10 +66,14 @@ Cada capa reemplaza a la de abajo (`loadConfig` en `src/config.mjs`):
 
 Todo texto que ve el usuario está escrito en inglés, portugués y español, junto al código que lo muestra. Al crear o cambiar uno, escribe los tres.
 
+## El manual visual
+
+`docs/manual.html` es el manual visual, una página en inglés, portugués y español. Las imágenes de los README son partes de él, en `docs/images/<idioma>/`. Después de cambiar el manual, ejecuta `npm run manual:images` para tomarlas de nuevo (usa tu Chrome o Edge). Ninguno de los dos entra en el paquete de npm.
+
 ## Mandar un cambio
 
 1. Crea una rama, haz el cambio y pruébalo con `node bin/screendocs.mjs` en un sitio real.
-2. Si cambia una opción, una pregunta del menú o lo que aparece en la terminal, actualiza también `README.md`, `README.pt-BR.md` y `README.es.md`.
+2. Si cambia una opción, una pregunta del menú o lo que aparece en la terminal, actualiza también `README.md`, `README.pt-BR.md`, `README.es.md` y `docs/manual.html`.
 3. Abre un pull request que diga qué estaba mal antes y qué pasa ahora.
 
 La publicación en npm está en [PUBLICAR.md](PUBLICAR.md).

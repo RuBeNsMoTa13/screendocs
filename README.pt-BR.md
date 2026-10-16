@@ -8,6 +8,19 @@ Funciona com qualquer site, em qualquer stack. Nada é instalado no projeto docu
 
 ## Começo rápido
 
+**Manual visual:** as imagens abaixo vêm do [docs/manual.html](docs/manual.html), um manual de uma página em inglês, português e espanhol. Baixe e abra no navegador para ver tudo, inclusive cada flag.
+
+![Dois jeitos de usar](docs/images/pt/ways.png)
+
+<details>
+<summary>O menu, passo a passo</summary>
+
+![O menu: idioma, site e conferência do endereço](docs/images/pt/menu-start.png)
+
+![O menu: revisão, início e a captura](docs/images/pt/menu-run.png)
+
+</details>
+
 ```bash
 npx screendocs
 ```
@@ -57,6 +70,8 @@ Por exemplo, com o número de páginas: o screendocs diz 20. Você salvou 40 com
 
 A maioria só precisa das camadas 2 e 4: salve o que quer sempre com `npx screendocs config` e mude uma vez com uma opção no comando.
 
+![Quem vale mais: as quatro camadas](docs/images/pt/layers.png)
+
 ## Páginas com login
 
 ```bash
@@ -70,6 +85,17 @@ Antes de cada captura ele abre a página em que você estava quando fez login; s
 Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você rodar o screendocs. A sessão salva dá acesso à sua conta, por isso só o seu usuário consegue ler. Para sair de um site, rode `npx screendocs login` de novo ou saia da conta pelo próprio site.
 
 ## O que ele faz
+
+![Como o site é mapeado](docs/images/pt/mapping-steps.png)
+
+<details>
+<summary>Como as páginas e as seções são encontradas</summary>
+
+![Procurando as páginas](docs/images/pt/mapping-pages.png)
+
+![Cortando cada página em seções](docs/images/pt/mapping-sections.png)
+
+</details>
 
 - **Confere o endereço** antes de começar: se o site não abrir, testa endereços parecidos (com ou sem `www.`, outros finais como `.com.br`, `.com`, `.net`, `.org`, `.io`, `.app`, `.dev`, erros como `.con`) e sugere os que abrirem, com exemplos como `meusite.com.br`, `meusite.app` ou `app.meusite.io/login`.
 - **Acha as páginas sozinho**: segue os links do próprio site a partir da página inicial, pula links de sair/logout e arquivos, e trata `/posts/12` e `/posts/13` como uma tela só.
@@ -159,6 +185,8 @@ Opcional, para quando um projeto precisa de opções diferentes dos seus padrõe
 
 ## Resultado
 
+![O que você recebe](docs/images/pt/output.png)
+
 ```
 screendocs-output/seu-site.com/
   index.html          relatório
@@ -173,6 +201,8 @@ screendocs-output/seu-site.com/
 ```
 
 ## Descrições com qualquer IA
+
+![Quem escreve as descrições](docs/images/pt/describe.png)
 
 Escolha quem escreve as descrições no menu ("Quem escreve as descrições das telas?") ou com `--describe`. Para descrever uma captura que você já fez, sem capturar de novo:
 
@@ -216,6 +246,8 @@ Para OpenAI, Gemini e Anthropic o prefixo pode ficar de fora (`--model gemini-2.
 A chave é testada com o provedor antes de a captura começar. Se você digitar errado, ele pede de novo na hora. Se uma chave guardada ou a de uma variável for recusada (expirou ou foi trocada), o screendocs diz qual foi e, num terminal, pede a nova e oferece trocar a guardada.
 
 Uma chave guardada vai para o lugar seguro do próprio sistema: o Keychain no macOS, criptografada com a sua conta do Windows no Windows (só você, neste computador, consegue ler), ou o chaveiro do Linux (`secret-tool`). Quando nenhum existe, ela fica em `~/.screendocs/keys.json`, que só o seu usuário pode ler. Nos dois casos ela fica na sua pasta de usuário, fora de qualquer projeto, então nunca vai para o Git. `npx screendocs keys list` mostra quais provedores têm chave guardada e onde, e `keys remove <provedor>` apaga uma. Uma chave guardada por uma versão anterior continua no arquivo até você guardá-la de novo com `keys set`.
+
+![Onde fica uma chave guardada e do que ela está protegida](docs/images/pt/keys.png)
 
 **Modelos locais** (Ollama, LM Studio) não precisam de chave. Antes de capturar, o screendocs confere se o servidor responde e, no Ollama, se o modelo foi baixado (se não foi, mostra o comando `ollama pull`). Se o Ollama roda em outro endereço, defina `OLLAMA_HOST`. O modelo precisa ler imagens (ex.: `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) e precisa de um computador com memória suficiente.
 
@@ -286,6 +318,8 @@ Uma captura leva de um a vários minutos; com `video: false` é mais rápida.
 > **Quais IAs funcionam.** Qualquer app que roda servidores MCP no seu computador: Claude Desktop, Claude Code, Cursor, VS Code (Copilot), Windsurf, Codex, Gemini CLI, Cline, LM Studio e outros. Chats de IA que rodam só no navegador (ChatGPT, Claude.ai, Gemini na web) não conseguem abrir um programa no seu computador, então não funcionam. O modelo também precisa **ler imagens**: ele olha cada foto para descrevê-la. Um modelo só de texto consegue capturar o site, mas não descrever as telas.
 
 ## O que fica no seu computador
+
+![O que fica no seu computador](docs/images/pt/files.png)
 
 Na pasta onde você roda o comando, só a `screendocs-output/`: as capturas e os relatórios, uma pasta por site. Todo o resto fica na sua pasta de usuário (`npx screendocs config path` mostra onde):
 
