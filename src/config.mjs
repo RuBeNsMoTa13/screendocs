@@ -12,8 +12,6 @@ const DEFAULTS = {
   autoMask: true,
   describe: null,
   docs: null,
-  apiUrl: null,
-  apiKey: null,
   model: null,
   lang: "en",
   headed: false,
@@ -45,8 +43,6 @@ export function loadConfig(url, flags) {
     autoMask: flags["no-auto-mask"] ? false : undefined,
     describe: flags.describe,
     docs: flags.docs,
-    apiUrl: flags["api-url"],
-    apiKey: flags["api-key"],
     model: flags.model,
     lang: flags.lang,
     headed: flags.headed,
@@ -54,6 +50,12 @@ export function loadConfig(url, flags) {
   };
   const config = { ...DEFAULTS, ...fromFile, url };
   for (const [k, v] of Object.entries(fromFlags)) if (v !== undefined) config[k] = v;
+
+  // One flag for an API: --model <provider/model>
+  if (config.describe === "api") throw new Error("--describe api was replaced by --model <provider/model> (e.g. --model gemini/gemini-2.5-flash, --model ollama/llama3.2-vision)");
+  if (config.model && config.describe)
+    throw new Error(`--model is for describing with an API, and --describe ${config.describe} uses the tool's own model. Drop one of the two.`);
+  if (config.model) config.describe = "api";
 
   const bad = config.viewports.filter((v) => !VIEWPORTS[v]);
   if (bad.length) throw new Error(`unknown viewport "${bad[0]}" (use desktop, mobile)`);

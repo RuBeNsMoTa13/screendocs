@@ -12,7 +12,7 @@ Works with any site, in any stack. Nothing is installed in the project being doc
 npx screendocs
 ```
 
-With no arguments it opens an interactive menu that asks for the site and the options (login, desktop/mobile, video, which pages) and shows the equivalent command at the end. `Esc` goes back to the previous question and `Ctrl+C` quits. Or pass everything at once:
+With no arguments it opens an interactive menu that asks for the site and the options (login, desktop/mobile, video, which pages) and shows the equivalent command at the end. Under each question, a line shows what each key does: arrows to choose, `Enter` confirms, `Esc` goes back to the previous question and `Ctrl+C` quits. Or pass everything at once:
 
 ```bash
 npx screendocs https://your-site.com
@@ -84,10 +84,8 @@ Before each run it opens the page you were on when you logged in; if the site se
 | `--keep` | | keep the previous capture of the site (renamed with its date) instead of replacing it |
 | `--mask <selectors>` | | extra CSS selectors to blur |
 | `--no-auto-mask` | | don't blur emails, phones, documents |
-| `--describe <how>` | | who writes the descriptions: `claude`, `codex`, `antigravity`, `api` or `chat` (see below) |
-| `--api-url <url>` | | OpenAI-compatible API address, for `--describe api` |
-| `--model <id>` | | model for `--describe api` (one that reads images) |
-| `--api-key <key>` | | API key for `--describe api` (prefer `SCREENDOCS_API_KEY`) |
+| `--describe <how>` | | who writes the descriptions: `claude`, `codex`, `antigravity` or `chat` (see below) |
+| `--model <provider/model>` | | describe with an API (e.g. `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; see below) |
 | `--docs <dir>` | | Markdown docs the AI reads when describing |
 | `--lang <code>` | `en` | description language (`pt`, `es`...) |
 | `--config <file>` | `screendocs.config.json` | config file (see below) |
@@ -101,7 +99,10 @@ Environment variables:
 
 | Variable | |
 |---|---|
-| `SCREENDOCS_API_KEY` | API key for `--describe api` |
+| `OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY` | the provider's key for `--model` |
+| `SCREENDOCS_API_KEY` | a key for `--model`, whatever the provider |
+| `OPENAI_BASE_URL` | another OpenAI-compatible server, with `--model openai/<model>` |
+| `OLLAMA_HOST` | where Ollama runs, when it is not `localhost:11434` |
 | `CHROMIUM_PATH` | use another Chromium-based browser instead of Chrome or Edge |
 | `SCREENDOCS_DEBUG` | set to `1` to print the full error |
 
@@ -126,7 +127,9 @@ Put `screendocs.config.json` where you run the command and keep the options ther
 ```
 screendocs-output/your-site.com/
   index.html          report
+  index-original.html the report as captured, before any AI description (never rewritten)
   screens.json        every page and screen with title and description
+  screens-original.json  the same, as captured
   prompt.md           how to describe the screens with an AI chat on your own
   for-ai/part-1/...   the screens to describe, with unique names, plus the text for the AI
   desktop/<page>/01.jpg, 02.jpg ... full.jpg, video.webm
@@ -141,11 +144,13 @@ Choose who writes the descriptions in the menu ("Who writes the descriptions of 
 npx screendocs describe your-site.com
 ```
 
-The titles and descriptions go into `screens.json` and `index.html`, and the mobile screens reuse the description of the same section on desktop. The report marks each screen with who described it (for example "Claude Code" or "AI chat"), or "page text" when no AI did, and the terminal lists the screens left out. Use `--lang pt` (or the menu) for another language.
+Without the site (or with a site that has no capture), it lists the captures there are so you can pick one.
+
+The titles and descriptions go into `screens.json` and `index.html`, and the mobile screens reuse the description of the same section on desktop. The report marks each screen with who described it (for example "Claude Code" or "AI chat"), or "page text" when no AI did, and the terminal lists the screens left out. What the AI changed stays visible: each described screen has a "Before AI" line with the text it had before, and `index-original.html` keeps the whole report as captured, never rewritten. Use `--lang pt` (or the menu) for another language.
 
 > The AI has to **read images**: it looks at each screenshot to write its description. A model that only reads text cannot do this.
 
-**1. A chat in your browser (no key, nothing installed).** Choose "A chat in your browser (ChatGPT, Gemini, Claude.ai...)" or use `--describe chat`. screendocs guides you: it opens a folder with the images (up to 10 per part, with unique names) and copies the text for the AI; you drag the images into the chat, paste the text, and paste the AI's answer back in the terminal. It checks the answer and asks again if it is not right. `prompt.md` explains how to do the chat part on your own.
+**1. A chat in your browser (no key, nothing installed).** Choose "A chat in your browser (ChatGPT, Gemini, Claude.ai...)" or use `--describe chat`. screendocs guides you: it opens a folder with the images (up to 10 per part, with unique names) and copies the text for the AI; you drag the images into the chat, paste the text, and paste the AI's answer back in the terminal. When a part is done, it closes that folder's window (Windows and macOS). It checks the answer and asks again if it is not right. `prompt.md` explains how to do the chat part on your own.
 
 **2. An AI tool on your computer (uses your plan, no API key).** If [Claude Code](https://code.claude.com), [Codex](https://developers.openai.com/codex) or the [Antigravity CLI](https://antigravity.google) (`agy`, use a recent version) is installed and logged in, screendocs runs it for you. The menu always lists the three; if the one you pick is missing, it offers to install it with its official installer and tells you how to log in:
 
@@ -153,22 +158,30 @@ The titles and descriptions go into `screens.json` and `index.html`, and the mob
 npx screendocs https://your-site.com --describe claude   # or codex, antigravity
 ```
 
-**3. Any API (for developers).** Any provider with an OpenAI-compatible API works, called directly, with no SDK installed:
+**3. Any API (for developers).** Name the model with its provider in front, the usual format of AI tools (LiteLLM, aider); it is called directly, with no SDK installed:
 
 ```bash
-export SCREENDOCS_API_KEY=...        # PowerShell: $env:SCREENDOCS_API_KEY="..."
-npx screendocs https://your-site.com --describe api --api-url https://api.openai.com/v1 --model <model>
+npx screendocs your-site.com --model gemini/gemini-2.5-flash
 ```
 
-| Provider | `--api-url` |
-|---|---|
-| OpenAI | `https://api.openai.com/v1` |
-| Google Gemini | `https://generativelanguage.googleapis.com/v1beta/openai` |
-| OpenRouter | `https://openrouter.ai/api/v1` |
-| Anthropic | `https://api.anthropic.com/v1` |
-| Ollama (local, free, no key) | `http://localhost:11434/v1` |
+| Model | Provider | Key |
+|---|---|---|
+| `openai/gpt-4o-mini` | OpenAI | `OPENAI_API_KEY` |
+| `gemini/gemini-2.5-flash` | Google Gemini | `GEMINI_API_KEY` |
+| `anthropic/claude-sonnet-4-5` | Anthropic | `ANTHROPIC_API_KEY` |
+| `openrouter/<model>` | OpenRouter | `OPENROUTER_API_KEY` |
+| `ollama/<model>` | Ollama on your computer (free) | none |
+| `lmstudio/<model>` | LM Studio on your computer (free) | none |
 
-Pick a model that reads images (e.g. `gpt-4o-mini`, `gemini-2.5-flash`, `llama3.2-vision`); with one that doesn't, screendocs tells you. The menu asks for all of this and never shows the key.
+For OpenAI, Gemini and Anthropic the prefix can be left out (`--model gemini-2.5-flash` works too), since the name already says the provider.
+
+**The key** is looked for in this order: the provider's variable above (if you already use another AI tool, it is probably set), `SCREENDOCS_API_KEY`, and the key saved with `npx screendocs keys set <provider>`. If there is none, screendocs asks for it without showing what you type and offers to save it in `~/.screendocs/keys.json`, in your user folder, outside any project, so it never goes to Git. `npx screendocs keys list` shows which providers have a saved key and `keys remove <provider>` deletes one.
+
+**Local models** (Ollama, LM Studio) need no key. Before capturing, screendocs checks that the server answers and, on Ollama, that the model is downloaded (if not, it shows the `ollama pull` command). If Ollama runs on another address, set `OLLAMA_HOST`. The model must read images (e.g. `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) and needs a computer with enough memory.
+
+For another OpenAI-compatible server, do as the OpenAI tools do: set `OPENAI_BASE_URL` to its address and use `--model openai/<model>`.
+
+Pick a model that reads images; with one that doesn't, screendocs tells you. The menu asks for the provider and the model, uses the saved key when there is one, and never shows the key.
 
 ## Use it from an AI (MCP)
 

@@ -28,15 +28,30 @@ export function writeReport(result, config) {
   return writeData(result.root, data, config.lang);
 }
 
-/** screens.json, index.html and prompt.md from the report data. Also rewritten after describing. */
+/**
+ * screens.json, index.html and prompt.md from the report data. Also rewritten after describing.
+ * Until an AI writes anything, it also saves index-original.html and screens-original.json:
+ * the report as captured (kept up to date while the capture adds pages), frozen from the
+ * first AI description on.
+ */
 export function writeData(root, data, lang = data.lang ?? "en") {
   data.lang = lang;
+  const original = path.join(root, ORIGINAL);
+  if (!anyDescribed(data)) {
+    fs.writeFileSync(path.join(root, "screens-original.json"), JSON.stringify(data, null, 2) + "\n");
+    fs.writeFileSync(original, html(data, { original: true }));
+  }
   fs.writeFileSync(path.join(root, "screens.json"), JSON.stringify(data, null, 2) + "\n");
   fs.writeFileSync(path.join(root, "prompt.md"), prompt(data));
   const file = path.join(root, "index.html");
-  fs.writeFileSync(file, html(data));
+  fs.writeFileSync(file, html(data, { hasOriginal: fs.existsSync(original) }));
   return file;
 }
+
+/** The report as captured, before any AI description. */
+export const ORIGINAL = "index-original.html";
+
+const anyDescribed = (data) => data.pages.some((p) => Object.values(p.viewports).some((v) => v.screens.some((s) => s.describedBy)));
 
 const LANGS = { en: "English", pt: "Brazilian Portuguese", "pt-br": "Brazilian Portuguese", es: "Spanish" };
 export const langName = (lang) => LANGS[String(lang).toLowerCase()] ?? lang;
@@ -105,7 +120,7 @@ export function task(data, screens, what = "screenshot", docs = "") {
     .join("\n");
   return `You are documenting the screens of the website ${data.url}. For each ${what}, say in ${lang} what the user sees and can do there, based only on what is visible and on the notes below${docs ? ` and on the project documentation in ${docs}` : ""}. Do not invent features.
 
-Reply with only a JSON array, one item per image, using the exact file names below. There ${screens.length === 1 ? "is 1 image" : `are ${screens.length} images`}, so the array must have exactly ${screens.length} item(s), none repeated. If any image did not arrive, write which ones before the JSON.
+Reply with only a JSON array, one item per image, using the exact file names below. There ${screens.length === 1 ? "is 1 image" : `are ${screens.length} images`}, so the array must have exactly ${screens.length} item(s), none repeated. Write each description on a single line, with no source marks such as [cite: 1]. If any image did not arrive, write which ones before the JSON.
 
 \`\`\`json
 [{ "file": "${screens[0]?.file ?? "desktop/home/01.jpg"}", "title": "2 to 6 words", "description": "one or two sentences" }]
@@ -125,7 +140,7 @@ const badge = (s) =>
     : `<em class="by">page text</em>`;
 
 /** "18 of 20 screens described by Claude Code on ..." when an AI has described any screen. */
-function summary(data) {
+function summary(data, hasOriginal) {
   const screens = primaryScreens(data);
   const done = screens.filter((s) => s.describedBy);
   if (!done.length) return "";
@@ -134,10 +149,19 @@ function summary(data) {
   const rest = screens.length - done.length;
   return `<p class="summary">${done.length} of ${screens.length} screens described by <strong>${esc(who)}</strong> · ${esc(last)}${
     rest ? ` · <span class="warn">${rest} without an AI description (marked "page text")</span>` : ""
-  }</p>`;
+  }${hasOriginal ? ` · <a href="${ORIGINAL}">see the report before the AI</a>` : ""}</p>`;
 }
 
-function html(data) {
+/** What the screen said before the AI described it, when that changed. */
+function before(s) {
+  const o = s.original;
+  if (!o || (o.title === s.title && o.description === s.description)) return "";
+  return `<details class="before"><summary>Before AI</summary><strong>${esc(o.title)}</strong>${
+    o.description && o.description !== o.title ? `<span>${esc(o.description)}</span>` : ""
+  }</details>`;
+}
+
+function html(data, { original = false, hasOriginal = false } = {}) {
   const tabs = data.viewports
     .map((vp, i) => `<button class="tab${i ? "" : " on"}" data-vp="${vp}">${esc(vp)}</button>`)
     .join("");
@@ -151,7 +175,7 @@ function html(data) {
           const cards = v.screens
             .map(
               (s) => `<figure><a href="${esc(s.file)}" target="_blank"><img src="${esc(s.file)}" loading="lazy" alt="${esc(s.title)}"></a>
-<figcaption><strong>${esc(s.title)}</strong>${s.description && s.description !== s.title ? `<span>${esc(s.description)}</span>` : ""}${badge(s)}</figcaption></figure>`,
+<figcaption><strong>${esc(s.title)}</strong>${s.description && s.description !== s.title ? `<span>${esc(s.description)}</span>` : ""}${badge(s)}${before(s)}</figcaption></figure>`,
             )
             .join("");
           const links = [v.full && `<a href="${esc(v.full)}" target="_blank">full page</a>`, v.video && `<a href="${esc(v.video)}" target="_blank">video</a>`]
@@ -169,7 +193,7 @@ ${p.summary ? `<p>${esc(p.summary)}</p>` : ""}${views}</section>`;
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(data.site)} screens</title>
+<title>${esc(data.site)} screens${original ? " (original)" : ""}</title>
 <style>
 :root{--bg:#0d0d0f;--panel:#17171b;--line:#2a2a30;--ink:#ececf1;--muted:#9a9aa5;--accent:#e5484d}
 @media (prefers-color-scheme:light){:root{--bg:#fafafa;--panel:#fff;--line:#e3e3e8;--ink:#17171b;--muted:#6b6b76}}
@@ -191,9 +215,13 @@ figcaption{padding:10px 12px;display:grid;gap:4px}figcaption span{color:var(--mu
 .summary{margin:16px 0 0;font-size:14px}.warn{color:var(--accent)}
 video{width:100%;max-height:420px;background:#000;border-radius:8px;margin-top:12px}
 .muted{color:var(--muted);font-size:13px}
+.before{font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px}.before summary{cursor:pointer}
+.before strong,.before span{display:block}.original{margin:16px 0 0;font-size:14px;color:var(--muted)}
 </style></head><body>
 <header><h1>${esc(data.site)} <span class="muted">· ${esc(new Date(data.createdAt).toLocaleString())}</span></h1>${tabs}</header>
-<nav>${nav}</nav><main>${summary(data)}${pages}</main>
+<nav>${nav}</nav><main>${
+    original ? `<p class="original">Original report, as captured, before any AI description. It is never rewritten. The current one is <a href="index.html">index.html</a>.</p>` : summary(data, hasOriginal)
+  }${pages}</main>
 <script>
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
 document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t===b));

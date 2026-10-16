@@ -2,13 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { primaryScreens, task } from "./report.mjs";
-import { parseAnswer, applyItems } from "./answers.mjs";
+import { parseAnswer, applyItems, sameFile } from "./answers.mjs";
+import { resolveModel, findKey, checkLocal, KEYS_FILE } from "./providers.mjs";
 
 /**
  * Two ways to describe the screens automatically (the third, an AI chat in the browser, is chat.mjs):
- * - an AI tool already installed and logged in on the computer (Claude Code, Codex, Antigravity), which
+ * - an AI tool already installed and logged in on the computer (Claude Code, Codex, Antigravity CLI), which
  *   runs on the person's own plan with no API key;
- * - "api": any provider with an OpenAI-compatible API (OpenAI, Gemini, OpenRouter, Anthropic,
+ * - an API (--model <provider/model>): any provider with an OpenAI-compatible API (OpenAI, Gemini, OpenRouter, Anthropic,
  *   Ollama...), called with fetch, so no SDK is installed.
  */
 export const AGENTS = {
@@ -25,7 +26,7 @@ export const AGENTS = {
     login: "codex login",
   },
   antigravity: {
-    name: "Antigravity",
+    name: "Antigravity CLI",
     bin: "agy",
     install: { win: "irm https://antigravity.google/cli/install.ps1 | iex", unix: "curl -fsSL https://antigravity.google/cli/install.sh | bash" },
     login: "agy",
@@ -37,29 +38,56 @@ export const installCommand = (agent) => AGENTS[agent].install[WIN ? "win" : "un
 
 /**
  * Runs the official installer in this terminal, so the person sees it working. A new install
- * goes on the PATH of new terminals only, so the usual install folders are added here too.
+ * goes on the PATH of new terminals only, so the new PATH is read back here too.
  */
 export function installAgent(agent) {
   const line = installCommand(agent);
-  const r = WIN
+  WIN
     ? spawnSync("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", line], { stdio: "inherit" })
     : spawnSync("sh", ["-c", line], { stdio: "inherit" });
-  const home = process.env.USERPROFILE || process.env.HOME || "";
-  const extra = [path.join(home, ".local", "bin")];
-  const npmPrefix = spawnSync(...cmd("npm", ["prefix", "-g"], { encoding: "utf8" })).stdout?.trim();
-  if (npmPrefix) extra.push(WIN ? npmPrefix : path.join(npmPrefix, "bin"));
-  process.env.PATH = [process.env.PATH, ...extra].join(path.delimiter);
-  return r.status === 0 && installedAgents().includes(agent);
+  pathRead = false;
+  findInstalled();
+  // Some installers exit with an error when the tool is already there: what counts is finding it
+  return installedAgents().includes(agent);
 }
 
-/** OpenAI-compatible endpoints of common providers, offered in the menu. */
-export const PROVIDERS = [
-  { name: "OpenAI", url: "https://api.openai.com/v1" },
-  { name: "Google Gemini", url: "https://generativelanguage.googleapis.com/v1beta/openai" },
-  { name: "OpenRouter", url: "https://openrouter.ai/api/v1" },
-  { name: "Anthropic", url: "https://api.anthropic.com/v1" },
-  { name: "Ollama (local)", url: "http://localhost:11434/v1", local: true },
-];
+/**
+ * A tool installed in another terminal, or by the installer just now, is only on the PATH of
+ * terminals opened afterwards. This adds the folders where the official installers put the
+ * tools (Claude Code: ~/.local/bin; Codex: the npm folder; Antigravity CLI: %LOCALAPPDATA%\agy\bin)
+ * and, on Windows, the PATH saved for new terminals.
+ */
+let pathRead = false;
+function findInstalled() {
+  const home = process.env.USERPROFILE || process.env.HOME || "";
+  const dirs = [path.join(home, ".local", "bin")];
+  if (WIN) {
+    if (process.env.LOCALAPPDATA) dirs.push(path.join(process.env.LOCALAPPDATA, "agy", "bin"));
+    if (process.env.APPDATA) dirs.push(path.join(process.env.APPDATA, "npm"));
+  }
+  addToPath(dirs);
+  if (pathRead) return;
+  pathRead = true;
+  if (WIN) {
+    const r = spawnSync(
+      "powershell",
+      ["-NoProfile", "-Command", "[Environment]::GetEnvironmentVariable('Path','User'); [Environment]::GetEnvironmentVariable('Path','Machine')"],
+      { encoding: "utf8", timeout: 20_000 },
+    );
+    addToPath(String(r.stdout ?? "").split(/[;\r\n]+/).map((d) => d.replace(/%([^%]+)%/g, (m, v) => process.env[v] ?? m)));
+  } else {
+    const npmPrefix = spawnSync("npm", ["prefix", "-g"], { encoding: "utf8", timeout: 20_000 }).stdout?.trim();
+    if (npmPrefix) addToPath([path.join(npmPrefix, "bin")]);
+  }
+}
+
+function addToPath(dirs) {
+  const have = new Set(String(process.env.PATH ?? "").split(path.delimiter).map((d) => d.toLowerCase()));
+  const add = dirs.filter((d) => d && !have.has(d.toLowerCase()) && fs.existsSync(d));
+  if (add.length) process.env.PATH = [process.env.PATH, ...add].join(path.delimiter);
+}
+
+export { PROVIDERS } from "./providers.mjs";
 
 const WIN = process.platform === "win32";
 const BATCH = 10; // screens per run, so each run stays small
@@ -75,21 +103,23 @@ function cmd(bin, args, opts) {
 
 /** The AI tools found on this computer. */
 export function installedAgents() {
-  return Object.keys(AGENTS).filter(
-    (k) => spawnSync(...cmd(AGENTS[k].bin, ["--version"], { stdio: "ignore", timeout: 20_000 })).status === 0,
-  );
+  const found = () =>
+    Object.keys(AGENTS).filter((k) => spawnSync(...cmd(AGENTS[k].bin, ["--version"], { stdio: "ignore", timeout: 20_000 })).status === 0);
+  let list = found();
+  if (list.length < Object.keys(AGENTS).length && !pathRead) {
+    findInstalled();
+    list = found();
+  }
+  return list;
 }
 
-export function checkAgent(agent, config = {}) {
-  if (agent === "api") {
-    if (!config.apiUrl || !config.model) throw new Error("--describe api needs --api-url and --model (the key goes in SCREENDOCS_API_KEY)");
-    return;
-  }
+export async function checkAgent(agent, config = {}) {
+  if (agent === "api") return prepareApi(config);
   if (agent === "chat") {
     if (!process.stdin.isTTY) throw new Error("--describe chat is step by step, so it needs a terminal you can type in");
     return;
   }
-  if (!AGENTS[agent]) throw new Error(`--describe accepts ${[...Object.keys(AGENTS), "api", "chat"].join(", ")}`);
+  if (!AGENTS[agent]) throw new Error(`--describe accepts ${[...Object.keys(AGENTS), "chat"].join(", ")}, and --model <provider/model> describes with an API`);
   if (!installedAgents().includes(agent)) {
     throw new Error(
       `${AGENTS[agent].name} was not found. Install it with: ${installCommand(agent)}` +
@@ -99,6 +129,33 @@ export function checkAgent(agent, config = {}) {
   }
 }
 
+/**
+ * --model to an address, a model id and a key, before anything is captured. Without a key
+ * and with a terminal, asks for it (hidden) and offers to save it.
+ */
+async function prepareApi(config) {
+  if (config.provider !== undefined) return;
+  const { provider, url, model, custom } = resolveModel(config.model);
+  Object.assign(config, { provider, apiUrl: url, model });
+  if (provider?.local) return checkLocal(provider, url, model);
+  const found = findKey(provider);
+  if (found) {
+    config.apiKey = found.key;
+    return;
+  }
+  // A server of its own (OPENAI_BASE_URL) may have no key
+  if (!provider || custom) return;
+  if (process.stdin.isTTY && process.stdout.isTTY) {
+    const { askKey } = await import("./interactive.mjs");
+    config.apiKey = await askKey(provider);
+    return;
+  }
+  throw new Error(
+    `no API key for ${provider.name}. Set ${provider.env[0]}, or save it once with: npx screendocs keys set ${provider.id}` +
+      ` (it goes to ${KEYS_FILE}, outside the project).`,
+  );
+}
+
 export async function describeWith(agent, root, config) {
   const data = JSON.parse(fs.readFileSync(path.join(root, "screens.json"), "utf8"));
   const screens = primaryScreens(data);
@@ -106,6 +163,7 @@ export async function describeWith(agent, root, config) {
 
   const docsDir = config.docs ? path.resolve(config.docs) : "";
   console.log(`\nDescribing ${screens.length} screen(s) with ${AGENTS[agent].name}...`);
+  fs.rmSync(path.join(root, LOG), { force: true });
 
   const items = [];
   for (let i = 0; i < screens.length; i += BATCH) {
@@ -114,9 +172,16 @@ export async function describeWith(agent, root, config) {
     fs.writeFileSync(path.join(root, file), task(data, batch, "image file listed below (open it from this folder)", docsDir));
     process.stdout.write(`  ${i + 1}-${i + batch.length} of ${screens.length}... `);
     try {
-      const answer = parseAnswer(await run(agent, root, file, batch, docsDir));
-      if (answer) items.push(...answer);
-      console.log(answer ? "ok" : "no JSON in the answer, skipped");
+      const answer = parseAnswer(await run(agent, root, file, batch, docsDir)) ?? [];
+      const mine = answer.filter((it) => batch.some((s) => sameFile(it?.file, s.file)));
+      items.push(...mine);
+      console.log(
+        mine.length
+          ? `ok (${mine.length} of ${batch.length})`
+          : answer.length
+            ? `the answer did not name the images of this batch, skipped (what it answered is in ${LOG})`
+            : `no JSON in the answer, skipped (what it answered is in ${LOG})`,
+      );
     } catch (err) {
       console.log(`failed: ${err.message}`);
     } finally {
@@ -124,6 +189,35 @@ export async function describeWith(agent, root, config) {
     }
   }
   return applyItems(root, items, AGENTS[agent].name);
+}
+
+/** The last answer of an AI tool, kept in the capture folder to see what went wrong. */
+export const LOG = "screendocs-agent-log.txt";
+
+/**
+ * Antigravity CLI with --output-format json answers { status, response, ... }. An error
+ * (not logged in, no quota) comes as a status, which is shown instead of "no JSON".
+ */
+function envelope(out, err) {
+  // One JSON object, or one per line (the last one has the answer)
+  const lines = out.trim().split(/\r?\n/).reverse();
+  const e = [out.trim(), ...lines].map((l) => {
+    try {
+      return JSON.parse(l);
+    } catch {
+      return null;
+    }
+  }).find((o) => o && typeof o === "object" && !Array.isArray(o) && ("response" in o || "status" in o || "result" in o));
+  try {
+    if (!e) throw null;
+    if (typeof e.result === "string" && e.result.trim()) return e.result;
+    if (typeof e.response === "string" && e.response.trim()) return e.response;
+    if (e.status && !/^(ok|success|completed?)$/i.test(String(e.status))) throw new Error(`Antigravity CLI: ${e.error?.message ?? e.error ?? e.status}`);
+  } catch (x) {
+    if (x?.message?.startsWith("Antigravity CLI:")) throw x;
+  }
+  if (!out.trim() && err.trim()) throw new Error(err.trim().split("\n").slice(-1)[0]);
+  return out;
 }
 
 function run(agent, root, file, batch, docsDir) {
@@ -140,7 +234,7 @@ function run(agent, root, file, batch, docsDir) {
       ? ["-p", q(ask), "--allowedTools", "Read", ...(docsDir ? ["--add-dir", q(docsDir)] : [])]
       : agent === "codex"
         ? ["exec", "--skip-git-repo-check", "--ephemeral", "-i", q(batch.map((s) => s.file).join(",")), "-o", q(outFile), q(ask)]
-        : [...(docsDir ? ["--add-dir", q(docsDir)] : []), "--print-timeout", "15m", "-p", q(ask)];
+        : [...(docsDir ? ["--add-dir", q(docsDir)] : []), "--print-timeout", "15m", "--output-format", "json", "-p", q(ask)];
 
   return new Promise((resolve, reject) => {
     const child = spawn(...cmd(AGENTS[agent].bin, args, { cwd: root, stdio: ["ignore", "pipe", "pipe"] }));
@@ -153,9 +247,15 @@ function run(agent, root, file, batch, docsDir) {
     child.on("close", (code) => {
       clearTimeout(timer);
       // Codex (and Antigravity, when asked) also write the answer to a file, which is cleaner than stdout
-      if (fs.existsSync(outFile)) {
-        out = fs.readFileSync(outFile, "utf8");
-        fs.rmSync(outFile, { force: true });
+      // What the tool said, to see why an answer had no descriptions
+      fs.appendFileSync(path.join(root, LOG), `\n$ ${AGENTS[agent].bin} ${args.join(" ")}\nexit code: ${code}\n\n--- output ---\n${out}\n\n--- errors ---\n${err}\n`);
+      try {
+        if (fs.existsSync(outFile)) {
+          out = fs.readFileSync(outFile, "utf8");
+          fs.rmSync(outFile, { force: true });
+        } else if (agent === "antigravity") out = envelope(out, err);
+      } catch (e) {
+        return reject(e);
       }
       if (code === 0) resolve(out);
       else reject(new Error((err || out).trim().split("\n").slice(-1)[0] || `exit code ${code}`));
@@ -165,7 +265,8 @@ function run(agent, root, file, batch, docsDir) {
 
 /** One request per screen, 4 at a time, to an OpenAI-compatible /chat/completions. */
 async function describeWithApi(data, root, screens, config) {
-  const key = config.apiKey || process.env.SCREENDOCS_API_KEY || "";
+  await prepareApi(config);
+  const key = config.apiKey || "";
   const url = `${config.apiUrl.replace(/\/+$/, "")}/chat/completions`;
   const docs = config.docs ? readDocs(config.docs) : "";
   console.log(`\nDescribing ${screens.length} screen(s) with ${config.model}...`);
@@ -200,7 +301,13 @@ async function describeWithApi(data, root, screens, config) {
           const msg = body.error?.message || body.message || `HTTP ${res.status}`;
           // A model that only reads text rejects the screenshot; say so in plain words
           if (/image|vision|multimodal|modalit/i.test(msg) && !/401|403/.test(String(res.status)))
-            throw new Error(`${config.model} does not seem to read images. Pick a model that does (e.g. gpt-4o-mini, gemini-2.5-flash). API said: ${msg}`);
+            throw new Error(`${config.model} does not seem to read images. Pick a model that does (e.g. openai/gpt-4o-mini, gemini/gemini-2.5-flash). API said: ${msg}`);
+          // A wrong key fails every screen: say so once, with how to fix it
+          if (res.status === 401 || res.status === 403)
+            throw new Error(
+              `the API refused the key (HTTP ${res.status}: ${msg}).` +
+                (config.provider && !config.provider.local ? ` Save the right one with: npx screendocs keys set ${config.provider.id}` : ""),
+            );
           throw new Error(msg);
         }
         const text = body.choices?.[0]?.message?.content ?? "";

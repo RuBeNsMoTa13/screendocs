@@ -70,6 +70,7 @@ export async function chatFlow(root) {
 
   // Answers are accepted for any part, so images sent out of order are not lost
   const all = new Set(parts.flatMap((part) => part.names));
+  const input = lineReader();
   const received = new Map();
   for (const [i, part] of parts.entries()) {
     if (part.names.every((n) => received.has(n))) {
@@ -90,7 +91,7 @@ export async function chatFlow(root) {
     );
     // Until every image of the part has a description, or the person skips the rest
     for (;;) {
-      const answer = await readAnswer(t, all, part.names);
+      const answer = await readAnswer(input, t, all, part.names);
       if (!answer) {
         p.log.warn(t.skipped);
         break;
@@ -108,8 +109,37 @@ export async function chatFlow(root) {
       if (!missing.length) break;
       p.log.warn(t.missing(missing));
     }
+    // The part is done: its folder window would only pile up with the next one
+    if (opened) closeFolder(part.dir);
   }
+  input.close();
   return applyItems(root, [...received.values()], "AI chat");
+}
+
+/**
+ * One reader for the whole flow. Closing it and opening another for each part paused and
+ * resumed the terminal in between, and on Windows the second part could then never be read.
+ */
+function lineReader() {
+  process.stdin.setRawMode?.(false);
+  const rl = readline.createInterface({ input: process.stdin, terminal: false });
+  let onLine = null;
+  let onClose = null;
+  let closed = false;
+  rl.on("line", (line) => onLine?.(line));
+  rl.on("close", () => {
+    closed = true;
+    onClose?.();
+  });
+  return {
+    listen(line, close) {
+      onLine = line;
+      onClose = close;
+      // The input already ended (Ctrl+D, or a pipe that ran out): nothing more will come
+      if (closed) close?.();
+    },
+    close: () => rl.close(),
+  };
 }
 
 /**
@@ -118,17 +148,16 @@ export async function chatFlow(root) {
  */
 const QUIET = 800;
 
-function readAnswer(t, known, expected) {
-  process.stdin.setRawMode?.(false);
-  const rl = readline.createInterface({ input: process.stdin, terminal: false });
+function readAnswer(input, t, known, expected) {
   process.stdout.write(pc.dim("> "));
   return new Promise((resolve) => {
     let buf = "";
     let timer;
     const done = (v) => {
       clearTimeout(timer);
-      resolve(v); // before close(), whose "close" event would resolve with null
-      rl.close();
+      // Lines that still arrive (the end of a long paste) are dropped, not read as the next answer
+      input.listen(null, null);
+      resolve(v);
     };
     const again = (msg) => {
       console.log(pc.yellow(msg));
@@ -140,7 +169,7 @@ function readAnswer(t, known, expected) {
       if (t.skip.includes(buf.trim().toLowerCase())) return done(null);
       const items = parseAnswer(buf);
       // A slow paste stopped halfway through the list: wait for the rest
-      if (!items && buf.lastIndexOf("[") > buf.lastIndexOf("]")) return;
+      if (!items && unfinished(buf)) return;
       const named = (items ?? [])
         .filter((it) => it && typeof it === "object" && !/^2 to 6 words$/i.test(String(it.title ?? "").trim()))
         .map((it) => ({ ...it, file: String(it.file ?? "").trim().split(/[\\/]/).pop() }));
@@ -160,16 +189,38 @@ function readAnswer(t, known, expected) {
         empty: [...new Set(mine.filter((it) => !filled.includes(it)).map((it) => it.file))],
       });
     };
-    rl.on("line", (line) => {
-      buf += line + "\n";
-      clearTimeout(timer);
-      timer = setTimeout(check, QUIET);
-    });
-    rl.on("close", () => {
-      clearTimeout(timer);
-      resolve(null);
-    });
+    input.listen(
+      (line) => {
+        buf += line + "\n";
+        clearTimeout(timer);
+        timer = setTimeout(check, QUIET);
+      },
+      () => done(null),
+    );
   });
+}
+
+/**
+ * True while the list that was started is not closed yet. Brackets inside the text (like
+ * the "[cite: 9]" some chats add) do not count. On Windows the last line of a paste ("]")
+ * only arrives when Enter is pressed, so the answer must wait for it.
+ */
+export function unfinished(text) {
+  const start = text.indexOf("[");
+  if (start < 0) return false;
+  let depth = 0;
+  let inString = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (inString) {
+      if (c === "\\") i++;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === "[" || c === "{") depth++;
+    else if (c === "]" || c === "}") depth--;
+    if (depth === 0) return false;
+  }
+  return true;
 }
 
 /** "a.jpg, b.jpg, c.jpg and 4 more" */
@@ -191,6 +242,31 @@ function openFolder(dir) {
   } catch {
     return false;
   }
+}
+
+/**
+ * Closes the file explorer window that openFolder opened, if it is still open. Best effort:
+ * on Linux each file manager is different, so the window stays.
+ */
+function closeFolder(dir) {
+  const quote = (x) => x.replace(/'/g, "''");
+  const run = WIN
+    ? [
+        "powershell",
+        [
+          "-NoProfile",
+          "-Command",
+          `$d = [IO.Path]::GetFullPath('${quote(dir)}').TrimEnd('\\'); (New-Object -ComObject Shell.Application).Windows() | ` +
+            `Where-Object { try { $_.Document.Folder.Self.Path.TrimEnd('\\') -eq $d } catch { $false } } | ForEach-Object { $_.Quit() }`,
+        ],
+      ]
+    : MAC
+      ? ["osascript", ["-e", `tell application "Finder" to close (every window whose target is (POSIX file ${JSON.stringify(dir)} as alias))`]]
+      : null;
+  if (!run) return;
+  try {
+    spawn(run[0], run[1], { detached: true, stdio: "ignore", windowsHide: true }).on("error", () => {}).unref();
+  } catch {}
 }
 
 /** Copies a UTF-8 text file to the clipboard (accents included). */
