@@ -38,7 +38,7 @@ Nasceu porque eu precisava das fotos e descrições das telas dos meus projetos 
 
 ## A fazer
 - Opção "incluir subdomínios" (ex.: `--subdomains`): capturar `app.meusite.com`, `blog.meusite.com` junto com `meusite.com`. Outros domínios continuam sempre de fora. Pedido em 14/10/2026.
-- Testar no Windows: opção "Um chat no navegador" (pasta abrindo sozinha e texto copiado), Codex e Antigravity reais.
+- Testar no Windows: opção "Um chat no navegador" (pasta abrindo sozinha e texto copiado), Codex e Antigravity CLI reais.
 - Deixar o CLI multilíngue (eu faço).
 - Criar o repositório no GitHub, pôr `repository`/`homepage` no package.json e publicar no npm.
 - Depois: ler o `sitemap.xml` para achar páginas; carrossel do portfólio (PR #7).

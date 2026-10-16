@@ -6,7 +6,7 @@ import { parseAnswer, applyItems } from "./answers.mjs";
 
 /**
  * Two ways to describe the screens automatically (the third, an AI chat in the browser, is chat.mjs):
- * - an AI tool already installed and logged in on the computer (Claude Code, Codex, Antigravity), which
+ * - an AI tool already installed and logged in on the computer (Claude Code, Codex, Antigravity CLI), which
  *   runs on the person's own plan with no API key;
  * - "api": any provider with an OpenAI-compatible API (OpenAI, Gemini, OpenRouter, Anthropic,
  *   Ollama...), called with fetch, so no SDK is installed.
@@ -25,7 +25,7 @@ export const AGENTS = {
     login: "codex login",
   },
   antigravity: {
-    name: "Antigravity",
+    name: "Antigravity CLI",
     bin: "agy",
     install: { win: "irm https://antigravity.google/cli/install.ps1 | iex", unix: "curl -fsSL https://antigravity.google/cli/install.sh | bash" },
     login: "agy",
@@ -44,28 +44,40 @@ export function installAgent(agent) {
   WIN
     ? spawnSync("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", line], { stdio: "inherit" })
     : spawnSync("sh", ["-c", line], { stdio: "inherit" });
-  addToPath(knownFolders());
+  pathRead = false;
+  findInstalled();
+  // Some installers exit with an error when the tool is already there: what counts is finding it
+  return installedAgents().includes(agent);
+}
+
+/**
+ * A tool installed in another terminal, or by the installer just now, is only on the PATH of
+ * terminals opened afterwards. This adds the folders where the official installers put the
+ * tools (Claude Code: ~/.local/bin; Codex: the npm folder; Antigravity CLI: %LOCALAPPDATA%\agy\bin)
+ * and, on Windows, the PATH saved for new terminals.
+ */
+let pathRead = false;
+function findInstalled() {
+  const home = process.env.USERPROFILE || process.env.HOME || "";
+  const dirs = [path.join(home, ".local", "bin")];
   if (WIN) {
-    // What the installer wrote to the user's PATH (Antigravity: %LOCALAPPDATA%\agy\bin)
+    if (process.env.LOCALAPPDATA) dirs.push(path.join(process.env.LOCALAPPDATA, "agy", "bin"));
+    if (process.env.APPDATA) dirs.push(path.join(process.env.APPDATA, "npm"));
+  }
+  addToPath(dirs);
+  if (pathRead) return;
+  pathRead = true;
+  if (WIN) {
     const r = spawnSync(
       "powershell",
       ["-NoProfile", "-Command", "[Environment]::GetEnvironmentVariable('Path','User'); [Environment]::GetEnvironmentVariable('Path','Machine')"],
       { encoding: "utf8", timeout: 20_000 },
     );
     addToPath(String(r.stdout ?? "").split(/[;\r\n]+/).map((d) => d.replace(/%([^%]+)%/g, (m, v) => process.env[v] ?? m)));
+  } else {
+    const npmPrefix = spawnSync("npm", ["prefix", "-g"], { encoding: "utf8", timeout: 20_000 }).stdout?.trim();
+    if (npmPrefix) addToPath([path.join(npmPrefix, "bin")]);
   }
-  // Some installers exit with an error when the tool is already there: what counts is finding it
-  return installedAgents().includes(agent);
-}
-
-/** Where the official installers put the tools, for a terminal opened before the install. */
-function knownFolders() {
-  const home = process.env.USERPROFILE || process.env.HOME || "";
-  const extra = [path.join(home, ".local", "bin")];
-  if (WIN && process.env.LOCALAPPDATA) extra.push(path.join(process.env.LOCALAPPDATA, "agy", "bin"));
-  const npmPrefix = spawnSync(...cmd("npm", ["prefix", "-g"], { encoding: "utf8", timeout: 20_000 })).stdout?.trim();
-  if (npmPrefix) extra.push(WIN ? npmPrefix : path.join(npmPrefix, "bin"));
-  return extra;
 }
 
 function addToPath(dirs) {
@@ -97,11 +109,14 @@ function cmd(bin, args, opts) {
 
 /** The AI tools found on this computer. */
 export function installedAgents() {
-  // Installed in another terminal, which this one does not know about yet
-  if (WIN && process.env.LOCALAPPDATA) addToPath([path.join(process.env.LOCALAPPDATA, "agy", "bin"), path.join(process.env.USERPROFILE ?? "", ".local", "bin")]);
-  return Object.keys(AGENTS).filter(
-    (k) => spawnSync(...cmd(AGENTS[k].bin, ["--version"], { stdio: "ignore", timeout: 20_000 })).status === 0,
-  );
+  const found = () =>
+    Object.keys(AGENTS).filter((k) => spawnSync(...cmd(AGENTS[k].bin, ["--version"], { stdio: "ignore", timeout: 20_000 })).status === 0);
+  let list = found();
+  if (list.length < Object.keys(AGENTS).length && !pathRead) {
+    findInstalled();
+    list = found();
+  }
+  return list;
 }
 
 export function checkAgent(agent, config = {}) {
