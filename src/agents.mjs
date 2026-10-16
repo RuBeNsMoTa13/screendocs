@@ -4,6 +4,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { primaryScreens, task } from "./report.mjs";
 import { parseAnswer, applyItems, sameFile } from "./answers.mjs";
 import { resolveModel, findKey, checkLocal, KEYS_FILE } from "./providers.mjs";
+import { DOCS_FILE, docsText } from "./docs.mjs";
 
 /**
  * Two ways to describe the screens automatically (the third, an AI chat in the browser, is chat.mjs):
@@ -161,7 +162,8 @@ export async function describeWith(agent, root, config) {
   const screens = primaryScreens(data);
   if (agent === "api") return applyItems(root, await describeWithApi(data, root, screens, config), `${config.model} (API)`);
 
-  const docsDir = config.docs ? path.resolve(config.docs) : "";
+  // The documentation text was saved in the capture folder, where the tool opens it
+  const docs = fs.existsSync(path.join(root, DOCS_FILE)) ? { file: DOCS_FILE } : {};
   console.log(`\nDescribing ${screens.length} screen(s) with ${AGENTS[agent].name}...`);
   fs.rmSync(path.join(root, LOG), { force: true });
 
@@ -169,10 +171,10 @@ export async function describeWith(agent, root, config) {
   for (let i = 0; i < screens.length; i += BATCH) {
     const batch = screens.slice(i, i + BATCH);
     const file = `.screendocs-task-${i / BATCH + 1}.md`;
-    fs.writeFileSync(path.join(root, file), task(data, batch, "image file listed below (open it from this folder)", docsDir));
+    fs.writeFileSync(path.join(root, file), task(data, batch, { what: "image file listed below (open it from this folder)", docs }));
     process.stdout.write(`  ${i + 1}-${i + batch.length} of ${screens.length}... `);
     try {
-      const answer = parseAnswer(await run(agent, root, file, batch, docsDir)) ?? [];
+      const answer = parseAnswer(await run(agent, root, file, batch)) ?? [];
       const mine = answer.filter((it) => batch.some((s) => sameFile(it?.file, s.file)));
       items.push(...mine);
       console.log(
@@ -220,7 +222,7 @@ function envelope(out, err) {
   return out;
 }
 
-function run(agent, root, file, batch, docsDir) {
+function run(agent, root, file, batch) {
   const outName = ".screendocs-answer.txt";
   const outFile = path.join(root, outName);
   // Antigravity's print mode has lost stdout when run by another program in some versions, so it also saves the answer to a file
@@ -231,10 +233,10 @@ function run(agent, root, file, batch, docsDir) {
   const q = (s) => (WIN && /[\s"]/.test(s) ? `"${s.replace(/"/g, '\\"')}"` : s);
   const args =
     agent === "claude"
-      ? ["-p", q(ask), "--allowedTools", "Read", ...(docsDir ? ["--add-dir", q(docsDir)] : [])]
+      ? ["-p", q(ask), "--allowedTools", "Read"]
       : agent === "codex"
         ? ["exec", "--skip-git-repo-check", "--ephemeral", "-i", q(batch.map((s) => s.file).join(",")), "-o", q(outFile), q(ask)]
-        : [...(docsDir ? ["--add-dir", q(docsDir)] : []), "--print-timeout", "15m", "--output-format", "json", "-p", q(ask)];
+        : ["--print-timeout", "15m", "--output-format", "json", "-p", q(ask)];
 
   return new Promise((resolve, reject) => {
     const child = spawn(...cmd(AGENTS[agent].bin, args, { cwd: root, stdio: ["ignore", "pipe", "pipe"] }));
@@ -263,63 +265,85 @@ function run(agent, root, file, batch, docsDir) {
   });
 }
 
-/** One request per screen, 4 at a time, to an OpenAI-compatible /chat/completions. */
+/**
+ * Up to 10 screens per request, 4 requests at a time, to an OpenAI-compatible /chat/completions.
+ * The documentation goes with every request, so fewer requests send it fewer times. Screens a
+ * request leaves out, or all of them when it fails (some models take one image only), are
+ * asked again one by one.
+ */
 async function describeWithApi(data, root, screens, config) {
   await prepareApi(config);
   const key = config.apiKey || "";
   const url = `${config.apiUrl.replace(/\/+$/, "")}/chat/completions`;
-  const docs = config.docs ? readDocs(config.docs) : "";
+  const docs = { text: docsText(root) };
   console.log(`\nDescribing ${screens.length} screen(s) with ${config.model}...`);
+
+  const ask = async (batch) => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [
+          { role: "system", content: task(data, batch, { what: "screenshot", docs }) },
+          {
+            role: "user",
+            content: batch.flatMap((s) => [
+              { type: "text", text: `Screenshot: ${s.file}` },
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${fs.readFileSync(path.join(root, s.file)).toString("base64")}` } },
+            ]),
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(batch.length > 1 ? 300_000 : 120_000),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = body.error?.message || body.message || `HTTP ${res.status}`;
+      // A model that only reads text rejects the screenshot; say so in plain words
+      if (/image|vision|multimodal|modalit/i.test(msg) && !/401|403/.test(String(res.status)) && batch.length === 1)
+        throw new Error(`${config.model} does not seem to read images. Pick a model that does (e.g. openai/gpt-4o-mini, gemini/gemini-2.5-flash). API said: ${msg}`);
+      // A wrong key fails every screen: say so once, with how to fix it
+      if (res.status === 401 || res.status === 403)
+        throw new Error(
+          `the API refused the key (HTTP ${res.status}: ${msg}).` +
+            (config.provider && !config.provider.local ? ` Save the right one with: npx screendocs keys set ${config.provider.id}` : ""),
+        );
+      throw new Error(msg);
+    }
+    const text = body.choices?.[0]?.message?.content ?? "";
+    const answer = parseAnswer(text) ?? parseObject(text) ?? [];
+    // One screen: whatever came back is about it
+    if (batch.length === 1) return answer.slice(0, 1).map((a) => ({ ...a, file: batch[0].file }));
+    return answer.filter((it) => batch.some((s) => sameFile(it?.file, s.file)));
+  };
+  // A bad key or a model that does not read images fails every screen
+  const fatal = (err) => /401|403|api key|unauthorized|does not seem to read images/i.test(err.message);
 
   const items = [];
   let done = 0;
-  const queue = [...screens];
+  let stop = false;
+  const queue = [];
+  for (let i = 0; i < screens.length; i += BATCH) queue.push(screens.slice(i, i + BATCH));
   const worker = async () => {
-    for (let s; (s = queue.shift()); ) {
-      const image = fs.readFileSync(path.join(root, s.file)).toString("base64");
+    for (let batch; !stop && (batch = queue.shift()); ) {
+      let got = [];
       try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) },
-          body: JSON.stringify({
-            model: config.model,
-            messages: [
-              { role: "system", content: task(data, [s], "screenshot") + (docs ? `\n<documentation>\n${docs}\n</documentation>` : "") },
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: `Screenshot: ${s.file}` },
-                  { type: "image_url", image_url: { url: `data:image/jpeg;base64,${image}` } },
-                ],
-              },
-            ],
-          }),
-          signal: AbortSignal.timeout(120_000),
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const msg = body.error?.message || body.message || `HTTP ${res.status}`;
-          // A model that only reads text rejects the screenshot; say so in plain words
-          if (/image|vision|multimodal|modalit/i.test(msg) && !/401|403/.test(String(res.status)))
-            throw new Error(`${config.model} does not seem to read images. Pick a model that does (e.g. openai/gpt-4o-mini, gemini/gemini-2.5-flash). API said: ${msg}`);
-          // A wrong key fails every screen: say so once, with how to fix it
-          if (res.status === 401 || res.status === 403)
-            throw new Error(
-              `the API refused the key (HTTP ${res.status}: ${msg}).` +
-                (config.provider && !config.provider.local ? ` Save the right one with: npx screendocs keys set ${config.provider.id}` : ""),
-            );
-          throw new Error(msg);
-        }
-        const text = body.choices?.[0]?.message?.content ?? "";
-        const answer = parseAnswer(text) ?? parseObject(text);
-        if (answer?.length) items.push(...answer.map((a) => ({ ...a, file: s.file })));
-        else console.log(`  ${s.file}: no JSON in the answer`);
+        got = await ask(batch);
       } catch (err) {
-        console.log(`  ${s.file}: ${err.message}`);
-        // a bad key or a model that does not read images fails every screen
-        if (/401|403|api key|unauthorized|does not seem to read images/i.test(err.message)) queue.length = 0;
+        if (fatal(err)) {
+          console.log(`\n  ${err.message}`);
+          stop = true;
+          break;
+        }
+        if (batch.length === 1) console.log(`\n  ${batch[0].file}: ${err.message}`);
       }
-      process.stdout.write(`\r  ${++done}/${screens.length}`);
+      items.push(...got);
+      const missing = batch.filter((s) => !got.some((it) => sameFile(it.file, s.file)));
+      if (batch.length > 1 && missing.length) queue.push(...missing.map((s) => [s]));
+      else if (batch.length === 1 && !got.length) console.log(`\n  ${batch[0].file}: no JSON in the answer`);
+      done += batch.length - (batch.length > 1 ? missing.length : 0);
+      process.stdout.write(`\r  ${done}/${screens.length}`);
     }
   };
   await Promise.all(Array.from({ length: 4 }, worker));
@@ -335,25 +359,4 @@ function parseObject(text) {
   } catch {
     return null;
   }
-}
-
-/** Markdown and text files from the docs folder, up to ~150 KB. */
-function readDocs(dir) {
-  if (!fs.existsSync(dir)) throw new Error(`docs folder not found: ${dir}`);
-  const out = [];
-  let size = 0;
-  const walk = (d) => {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-      if (e.name.startsWith(".") || e.name === "node_modules") continue;
-      const p = path.join(d, e.name);
-      if (e.isDirectory()) walk(p);
-      else if (/\.(md|mdx|txt)$/i.test(e.name) && size < 150_000) {
-        const t = fs.readFileSync(p, "utf8").slice(0, 150_000 - size);
-        size += t.length;
-        out.push(`## ${path.relative(dir, p)}\n${t}`);
-      }
-    }
-  };
-  walk(dir);
-  return out.join("\n\n");
 }

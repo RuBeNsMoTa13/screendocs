@@ -12,6 +12,7 @@ import { AGENTS, installedAgents, installCommand, installAgent } from "./agents.
 import { PROVIDERS, providerById, resolveModel, findKey, saveKey, checkLocal, KEYS_FILE } from "./providers.mjs";
 import { checkUrl, EXAMPLES, URL_TEXT, short } from "./checkurl.mjs";
 import { setBack } from "./hud.mjs";
+import { DOC_TYPES } from "./docs.mjs";
 
 const BIG = String.raw`
 ███████╗ ██████╗██████╗ ███████╗███████╗███╗   ██╗██████╗  ██████╗  ██████╗███████╗
@@ -82,12 +83,18 @@ const T = {
     lang: "Description language",
     previous: (h) => `There is already a capture of ${h}. What should happen to it?`,
     replace: "Replace it", keepOld: "Keep it (renamed with its date)",
-    advanced: "Change advanced options? (link depth, output folder, extra blurring...)",
+    advanced: "Change advanced options? (link depth, extra blurring)",
     depth: "How many clicks away from the start page to look for pages?",
     maskSel: "Other things to blur (CSS selectors, e.g. .customer-name, #balance)",
-    out: "Output folder",
+    out: "Where to save the capture? (Enter keeps this folder)",
     headed: "Show the browser while capturing?",
-    docs: "Folder with the project's docs for the AI to read (e.g. ./docs)",
+    instructions: "Should the descriptions focus on something specific? (Enter to skip)",
+    instructionsHint: "e.g. what the customer gains on each screen",
+    docs: "A folder or file with the site's documentation for the AI to read? (Enter to skip)",
+    docsHint: "e.g. C:\\mysite\\docs or ./manual.pdf",
+    docsTypes: "md, txt, html, json, csv, PDF, Word, Excel, PowerPoint, OpenDocument...",
+    docsMissing: "Not found. Type the path of a folder or a file, or leave it empty.",
+    docsBadType: (types) => `screendocs does not read this kind of file. It reads: ${types}`,
     usingConfig: (f) => `Also using the options in ${f}.`,
     start: "Start the capture?",
     command: "Same thing next time, without the questions",
@@ -148,12 +155,18 @@ const T = {
     lang: "Idioma das descrições",
     previous: (h) => `Já existe uma captura de ${h}. O que fazer com ela?`,
     replace: "Substituir", keepOld: "Guardar (renomeada com a data)",
-    advanced: "Mudar as opções avançadas? (profundidade dos links, pasta de saída, borrar mais coisas...)",
+    advanced: "Mudar as opções avançadas? (profundidade dos links, borrar mais coisas)",
     depth: "A quantos cliques da página inicial procurar páginas?",
     maskSel: "Outras coisas para borrar (seletores CSS, ex.: .nome-cliente, #saldo)",
-    out: "Pasta de saída",
+    out: "Onde salvar a captura? (Enter para usar esta pasta)",
     headed: "Mostrar o navegador durante a captura?",
-    docs: "Pasta com a documentação do projeto para a IA ler (ex.: ./docs)",
+    instructions: "Quer que as descrições falem de algo específico? (Enter para pular)",
+    instructionsHint: "ex.: o que o cliente ganha em cada tela",
+    docs: "Tem uma pasta ou arquivo com documentação do site para a IA ler? (Enter para pular)",
+    docsHint: "ex.: C:\\meusite\\docs ou ./manual.pdf",
+    docsTypes: "md, txt, html, json, csv, PDF, Word, Excel, PowerPoint, OpenDocument...",
+    docsMissing: "Não achei. Digite o caminho de uma pasta ou de um arquivo, ou deixe vazio.",
+    docsBadType: (types) => `O screendocs não lê esse tipo de arquivo. Ele lê: ${types}`,
     usingConfig: (f) => `Usando também as opções de ${f}.`,
     start: "Começar a captura?",
     command: "Para repetir sem as perguntas",
@@ -227,7 +240,7 @@ export async function interactive() {
   banner(t);
   p.intro(pc.bold(bgCrimson(pc.white(" ScreenDocs "))));
 
-  const s = { outDir: "screendocs-output", maxPages: "20", depth: "3" };
+  const s = { outDir: path.resolve(OUT), maxPages: "20", depth: "3" };
   const isNum = (v) => (/^\d+$/.test((v ?? "").trim()) ? undefined : t.number);
   const steps = [
     async () => {
@@ -267,6 +280,7 @@ export async function interactive() {
       }));
     },
     async () => (s.video = await a(yesNo({ message: t.video, initialValue: s.video ?? true }))),
+    async () => (s.headed = await a(yesNo({ message: t.headed, initialValue: s.headed ?? false }))),
     async () => {
       s.mode = await a(p.select({
         message: t.mode,
@@ -299,6 +313,10 @@ export async function interactive() {
     },
     async () => (s.autoMask = await a(yesNo({ message: t.mask, initialValue: s.autoMask ?? true }))),
     async () => {
+      // The full path, so the person sees where the capture goes before it starts
+      s.outDir = (await a(p.text({ message: t.out, initialValue: s.outDir, validate: (v) => ((v ?? "").trim() ? undefined : t.out) }))).trim();
+    },
+    async () => {
       s.how = await chooseDescriber({ t, a, later: true });
       if (!s.how.describe) p.log.info(pc.dim(t.noKey));
     },
@@ -310,6 +328,8 @@ export async function interactive() {
         options: [{ value: "pt", label: "Português" }, { value: "en", label: "English" }, { value: "es", label: "Español" }],
       }));
     },
+    { when: () => s.how.describe, run: async () => (s.instructions = await askInstructions(s.instructions, { t, a })) },
+    { when: () => s.how.describe, run: async () => (s.docs = await askDocs(s.docs, { t, a })) },
     async () => (s.advanced = await a(yesNo({ message: t.advanced, initialValue: s.advanced ?? false }))),
     {
       when: () => s.advanced && s.mode === "discover",
@@ -318,17 +338,6 @@ export async function interactive() {
     {
       when: () => s.advanced,
       run: async () => (s.maskSel = (await a(p.text({ message: t.maskSel, placeholder: t.none, initialValue: s.maskSel }))) ?? ""),
-    },
-    {
-      when: () => s.advanced,
-      run: async () => {
-        s.outDir = (await a(p.text({ message: t.out, initialValue: s.outDir, validate: (v) => ((v ?? "").trim() ? undefined : t.out) }))).trim();
-      },
-    },
-    { when: () => s.advanced, run: async () => (s.headed = await a(yesNo({ message: t.headed, initialValue: s.headed ?? false }))) },
-    {
-      when: () => s.advanced && s.how.describe && s.how.describe !== "chat",
-      run: async () => (s.docs = (await a(p.text({ message: t.docs, placeholder: t.none, initialValue: s.docs }))) ?? ""),
     },
     {
       when: () => fs.existsSync(path.join(s.outDir, s.host.replace(/[^a-z0-9.-]/gi, "_"))),
@@ -382,6 +391,8 @@ function toArgs(s) {
     args.push("--pages", s.paths.split(",").map((x) => x.trim()).filter(Boolean).join(","));
   }
   if (!s.autoMask) args.push("--no-auto-mask");
+  if (s.headed) args.push("--headed");
+  if (path.resolve(s.outDir) !== path.resolve(OUT)) args.push("--out", s.outDir);
   // --model alone already means an API
   if (s.how.describe === "api") {
     args.push("--model", s.how.model);
@@ -389,16 +400,49 @@ function toArgs(s) {
     args.push("--describe", s.how.describe);
   }
   if (s.descLang !== "en") args.push("--lang", s.descLang);
+  if (s.how.describe && s.instructions) args.push("--instructions", s.instructions);
+  if (s.how.describe && s.docs) args.push("--docs", s.docs);
   if (s.advanced) {
     if (s.mode === "discover" && s.depth !== "3") args.push("--depth", s.depth);
     if (s.maskSel?.trim()) args.push("--mask", s.maskSel.trim());
-    if (s.outDir !== "screendocs-output") args.push("--out", s.outDir);
-    if (s.headed) args.push("--headed");
-    if (s.how.describe && s.how.describe !== "chat" && s.docs?.trim()) args.push("--docs", s.docs.trim());
   }
   if (s.keep) args.push("--keep");
   return args;
 }
+
+/** The default output folder, inside the folder where screendocs runs. */
+const OUT = "screendocs-output";
+
+/**
+ * The two optional questions after choosing who describes: something specific the
+ * descriptions should take into account, and the documentation for the AI to read.
+ * Also used by "screendocs describe", with what the capture already has filled in.
+ */
+export async function askBrief(initial = {}, opts = {}) {
+  return { instructions: await askInstructions(initial.instructions, opts), docs: await askDocs(initial.docs, opts) };
+}
+
+async function askInstructions(initial = "", { t = T[uiLang()], a = ask(t) } = {}) {
+  return String((await a(p.text({ message: t.instructions, placeholder: t.instructionsHint, initialValue: initial ?? "" }))) ?? "").trim();
+}
+
+async function askDocs(initial = "", { t = T[uiLang()], a = ask(t) } = {}) {
+  const v = await a(p.text({
+    message: `${t.docs}\n${pc.dim(t.docsTypes)}`,
+    placeholder: t.docsHint,
+    initialValue: initial ?? "",
+    validate: (v) => {
+      const f = unquote(v);
+      if (!f) return undefined;
+      if (!fs.existsSync(f)) return t.docsMissing;
+      if (fs.statSync(f).isFile() && !DOC_TYPES.includes(path.extname(f).slice(1).toLowerCase())) return t.docsBadType(DOC_TYPES.join(", "));
+    },
+  }));
+  return unquote(v);
+}
+
+/** Windows "Copy as path" wraps the path in quotes. */
+const unquote = (v) => String(v ?? "").trim().replace(/^(["'])(.*)\1$/, "$2");
 
 /**
  * "Who writes the descriptions?": an AI tool installed here, an API, an AI chat in the

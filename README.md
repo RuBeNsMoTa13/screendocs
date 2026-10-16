@@ -35,7 +35,7 @@ With just the link (`npx screendocs mysite.com`), it asks nothing and uses the d
 | Personal data | blurs emails, phones, CPF/CNPJ and filled form fields | `--mask`, `--no-auto-mask` |
 | Descriptions | no AI: each screen keeps the page's own text (title and first paragraph) | `--describe`, or later `npx screendocs describe <site>` |
 | Description language | English | `--lang pt` |
-| Folder | `screendocs-output/<site>/`, replacing the previous capture of the same site | `--out`, `--keep` |
+| Folder | `screendocs-output/<site>/` inside the folder where you run the command (the terminal shows the full path at the start), replacing the previous capture of the same site | `--out`, `--keep` |
 | Browser | hidden | `--headed` |
 | Report | not opened; the terminal shows the path to `index.html` | `--open` |
 
@@ -86,7 +86,8 @@ Before each run it opens the page you were on when you logged in; if the site se
 | `--no-auto-mask` | | don't blur emails, phones, documents |
 | `--describe <how>` | | who writes the descriptions: `claude`, `codex`, `antigravity` or `chat` (see below) |
 | `--model <provider/model>` | | describe with an API (e.g. `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; see below) |
-| `--docs <dir>` | | Markdown docs the AI reads when describing |
+| `--instructions <text>` | | what else the descriptions should take into account, e.g. `"focus on what the customer gains"` |
+| `--docs <path>` | | the project's documentation for the AI to read: a folder or one file (see [Extra request and documentation](#extra-request-and-documentation)) |
 | `--lang <code>` | `en` | description language (`pt`, `es`...) |
 | `--config <file>` | `screendocs.config.json` | config file (see below) |
 | `--headed` | | show the browser |
@@ -118,6 +119,7 @@ Put `screendocs.config.json` where you run the command and keep the options ther
   "mask": [".customer-name", "#balance"],
   "describe": "claude",
   "docs": "./docs",
+  "instructions": "focus on what the customer gains on each screen",
   "lang": "pt"
 }
 ```
@@ -131,6 +133,7 @@ screendocs-output/your-site.com/
   screens.json        every page and screen with title and description
   screens-original.json  the same, as captured
   prompt.md           how to describe the screens with an AI chat on your own
+  docs-for-ai.md      the text taken from the documentation (only with --docs)
   for-ai/part-1/...   the screens to describe, with unique names, plus the text for the AI
   desktop/<page>/01.jpg, 02.jpg ... full.jpg, video.webm
   mobile/<page>/...
@@ -183,6 +186,19 @@ For another OpenAI-compatible server, do as the OpenAI tools do: set `OPENAI_BAS
 
 Pick a model that reads images; with one that doesn't, screendocs tells you. The menu asks for the provider and the model, uses the saved key when there is one, and never shows the key.
 
+screendocs sends up to 10 screens per request, so the documentation goes out a few times only and the bill stays small. Screens a request leaves out (or all of them, when the model takes one image at a time) are asked again one by one.
+
+### Extra request and documentation
+
+Every way of describing (chat, Claude Code, Codex, Antigravity, API and MCP) gets the same text with the rules. After you choose who describes, the menu asks two optional questions, and Enter skips each one:
+
+- **"Should the descriptions focus on something specific?"**: what you type goes to the AI too, e.g. *"focus on what the customer gains on each screen"*. On the command line: `--instructions "..."`.
+- **"A folder or file with the site's documentation for the AI to read?"**: a manual, a README, the project notes. On the command line: `--docs <path>`.
+
+The documentation can be a folder (with subfolders) or a single file, in `.md`, `.mdx`, `.txt`, `.html`, `.rst`, `.adoc`, `.json`, `.yaml`, `.csv`, PDF, Word (`.docx`), Excel (`.xlsx`), PowerPoint (`.pptx`) and OpenDocument (`.odt`, `.ods`, `.odp`). screendocs does not summarize anything: it takes the text out, keeps it in `docs-for-ai.md` in the capture folder and sends all of it to the AI, up to about 150 KB (around 40 pages); anything past that is cut. A scanned PDF (images only) has no text and is skipped.
+
+Both are saved with the capture, so a later `npx screendocs describe <site>` uses them again. To change them, pass another value; to remove them, pass an empty one (`--instructions ""`, `--docs ""`).
+
 ## Use it from an AI (MCP)
 
 `screendocs mcp` turns screendocs into tools for AI clients that speak [MCP](https://modelcontextprotocol.io) (Claude Code, Cursor, VS Code, Claude Desktop, Codex...). You ask in plain words, for example *"document the screens of mysite.com in Portuguese"*, and the AI captures the site, looks at each screenshot and writes the descriptions itself, on your plan, with no API key.
@@ -221,9 +237,9 @@ Captures and saved logins go to the folder the client starts the server in (in C
 
 | Tool | What it does |
 |---|---|
-| `capture_site` | Captures a site (same options as the command line: `pages`, `exclude`, `viewports`, `maxPages`, `depth`, `video`, `keep`, `mask`, `lang`...) |
+| `capture_site` | Captures a site (same options as the command line: `pages`, `exclude`, `viewports`, `maxPages`, `depth`, `video`, `keep`, `mask`, `lang`, `instructions`, `docs`...) |
 | `list_captures` | The sites already captured |
-| `get_capture` | The screens of a capture, with the path of each image and its current description |
+| `get_capture` | The screens of a capture, with the path of each image, its current description and the same text with the rules the other ways get (takes `instructions` and `docs`) |
 | `view_screens` | Shows up to 10 screenshots to the AI |
 | `save_descriptions` | Saves titles and descriptions into `screens.json` and the report, marked with the AI's name |
 | `login`, `save_login` | Opens a browser window for you to log in, then saves the session for later captures |

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { docsText } from "./docs.mjs";
 
 /** Writes screens.json (for scripts) and index.html (a report you can open or share). */
 export function writeReport(result, config) {
@@ -100,7 +101,7 @@ export function writeForAi(root) {
     fs.mkdirSync(partDir, { recursive: true });
     for (const [j, s] of batch.entries()) fs.copyFileSync(path.join(root, screens[i + j].file), path.join(partDir, s.file));
     const promptFile = path.join(partDir, "prompt.txt");
-    fs.writeFileSync(promptFile, task(data, batch, "attached image"));
+    fs.writeFileSync(promptFile, task(data, batch, { what: "attached image", docs: { text: docsText(root) } }));
     parts.push({ dir: partDir, names: batch.map((s) => s.file), prompt: promptFile });
   }
   return parts;
@@ -112,23 +113,35 @@ export function primaryScreens(data) {
   return data.pages.flatMap((p) => (p.viewports[vp]?.screens ?? []).map((s) => ({ ...s, page: p.url })));
 }
 
-/** The instructions and the list of screens, shared by prompt.md and the AI tools. */
-export function task(data, screens, what = "screenshot", docs = "") {
+/**
+ * The one text every way of describing gets (AI tools, API, chat and MCP): the rules, the
+ * person's extra request and the project documentation, when there are any, and the screens.
+ * - what: how the images arrive ("attached image", "screenshot"...);
+ * - docs: { text } to include the documentation, or { file } when the AI opens it itself;
+ * - reply: "json" (answer with a JSON array) or "tool" (MCP: save with save_descriptions).
+ */
+export function task(data, screens, { what = "screenshot", docs = {}, reply = "json" } = {}) {
   const lang = langName(data.lang);
   const list = screens
     .map((s) => `- \`${s.file}\` · page ${s.page}${s.heading ? ` · heading: ${s.heading}` : ""}${s.description && !s.describedBy && s.description !== s.heading ? ` · text: ${s.description}` : ""}`)
     .join("\n");
-  return `You are documenting the screens of the website ${data.url}. For each ${what}, say in ${lang} what the user sees and can do there, based only on what is visible and on the notes below${docs ? ` and on the project documentation in ${docs}` : ""}. Do not invent features.
-
-Reply with only a JSON array, one item per image, using the exact file names below. There ${screens.length === 1 ? "is 1 image" : `are ${screens.length} images`}, so the array must have exactly ${screens.length} item(s), none repeated. Write each description on a single line, with no source marks such as [cite: 1]. If any image did not arrive, write which ones before the JSON.
+  const hasDocs = Boolean(docs.text || docs.file);
+  const where = docs.file ? `in ${docs.file} (in this folder; read it first)` : "at the end of this text";
+  const answer =
+    reply === "tool"
+      ? `Save a title and a description for each screen with save_descriptions, using the exact file names below: a title of 2 to 6 words and a description of one or two sentences, each on a single line.`
+      : `Reply with only a JSON array, one item per image, using the exact file names below. There ${screens.length === 1 ? "is 1 image" : `are ${screens.length} images`}, so the array must have exactly ${screens.length} item(s), none repeated. Write each description on a single line, with no source marks such as [cite: 1]. If any image did not arrive, write which ones before the JSON.
 
 \`\`\`json
 [{ "file": "${screens[0]?.file ?? "desktop/home/01.jpg"}", "title": "2 to 6 words", "description": "one or two sentences" }]
-\`\`\`
+\`\`\``;
+  return `You are documenting the screens of the website ${data.url}. For each ${what}, say in ${lang} what the user sees and can do there, based only on what is visible and on the notes below${hasDocs ? ` and on the project documentation ${where}` : ""}. Do not invent features.
+${data.instructions ? `\nThe person also asked the descriptions to take this into account: "${data.instructions}". Follow it as long as it keeps to what the screens show.\n` : ""}
+${answer}
 
 Screens:
 ${list}
-`;
+${docs.text ? `\n<documentation>\n${docs.text.trim()}\n</documentation>\n` : ""}`;
 }
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
