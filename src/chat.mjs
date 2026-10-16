@@ -70,6 +70,7 @@ export async function chatFlow(root) {
 
   // Answers are accepted for any part, so images sent out of order are not lost
   const all = new Set(parts.flatMap((part) => part.names));
+  const input = lineReader();
   const received = new Map();
   for (const [i, part] of parts.entries()) {
     if (part.names.every((n) => received.has(n))) {
@@ -90,7 +91,7 @@ export async function chatFlow(root) {
     );
     // Until every image of the part has a description, or the person skips the rest
     for (;;) {
-      const answer = await readAnswer(t, all, part.names);
+      const answer = await readAnswer(input, t, all, part.names);
       if (!answer) {
         p.log.warn(t.skipped);
         break;
@@ -109,7 +110,34 @@ export async function chatFlow(root) {
       p.log.warn(t.missing(missing));
     }
   }
+  input.close();
   return applyItems(root, [...received.values()], "AI chat");
+}
+
+/**
+ * One reader for the whole flow. Closing it and opening another for each part paused and
+ * resumed the terminal in between, and on Windows the second part could then never be read.
+ */
+function lineReader() {
+  process.stdin.setRawMode?.(false);
+  const rl = readline.createInterface({ input: process.stdin, terminal: false });
+  let onLine = null;
+  let onClose = null;
+  let closed = false;
+  rl.on("line", (line) => onLine?.(line));
+  rl.on("close", () => {
+    closed = true;
+    onClose?.();
+  });
+  return {
+    listen(line, close) {
+      onLine = line;
+      onClose = close;
+      // The input already ended (Ctrl+D, or a pipe that ran out): nothing more will come
+      if (closed) close?.();
+    },
+    close: () => rl.close(),
+  };
 }
 
 /**
@@ -118,17 +146,16 @@ export async function chatFlow(root) {
  */
 const QUIET = 800;
 
-function readAnswer(t, known, expected) {
-  process.stdin.setRawMode?.(false);
-  const rl = readline.createInterface({ input: process.stdin, terminal: false });
+function readAnswer(input, t, known, expected) {
   process.stdout.write(pc.dim("> "));
   return new Promise((resolve) => {
     let buf = "";
     let timer;
     const done = (v) => {
       clearTimeout(timer);
-      resolve(v); // before close(), whose "close" event would resolve with null
-      rl.close();
+      // Lines that still arrive (the end of a long paste) are dropped, not read as the next answer
+      input.listen(null, null);
+      resolve(v);
     };
     const again = (msg) => {
       console.log(pc.yellow(msg));
@@ -160,15 +187,14 @@ function readAnswer(t, known, expected) {
         empty: [...new Set(mine.filter((it) => !filled.includes(it)).map((it) => it.file))],
       });
     };
-    rl.on("line", (line) => {
-      buf += line + "\n";
-      clearTimeout(timer);
-      timer = setTimeout(check, QUIET);
-    });
-    rl.on("close", () => {
-      clearTimeout(timer);
-      resolve(null);
-    });
+    input.listen(
+      (line) => {
+        buf += line + "\n";
+        clearTimeout(timer);
+        timer = setTimeout(check, QUIET);
+      },
+      () => done(null),
+    );
   });
 }
 
