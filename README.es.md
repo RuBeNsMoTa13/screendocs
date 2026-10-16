@@ -47,7 +47,7 @@ Solo con el enlace (`npx screendocs meusite.com.br`), no pregunta nada y usa los
 | Pantallas | computadora y celular | `--viewports desktop` o `--viewports mobile` |
 | Capturas | una por sección, más la página completa | |
 | Video | uno recorriendo cada página | `--no-video` |
-| Datos personales | difumina correos, teléfonos, CPF/CNPJ y campos llenos | `--mask`, `--no-auto-mask` |
+| Datos personales | difumina correos, teléfonos, documentos, tarjetas y campos llenos, y los quita del texto guardado | `--mask`, `--no-auto-mask` |
 | Descripciones | ninguna IA: cada pantalla queda con el texto de la página (título y primer párrafo) | `--describe`, o después `npx screendocs describe <site>` |
 | Idioma de las descripciones | el idioma de screendocs (se pregunta la primera vez) | `--lang pt` |
 | Carpeta | `screendocs-output/<site>/` dentro de la carpeta donde ejecutas el comando (la terminal muestra la ruta completa al principio), reemplazando la captura anterior del mismo sitio | `--out`, `--keep` |
@@ -104,7 +104,12 @@ Como queda en tu carpeta de usuario, la sesión vale en cualquier carpeta donde 
 - **Una imagen por sección**: `<header>`, `<section>`, `<footer>` y bloques parecidos; las páginas sin eso se cortan en franjas del tamaño de la pantalla. También captura la página completa.
 - **Computadora y celular** (1440×900 y 390×844).
 - **Video** de cada página recorriéndola.
-- **Oculta datos personales**: los correos, teléfonos, CPF/CNPJ y campos de correo/teléfono/contraseña llenos quedan difuminados en las capturas y en los videos. Agrega tus propios selectores con `--mask`.
+- **Oculta datos personales**: quedan difuminados en las capturas y en los videos, y se cambian por `•••` en el texto guardado con la captura (`screens.json`, el informe y el texto enviado a la IA):
+  - correos, números de tarjeta (revisados con su dígito verificador) y teléfonos en los formatos de Brasil, EE. UU., España e internacional (`+código`);
+  - documentos: CPF y CNPJ (Brasil, con o sin puntuación), SSN (EE. UU.), DNI y NIE (España), DNI (Argentina), CURP y RFC (México), IBAN;
+  - campos de correo, teléfono y contraseña llenos, y cualquier campo con uno de los datos anteriores.
+
+  Agrega tus propios selectores CSS con `--mask` (que también quedan fuera del texto guardado). Los nombres y el texto libre no se detectan: usa una cuenta de prueba cuando puedas.
 - **Descripciones**: por defecto, el título y el primer párrafo de cada sección. Una IA puede mirar cada captura y escribir un título y una descripción: consulta [Descripciones con cualquier IA](#descripciones-con-cualquier-ia).
 - **Informe**: `index.html` con todas las páginas, las dos pantallas y los videos, más el `screens.json` para usar en scripts.
 

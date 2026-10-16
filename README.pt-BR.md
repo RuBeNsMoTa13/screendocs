@@ -47,7 +47,7 @@ Com só o link (`npx screendocs meusite.com.br`), ele não pergunta nada e usa o
 | Telas | computador e celular | `--viewports desktop` ou `--viewports mobile` |
 | Fotos | uma por seção, mais a página inteira | |
 | Vídeo | um rolando cada página | `--no-video` |
-| Dados pessoais | borra e-mails, telefones, CPF/CNPJ e campos preenchidos | `--mask`, `--no-auto-mask` |
+| Dados pessoais | borra e-mails, telefones, documentos, cartões e campos preenchidos, e tira esses dados do texto salvo | `--mask`, `--no-auto-mask` |
 | Descrições | nenhuma IA: cada tela fica com o texto da página (título e primeiro parágrafo) | `--describe`, ou depois `npx screendocs describe <site>` |
 | Idioma das descrições | o idioma do screendocs (perguntado na primeira vez) | `--lang pt` |
 | Pasta | `screendocs-output/<site>/` dentro da pasta onde você roda o comando (o terminal mostra o caminho completo no começo), substituindo a captura anterior do mesmo site | `--out`, `--keep` |
@@ -104,7 +104,12 @@ Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você ro
 - **Uma imagem por seção**: `<header>`, `<section>`, `<footer>` e blocos parecidos; páginas sem isso são cortadas em fatias do tamanho da tela. Também tira a página inteira.
 - **Computador e celular** (1440×900 e 390×844).
 - **Vídeo** de cada página rolando.
-- **Esconde dados pessoais**: e-mails, telefones, CPF/CNPJ e campos de e-mail/telefone/senha preenchidos ficam borrados nas fotos e nos vídeos. Adicione seus próprios seletores com `--mask`.
+- **Esconde dados pessoais**: ficam borrados nas fotos e nos vídeos e viram `•••` no texto salvo com a captura (`screens.json`, o relatório e o texto enviado à IA):
+  - e-mails, números de cartão (conferidos pelo dígito verificador) e telefones nos formatos do Brasil, EUA, Espanha e internacional (`+código`);
+  - documentos: CPF e CNPJ (com ou sem pontuação), SSN (EUA), DNI e NIE (Espanha), DNI (Argentina), CURP e RFC (México), IBAN;
+  - campos de e-mail, telefone e senha preenchidos, e qualquer campo com um dos dados acima.
+
+  Adicione seus próprios seletores CSS com `--mask` (que também ficam fora do texto salvo). Nomes e texto livre não são detectados: use uma conta de teste quando puder.
 - **Descrições**: por padrão, o título e o primeiro parágrafo de cada seção. Uma IA pode olhar cada foto e escrever um título e uma descrição: veja [Descrições com qualquer IA](#descrições-com-qualquer-ia).
 - **Relatório**: `index.html` com todas as páginas, as duas telas e os vídeos, mais o `screens.json` para usar em scripts.
 
