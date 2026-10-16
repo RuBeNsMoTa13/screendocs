@@ -37,19 +37,41 @@ export const installCommand = (agent) => AGENTS[agent].install[WIN ? "win" : "un
 
 /**
  * Runs the official installer in this terminal, so the person sees it working. A new install
- * goes on the PATH of new terminals only, so the usual install folders are added here too.
+ * goes on the PATH of new terminals only, so the new PATH is read back here too.
  */
 export function installAgent(agent) {
   const line = installCommand(agent);
-  const r = WIN
+  WIN
     ? spawnSync("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", line], { stdio: "inherit" })
     : spawnSync("sh", ["-c", line], { stdio: "inherit" });
+  addToPath(knownFolders());
+  if (WIN) {
+    // What the installer wrote to the user's PATH (Antigravity: %LOCALAPPDATA%\agy\bin)
+    const r = spawnSync(
+      "powershell",
+      ["-NoProfile", "-Command", "[Environment]::GetEnvironmentVariable('Path','User'); [Environment]::GetEnvironmentVariable('Path','Machine')"],
+      { encoding: "utf8", timeout: 20_000 },
+    );
+    addToPath(String(r.stdout ?? "").split(/[;\r\n]+/).map((d) => d.replace(/%([^%]+)%/g, (m, v) => process.env[v] ?? m)));
+  }
+  // Some installers exit with an error when the tool is already there: what counts is finding it
+  return installedAgents().includes(agent);
+}
+
+/** Where the official installers put the tools, for a terminal opened before the install. */
+function knownFolders() {
   const home = process.env.USERPROFILE || process.env.HOME || "";
   const extra = [path.join(home, ".local", "bin")];
-  const npmPrefix = spawnSync(...cmd("npm", ["prefix", "-g"], { encoding: "utf8" })).stdout?.trim();
+  if (WIN && process.env.LOCALAPPDATA) extra.push(path.join(process.env.LOCALAPPDATA, "agy", "bin"));
+  const npmPrefix = spawnSync(...cmd("npm", ["prefix", "-g"], { encoding: "utf8", timeout: 20_000 })).stdout?.trim();
   if (npmPrefix) extra.push(WIN ? npmPrefix : path.join(npmPrefix, "bin"));
-  process.env.PATH = [process.env.PATH, ...extra].join(path.delimiter);
-  return r.status === 0 && installedAgents().includes(agent);
+  return extra;
+}
+
+function addToPath(dirs) {
+  const have = new Set(String(process.env.PATH ?? "").split(path.delimiter).map((d) => d.toLowerCase()));
+  const add = dirs.filter((d) => d && !have.has(d.toLowerCase()) && fs.existsSync(d));
+  if (add.length) process.env.PATH = [process.env.PATH, ...add].join(path.delimiter);
 }
 
 /** OpenAI-compatible endpoints of common providers, offered in the menu. */
@@ -75,6 +97,8 @@ function cmd(bin, args, opts) {
 
 /** The AI tools found on this computer. */
 export function installedAgents() {
+  // Installed in another terminal, which this one does not know about yet
+  if (WIN && process.env.LOCALAPPDATA) addToPath([path.join(process.env.LOCALAPPDATA, "agy", "bin"), path.join(process.env.USERPROFILE ?? "", ".local", "bin")]);
   return Object.keys(AGENTS).filter(
     (k) => spawnSync(...cmd(AGENTS[k].bin, ["--version"], { stdio: "ignore", timeout: 20_000 })).status === 0,
   );
