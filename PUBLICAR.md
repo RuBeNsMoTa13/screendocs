@@ -1,31 +1,36 @@
-# Como publicar o screendocs no npm (uma vez)
+# Como publicar o screendocs no npm
 
-1. Crie uma conta grátis em https://www.npmjs.com/signup
-2. Nesta pasta, rode:
+## Primeira versão (0.1.0)
+
+O `package.json` já está em `0.1.0`. Na pasta do projeto, com a `main` atualizada (`git pull`):
 
 ```
 npm login
+npm pack --dry-run
 npm publish
+git tag v0.1.0
+git push origin v0.1.0
 ```
+
+O `npm pack --dry-run` mostra o que vai para o npm: só `bin/`, `src/`, os READMEs, o `LICENSE` e o `package.json`.
 
 Pronto: qualquer pessoa já consegue rodar `npx screendocs https://site.com`.
 
-Para lançar uma versão nova depois de mudar o código:
+## Versões seguintes
+
+Depois de mudar o código:
 
 ```
 npm version patch
 npm publish
-```
-
-## Instalador do Claude Desktop (.mcpb)
-
-A cada versão, crie a tag e envie para o GitHub:
-
-```
 git push --follow-tags
 ```
 
-(`npm version patch` já cria a tag `v0.1.1`.) O GitHub Actions gera o `screendocs.mcpb` e cria o Release sozinho. O link para baixar a versão mais recente é sempre:
+(`npm version patch` sobe a versão no `package.json`, faz o commit e cria a tag, por exemplo `v0.1.1`.)
+
+## Instalador do Claude Desktop (.mcpb)
+
+Ao enviar a tag para o GitHub, o GitHub Actions gera o `screendocs.mcpb` e cria o Release sozinho. A tag precisa ser igual à versão do `package.json`. O link para baixar a versão mais recente é sempre:
 
 https://github.com/RuBeNsMoTa13/screendocs/releases/latest/download/screendocs.mcpb
 
