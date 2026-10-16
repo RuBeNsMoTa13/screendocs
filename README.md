@@ -126,7 +126,9 @@ Put `screendocs.config.json` where you run the command and keep the options ther
 ```
 screendocs-output/your-site.com/
   index.html          report
+  index-original.html the report as captured, before any AI description (never rewritten)
   screens.json        every page and screen with title and description
+  screens-original.json  the same, as captured
   prompt.md           how to describe the screens with an AI chat on your own
   for-ai/part-1/...   the screens to describe, with unique names, plus the text for the AI
   desktop/<page>/01.jpg, 02.jpg ... full.jpg, video.webm
@@ -143,11 +145,11 @@ npx screendocs describe your-site.com
 
 Without the site (or with a site that has no capture), it lists the captures there are so you can pick one.
 
-The titles and descriptions go into `screens.json` and `index.html`, and the mobile screens reuse the description of the same section on desktop. The report marks each screen with who described it (for example "Claude Code" or "AI chat"), or "page text" when no AI did, and the terminal lists the screens left out. Use `--lang pt` (or the menu) for another language.
+The titles and descriptions go into `screens.json` and `index.html`, and the mobile screens reuse the description of the same section on desktop. The report marks each screen with who described it (for example "Claude Code" or "AI chat"), or "page text" when no AI did, and the terminal lists the screens left out. What the AI changed stays visible: each described screen has a "Before AI" line with the text it had before, and `index-original.html` keeps the whole report as captured, never rewritten. Use `--lang pt` (or the menu) for another language.
 
 > The AI has to **read images**: it looks at each screenshot to write its description. A model that only reads text cannot do this.
 
-**1. A chat in your browser (no key, nothing installed).** Choose "A chat in your browser (ChatGPT, Gemini, Claude.ai...)" or use `--describe chat`. screendocs guides you: it opens a folder with the images (up to 10 per part, with unique names) and copies the text for the AI; you drag the images into the chat, paste the text, and paste the AI's answer back in the terminal. It checks the answer and asks again if it is not right. `prompt.md` explains how to do the chat part on your own.
+**1. A chat in your browser (no key, nothing installed).** Choose "A chat in your browser (ChatGPT, Gemini, Claude.ai...)" or use `--describe chat`. screendocs guides you: it opens a folder with the images (up to 10 per part, with unique names) and copies the text for the AI; you drag the images into the chat, paste the text, and paste the AI's answer back in the terminal. When a part is done, it closes that folder's window (Windows and macOS). It checks the answer and asks again if it is not right. `prompt.md` explains how to do the chat part on your own.
 
 **2. An AI tool on your computer (uses your plan, no API key).** If [Claude Code](https://code.claude.com), [Codex](https://developers.openai.com/codex) or the [Antigravity CLI](https://antigravity.google) (`agy`, use a recent version) is installed and logged in, screendocs runs it for you. The menu always lists the three; if the one you pick is missing, it offers to install it with its official installer and tells you how to log in:
 

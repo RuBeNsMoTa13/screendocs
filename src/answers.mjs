@@ -108,6 +108,7 @@ export function applyItems(root, items, by) {
         if (!s.describedBy) missing.push(s.file);
         continue;
       }
+      keepOriginal(s);
       s.title = String(a.title ?? s.title).trim();
       s.description = String(a.description ?? s.description).trim();
       Object.assign(s, { describedBy: by, describedAt: at });
@@ -122,6 +123,7 @@ export function applyItems(root, items, by) {
           byFile.get(normalize(s.file)) ??
           main.find((m) => m.heading && m.heading === s.heading && done(m)) ??
           (!s.heading && list.length === main.length && done(main[i]) ? main[i] : undefined);
+        if (twin) keepOriginal(s);
         if (twin) Object.assign(s, { title: String(twin.title).trim(), description: String(twin.description).trim(), describedBy: by, describedAt: at });
       }
     }
@@ -129,6 +131,14 @@ export function applyItems(root, items, by) {
   const report = writeData(root, data);
   const total = data.pages.reduce((n, p) => n + (p.viewports[primary]?.screens.length ?? 0), 0);
   return { updated, total, report, missing, by };
+}
+
+/**
+ * The text a screen had before any AI wrote over it (taken from the page), kept so the
+ * report can show what changed. Only the first time: later answers do not replace it.
+ */
+function keepOriginal(s) {
+  if (!s.original && !s.describedBy) s.original = { title: s.title, description: s.description };
 }
 
 const normalize = (f) => String(f).replace(/\\/g, "/").replace(/^\.\//, "").trim();

@@ -109,6 +109,8 @@ export async function chatFlow(root) {
       if (!missing.length) break;
       p.log.warn(t.missing(missing));
     }
+    // The part is done: its folder window would only pile up with the next one
+    if (opened) closeFolder(part.dir);
   }
   input.close();
   return applyItems(root, [...received.values()], "AI chat");
@@ -240,6 +242,31 @@ function openFolder(dir) {
   } catch {
     return false;
   }
+}
+
+/**
+ * Closes the file explorer window that openFolder opened, if it is still open. Best effort:
+ * on Linux each file manager is different, so the window stays.
+ */
+function closeFolder(dir) {
+  const quote = (x) => x.replace(/'/g, "''");
+  const run = WIN
+    ? [
+        "powershell",
+        [
+          "-NoProfile",
+          "-Command",
+          `$d = [IO.Path]::GetFullPath('${quote(dir)}').TrimEnd('\\'); (New-Object -ComObject Shell.Application).Windows() | ` +
+            `Where-Object { try { $_.Document.Folder.Self.Path.TrimEnd('\\') -eq $d } catch { $false } } | ForEach-Object { $_.Quit() }`,
+        ],
+      ]
+    : MAC
+      ? ["osascript", ["-e", `tell application "Finder" to close (every window whose target is (POSIX file ${JSON.stringify(dir)} as alias))`]]
+      : null;
+  if (!run) return;
+  try {
+    spawn(run[0], run[1], { detached: true, stdio: "ignore", windowsHide: true }).on("error", () => {}).unref();
+  } catch {}
 }
 
 /** Copies a UTF-8 text file to the clipboard (accents included). */

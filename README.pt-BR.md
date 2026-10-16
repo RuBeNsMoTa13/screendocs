@@ -126,7 +126,9 @@ Crie um `screendocs.config.json` na pasta onde roda o comando e deixe as opçõe
 ```
 screendocs-output/seu-site.com/
   index.html          relatório
+  index-original.html o relatório como foi capturado, antes de qualquer descrição da IA (nunca é reescrito)
   screens.json        todas as páginas e telas com título e descrição
+  screens-original.json  o mesmo, como foi capturado
   prompt.md           como descrever as telas com um chat de IA por conta própria
   for-ai/part-1/...   as telas a descrever, com nomes únicos, e o texto para a IA
   desktop/<pagina>/01.jpg, 02.jpg ... full.jpg, video.webm
@@ -143,11 +145,11 @@ npx screendocs describe seu-site.com.br
 
 Sem o site (ou com um site que não tem captura), ele lista as capturas que existem para você escolher.
 
-Os títulos e descrições vão para o `screens.json` e o `index.html`, e as telas do celular reaproveitam a descrição da mesma seção no computador. O relatório marca em cada tela quem a descreveu (por exemplo "Claude Code" ou "AI chat"), ou "page text" quando nenhuma IA descreveu, e o terminal lista as telas que ficaram de fora. Use `--lang pt` (ou o menu) para descrições em português.
+Os títulos e descrições vão para o `screens.json` e o `index.html`, e as telas do celular reaproveitam a descrição da mesma seção no computador. O relatório marca em cada tela quem a descreveu (por exemplo "Claude Code" ou "AI chat"), ou "page text" quando nenhuma IA descreveu, e o terminal lista as telas que ficaram de fora. O que a IA mudou fica visível: cada tela descrita tem uma linha "Before AI" com o texto que tinha antes, e o `index-original.html` guarda o relatório inteiro como foi capturado, sem nunca ser reescrito. Use `--lang pt` (ou o menu) para descrições em português.
 
 > A IA precisa **ler imagens**: ela olha cada captura para escrever a descrição. Um modelo que só lê texto não consegue.
 
-**1. Um chat no navegador (sem chave, sem instalar nada).** Escolha "Um chat no navegador (ChatGPT, Gemini, Claude.ai...)" ou use `--describe chat`. O screendocs guia você: abre uma pasta com as imagens (até 10 por parte, com nomes únicos) e copia o texto para a IA; você arrasta as imagens para o chat, cola o texto e cola a resposta da IA de volta no terminal. Ele confere a resposta e pede de novo se não vier certa. O `prompt.md` explica como fazer a parte do chat por conta própria.
+**1. Um chat no navegador (sem chave, sem instalar nada).** Escolha "Um chat no navegador (ChatGPT, Gemini, Claude.ai...)" ou use `--describe chat`. O screendocs guia você: abre uma pasta com as imagens (até 10 por parte, com nomes únicos) e copia o texto para a IA; você arrasta as imagens para o chat, cola o texto e cola a resposta da IA de volta no terminal. Quando uma parte termina, ele fecha a janela daquela pasta (Windows e macOS). Ele confere a resposta e pede de novo se não vier certa. O `prompt.md` explica como fazer a parte do chat por conta própria.
 
 **2. Uma ferramenta de IA no seu computador (usa o seu plano, sem chave de API).** Se o [Claude Code](https://code.claude.com), o [Codex](https://developers.openai.com/codex) ou o [Antigravity CLI](https://antigravity.google) (`agy`, use uma versão recente) estiver instalado e com login feito, o screendocs roda ele para você. O menu sempre mostra os três; se o escolhido não estiver instalado, ele oferece instalar com o instalador oficial e diz como fazer login:
 
