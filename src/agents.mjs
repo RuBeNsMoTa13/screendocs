@@ -3,7 +3,7 @@ import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { primaryScreens, task } from "./report.mjs";
 import { parseAnswer, applyItems, sameFile } from "./answers.mjs";
-import { resolveModel, findKey, checkLocal, KEYS_FILE } from "./providers.mjs";
+import { resolveModel, findKey, checkLocal, checkKey, KEYS_FILE } from "./providers.mjs";
 import { DOCS_FILE, docsText } from "./docs.mjs";
 import { tr } from "./i18n.mjs";
 
@@ -152,25 +152,54 @@ async function prepareApi(config) {
   const { provider, url, model, custom } = resolveModel(config.model);
   Object.assign(config, { provider, apiUrl: url, model });
   if (provider?.local) return checkLocal(provider, url, model);
-  const found = findKey(provider);
-  if (found) {
-    config.apiKey = found.key;
+  const tty = process.stdin.isTTY && process.stdout.isTTY;
+  let found = findKey(provider);
+  // A server of its own (OPENAI_BASE_URL) may have no key, and is not checked
+  if (!provider || custom) {
+    config.apiKey = found?.key;
     return;
   }
-  // A server of its own (OPENAI_BASE_URL) may have no key
-  if (!provider || custom) return;
-  if (process.stdin.isTTY && process.stdout.isTTY) {
-    const { askKey } = await import("./interactive.mjs");
-    config.apiKey = await askKey(provider);
-    return;
+  if (!found && !tty) throw new Error(noKey(provider));
+  const { askKey } = tty ? await import("./interactive.mjs") : {};
+  // A typed key is tried as it is typed (askKey); a saved one or one from a variable is tried
+  // now, before the capture: a wrong or changed key would only fail after every page was photographed
+  if (!found) found = { key: await askKey(provider) };
+  else if ((await checkKey(provider, url, found.key)) === "refused") {
+    const where = found.from === KEYS_FILE ? "saved" : found.from;
+    if (!tty) throw new Error(refused(provider, where));
+    console.log(`\n! ${refused(provider, where)}`);
+    found = { key: await askKey(provider, { replace: where === "saved" }) };
   }
-  throw new Error(
-    tr({
-      en: `no API key for ${provider.name}. Set ${provider.env[0]}, or save it once with: npx screendocs keys set ${provider.id} (it goes to ${KEYS_FILE}, outside the project).`,
-      pt: `sem chave de API do ${provider.name}. Defina ${provider.env[0]}, ou guarde uma vez com: npx screendocs keys set ${provider.id} (ela vai para ${KEYS_FILE}, fora do projeto).`,
-      es: `no hay clave de API de ${provider.name}. Define ${provider.env[0]}, o guárdala una vez con: npx screendocs keys set ${provider.id} (va a ${KEYS_FILE}, fuera del proyecto).`,
-    }),
-  );
+  config.apiKey = found.key;
+}
+
+const noKey = (provider) =>
+  tr({
+    en: `no API key for ${provider.name}. Set ${provider.env[0]}, or save it once with: npx screendocs keys set ${provider.id}`,
+    pt: `sem chave de API do ${provider.name}. Defina ${provider.env[0]}, ou guarde uma vez com: npx screendocs keys set ${provider.id}`,
+    es: `no hay clave de API de ${provider.name}. Define ${provider.env[0]}, o guárdala una vez con: npx screendocs keys set ${provider.id}`,
+  });
+
+/** The provider refused the key: where it came from and how to replace it. */
+function refused(provider, where) {
+  const t = tr({
+    en: {
+      head: `${provider.name} refused the API key`,
+      saved: ` saved by screendocs (it may have expired or been changed). Save the new one with: npx screendocs keys set ${provider.id}`,
+      env: (v) => ` in ${v}. Put the new key in ${v}.`,
+    },
+    pt: {
+      head: `O ${provider.name} recusou a chave de API`,
+      saved: ` guardada pelo screendocs (pode ter expirado ou sido trocada). Guarde a nova com: npx screendocs keys set ${provider.id}`,
+      env: (v) => ` de ${v}. Coloque a chave nova em ${v}.`,
+    },
+    es: {
+      head: `${provider.name} rechazó la clave de API`,
+      saved: ` guardada por screendocs (puede haber expirado o cambiado). Guarda la nueva con: npx screendocs keys set ${provider.id}`,
+      env: (v) => ` de ${v}. Pon la clave nueva en ${v}.`,
+    },
+  });
+  return t.head + (where === "saved" ? t.saved : t.env(where));
 }
 
 export async function describeWith(agent, root, config) {

@@ -17,6 +17,7 @@ import { tr, languageChosen } from "./i18n.mjs";
 import { USER_CONFIG } from "./userconfig.mjs";
 import { configCommand, askLanguage } from "./configcmd.mjs";
 import { PROVIDERS, providerById, savedKeys, removeKey, KEYS_FILE } from "./providers.mjs";
+import { storeOf } from "./secrets.mjs";
 import pc from "./theme.mjs";
 import * as p from "@clack/prompts";
 import fs from "node:fs";
@@ -488,6 +489,7 @@ async function keysCommand(action, id) {
       removed: (n) => `${n} key removed.`,
       notThere: (n) => `There was no saved ${n} key.`,
       tty: "keys set asks for the key without showing it, so it needs a terminal",
+      stores: { keychain: "system keychain", encrypted: "encrypted with your Windows account", file: "in the file" },
     },
     pt: {
       saved: (list) => `Chaves guardadas (${KEYS_FILE}): ${list}`,
@@ -496,6 +498,7 @@ async function keysCommand(action, id) {
       removed: (n) => `Chave do ${n} removida.`,
       notThere: (n) => `Não havia chave do ${n} guardada.`,
       tty: "o keys set pede a chave sem mostrá-la, então precisa de um terminal",
+      stores: { keychain: "cofre de senhas do sistema", encrypted: "criptografada com a sua conta do Windows", file: "no arquivo" },
     },
     es: {
       saved: (list) => `Claves guardadas (${KEYS_FILE}): ${list}`,
@@ -504,11 +507,12 @@ async function keysCommand(action, id) {
       removed: (n) => `Clave de ${n} eliminada.`,
       notThere: (n) => `No había una clave de ${n} guardada.`,
       tty: "keys set pide la clave sin mostrarla, así que necesita una terminal",
+      stores: { keychain: "llavero del sistema", encrypted: "cifrada con tu cuenta de Windows", file: "en el archivo" },
     },
   });
   if (action === "list") {
-    const saved = Object.keys(savedKeys());
-    console.log(saved.length ? t.saved(saved.join(", ")) : t.none);
+    const saved = Object.entries(savedKeys());
+    console.log(saved.length ? t.saved(saved.map(([id, entry]) => `${id} (${t.stores[storeOf(entry)]})`).join(", ")) : t.none);
     return;
   }
   const provider = id && providerById(id);
@@ -518,5 +522,5 @@ async function keysCommand(action, id) {
     return;
   }
   if (!process.stdin.isTTY) throw new Error(t.tty);
-  await askKey(provider);
+  await askKey(provider, { save: true });
 }
