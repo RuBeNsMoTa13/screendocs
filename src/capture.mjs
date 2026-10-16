@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { VIEWPORTS } from "./config.mjs";
 import { open } from "./discover.mjs";
-import { applyMask } from "./mask.mjs";
+import { applyMask, hideText } from "./mask.mjs";
 import { slugOf } from "./paths.mjs";
 import { tr } from "./i18n.mjs";
 
@@ -43,10 +43,18 @@ export async function capture(browser, config, pages, storageState, onPage) {
         await withTimeout(PAGE_TIMEOUT, async () => {
           await open(page, url);
           await applyMask(page, config);
-          if (!entry.title) Object.assign(entry, await pageInfo(page));
+          if (!entry.title) {
+            const info = await pageInfo(page, config.mask);
+            Object.assign(entry, { title: hideText(info.title, config), summary: hideText(info.summary, config) });
+          }
           await scrollThrough(page, size.height);
 
-          const sections = await findSections(page, size, config.maxSectionsPerPage);
+          // The text saved with the capture leaves out what the screenshots blur
+          const sections = (await findSections(page, size, config.maxSectionsPerPage, config.mask)).map((s) => ({
+            ...s,
+            heading: hideText(s.heading, config),
+            text: hideText(s.text, config),
+          }));
           for (const [i, s] of sections.entries()) {
             const file = `${String(i + 1).padStart(2, "0")}.jpg`;
             await page.screenshot({ path: path.join(dir, file), type: "jpeg", quality: 82, fullPage: true, clip: s.clip });
@@ -97,11 +105,26 @@ function withTimeout(ms, work) {
   return Promise.race([work(), limit]).finally(() => clearTimeout(timer));
 }
 
-async function pageInfo(page) {
-  return page.evaluate(() => ({
-    title: (document.querySelector("h1")?.innerText || document.title || "").replace(/\s+/g, " ").trim().slice(0, 120),
-    summary: (document.querySelector('meta[name="description"]')?.content || "").trim().slice(0, 300),
-  }));
+async function pageInfo(page, mask = []) {
+  return page.evaluate((sel) => {
+      // What the --mask selectors blur is left out of the text too
+      const textOf = (el) => {
+        if (!el) return "";
+        if (!sel) return el.innerText;
+        try {
+          if (el.closest(sel)) return "";
+          const copy = el.cloneNode(true);
+          for (const n of copy.querySelectorAll(sel)) n.remove();
+          return copy.textContent;
+        } catch {
+          return el.innerText;
+        }
+      };
+      return {
+        title: (textOf(document.querySelector("h1")) || document.title || "").replace(/\s+/g, " ").trim().slice(0, 120),
+        summary: (document.querySelector('meta[name="description"]')?.content || "").trim().slice(0, 300),
+      };
+  }, mask.join(","));
 }
 
 /** Scrolls down and back up: loads lazy images, fires entrance animations and films the page. */
@@ -122,10 +145,24 @@ async function scrollThrough(page, viewportHeight) {
  * The page's big blocks (<header>, <section>, <footer>, <main> children, [data-section]),
  * outermost only. Pages without that structure are cut into screen-sized slices.
  */
-async function findSections(page, size, max) {
+async function findSections(page, size, max, mask = []) {
   const found = await page.evaluate(
-    ({ minH, maxH, minW }) => {
+    ({ minH, maxH, minW, sel }) => {
       const clean = (s) => (s || "").replace(/\s+/g, " ").trim();
+      // What the --mask selectors blur is left out of the text too
+      const textOf = (el) => {
+        if (!el) return "";
+        if (!sel) return el.innerText;
+        try {
+          if (el.closest(sel)) return "";
+          const copy = el.cloneNode(true);
+          for (const n of copy.querySelectorAll(sel)) n.remove();
+          return copy.textContent;
+        } catch {
+          return el.innerText;
+        }
+      };
+
       const candidates = [...document.querySelectorAll("header, section, footer, article, [data-section], main > div, main > form")];
       const visible = candidates.filter((el) => {
         const r = el.getBoundingClientRect();
@@ -137,8 +174,8 @@ async function findSections(page, size, max) {
       return outer.map((el) => {
         const r = el.getBoundingClientRect();
         const y = Math.max(0, Math.round(r.top + window.scrollY));
-        const heading = clean(el.querySelector("h1, h2, h3, [role=heading]")?.innerText).slice(0, 100);
-        const para = [...el.querySelectorAll("p, li")].map((p) => clean(p.innerText)).find((t) => t.length > 30) || "";
+        const heading = clean(textOf(el.querySelector("h1, h2, h3, [role=heading]"))).slice(0, 100);
+        const para = [...el.querySelectorAll("p, li")].map((p) => clean(textOf(p))).find((t) => t.length > 30) || "";
         return {
           clip: { x: 0, y, width: document.documentElement.clientWidth, height: Math.round(Math.min(r.height, maxH, docH - y)) },
           heading,
@@ -146,14 +183,14 @@ async function findSections(page, size, max) {
         };
       });
     },
-    { minH: Math.round(size.height * 0.25), maxH: Math.round(size.height * 1.6), minW: Math.round(size.width * 0.6) },
+    { minH: Math.round(size.height * 0.25), maxH: Math.round(size.height * 1.6), minW: Math.round(size.width * 0.6), sel: mask.join(",") },
   );
 
   let list = found.filter((s) => s.clip.height > 0).sort((a, b) => a.clip.y - b.clip.y);
   if (list.length < 2) {
     const total = await page.evaluate(() => document.documentElement.scrollHeight);
     const width = await page.evaluate(() => document.documentElement.clientWidth);
-    const heading = await page.evaluate(() => (document.querySelector("h1, h2")?.innerText || "").replace(/\s+/g, " ").trim().slice(0, 100));
+    const heading = (await pageInfo(page, mask)).title.slice(0, 100);
     list = [];
     for (let y = 0; y < total && list.length < max; y += size.height) {
       list.push({ clip: { x: 0, y, width, height: Math.min(size.height, total - y) }, heading: list.length ? "" : heading, text: "" });

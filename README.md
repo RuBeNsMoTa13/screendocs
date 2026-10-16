@@ -47,7 +47,7 @@ With just the link (`npx screendocs mysite.com`), it asks nothing and uses the d
 | Screens | desktop and mobile | `--viewports desktop` or `--viewports mobile` |
 | Images | one per section, plus the full page | |
 | Video | one scrolling each page | `--no-video` |
-| Personal data | blurs emails, phones, CPF/CNPJ and filled form fields | `--mask`, `--no-auto-mask` |
+| Personal data | blurs emails, phones, documents, card numbers and filled form fields, and leaves them out of the saved text | `--mask`, `--no-auto-mask` |
 | Descriptions | no AI: each screen keeps the page's own text (title and first paragraph) | `--describe`, or later `npx screendocs describe <site>` |
 | Description language | the language of screendocs (asked on the first run) | `--lang pt` |
 | Folder | `screendocs-output/<site>/` inside the folder where you run the command (the terminal shows the full path at the start), replacing the previous capture of the same site | `--out`, `--keep` |
@@ -104,7 +104,12 @@ Because it is saved in your user folder, the login works from any folder where y
 - **One image per section**: `<header>`, `<section>`, `<footer>` and similar blocks; pages without them are cut into screen-sized slices. Also a full-page image.
 - **Desktop and mobile** (1440×900 and 390×844).
 - **Video** of each page being scrolled.
-- **Hides personal data**: emails, phone numbers, CPF/CNPJ and filled email/phone/password fields are blurred in screenshots and videos. Add your own selectors with `--mask`.
+- **Hides personal data**: blurred in screenshots and videos, and replaced by `•••` in the text saved with the capture (`screens.json`, the report and the text sent to an AI):
+  - emails, card numbers (checked with their check digit) and phone numbers in Brazilian, US, Spanish and international (`+code`) formats;
+  - documents: CPF and CNPJ (Brazil, with or without punctuation), SSN (US), DNI and NIE (Spain), DNI (Argentina), CURP and RFC (Mexico), IBAN;
+  - filled email, phone and password fields, and any field holding one of the above.
+
+  Add your own CSS selectors with `--mask` (also left out of the saved text). Names and free text are not detected: use a test account when you can.
 - **Descriptions**: by default, the heading and first paragraph of each section. An AI can look at each screenshot and write a title and a description: see [Descriptions with any AI](#descriptions-with-any-ai).
 - **Report**: `index.html` with every page, both viewports and the videos, plus `screens.json` for scripts.
 

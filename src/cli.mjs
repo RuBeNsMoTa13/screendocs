@@ -58,7 +58,7 @@ Options
   --out <dir>           output folder (default screendocs-output)
   --keep                keep the previous capture (renamed with its date) instead of replacing it
   --mask <selectors>    extra CSS selectors to hide, comma separated
-  --no-auto-mask        do not hide emails, phones, CPF/CNPJ and form inputs
+  --no-auto-mask        do not hide emails, phones, documents (CPF, SSN, DNI...), cards and filled fields
   --describe <how>      who writes the descriptions:
                           claude, codex, antigravity
                                 an AI tool installed and logged in here (uses your plan)
@@ -115,7 +115,7 @@ Opções
   --out <pasta>         pasta da captura (padrão screendocs-output)
   --keep                guarda a captura anterior (renomeada com a data) em vez de substituir
   --mask <seletores>    seletores CSS a mais para esconder, separados por vírgula
-  --no-auto-mask        não esconde e-mails, telefones, CPF/CNPJ e campos de formulário
+  --no-auto-mask        não esconde e-mails, telefones, documentos (CPF, SSN, DNI...), cartões e campos preenchidos
   --describe <como>     quem escreve as descrições:
                           claude, codex, antigravity
                                 uma ferramenta de IA instalada e logada aqui (usa o seu plano)
@@ -172,7 +172,7 @@ Opciones
   --out <carpeta>       carpeta de la captura (predeterminado screendocs-output)
   --keep                guarda la captura anterior (renombrada con su fecha) en lugar de reemplazarla
   --mask <selectores>   selectores CSS extra para ocultar, separados por comas
-  --no-auto-mask        no oculta correos, teléfonos, CPF/CNPJ ni campos de formulario
+  --no-auto-mask        no oculta correos, teléfonos, documentos (CPF, SSN, DNI...), tarjetas ni campos completados
   --describe <cómo>     quién escribe las descripciones:
                           claude, codex, antigravity
                                 una herramienta de IA instalada y con sesión aquí (usa tu plan)
