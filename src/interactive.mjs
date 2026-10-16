@@ -13,6 +13,9 @@ import { PROVIDERS, providerById, resolveModel, findKey, saveKey, checkLocal, KE
 import { checkUrl, EXAMPLES, URL_TEXT, short } from "./checkurl.mjs";
 import { setBack } from "./hud.mjs";
 import { DOC_TYPES } from "./docs.mjs";
+import { uiLang } from "./i18n.mjs";
+import { baseConfig, projectFile } from "./config.mjs";
+import { USER_CONFIG, readUserConfig } from "./userconfig.mjs";
 
 const BIG = String.raw`
 ███████╗ ██████╗██████╗ ███████╗███████╗███╗   ██╗██████╗  ██████╗  ██████╗███████╗
@@ -96,6 +99,7 @@ const T = {
     docsMissing: "Not found. Type the path of a folder or a file, or leave it empty.",
     docsBadType: (types) => `screendocs does not read this kind of file. It reads: ${types}`,
     usingConfig: (f) => `Also using the options in ${f}.`,
+    usingUser: (f) => `Your defaults come from ${f} (change them with: npx screendocs config).`,
     start: "Start the capture?",
     command: "Same thing next time, without the questions",
     cancel: "Cancelled.",
@@ -168,11 +172,85 @@ const T = {
     docsMissing: "Não achei. Digite o caminho de uma pasta ou de um arquivo, ou deixe vazio.",
     docsBadType: (types) => `O screendocs não lê esse tipo de arquivo. Ele lê: ${types}`,
     usingConfig: (f) => `Usando também as opções de ${f}.`,
+    usingUser: (f) => `Os seus padrões vêm de ${f} (mude com: npx screendocs config).`,
     start: "Começar a captura?",
     command: "Para repetir sem as perguntas",
     cancel: "Cancelado.",
     yes: "Sim", no: "Não", none: "nenhuma",
     number: "Digite um número",
+  },
+  es: {
+    tagline: "capturas, videos y documentación de todas las pantallas de un sitio web",
+    by: "por",
+    url: "¿Qué sitio quieres documentar? (ej.: misitio.com, www.misitio.es, app.misitio.io/login)",
+    urlBad: "Escribe una dirección web, como misitio.com",
+    savedLogin: (h) => `Usando el inicio de sesión guardado de ${h}.`,
+    checking: "Revisando el inicio de sesión guardado...",
+    expired: (h, u) => `El inicio de sesión guardado de ${h} expiró (${u} te llevó a otra página).`,
+    relogin: "¿Iniciar sesión de nuevo ahora?",
+    unchecked: (h) => `Usando el inicio de sesión guardado de ${h}. Inicia sesión de nuevo con esta versión para que screendocs te avise cuando expire.`,
+    hasLogin: "¿El sitio tiene páginas que piden iniciar sesión?",
+    loginNow: "Se abrirá una ventana del navegador. Inicia sesión, vuelve aquí y presiona Enter.",
+    viewports: "¿Qué pantallas?",
+    desktop: "Computadora", mobile: "Celular", both: "Las dos",
+    video: "¿Grabar un video desplazándose por cada página?",
+    mode: "¿Qué páginas?",
+    discover: "Encontrarlas siguiendo los enlaces", discoverHint: "recomendado",
+    list: "Solo las rutas que yo escriba",
+    maxPages: "¿Hasta cuántas páginas?",
+    paths: "Rutas, separadas por comas",
+    exclude: "Saltar páginas cuya dirección contiene (ej.: /admin, /checkout; Enter para ninguna)",
+    mask: "¿Difuminar correos, teléfonos, documentos (CPF/CNPJ) y campos de formulario llenos?",
+    describe: "¿Quién escribe las descripciones de las pantallas?",
+    yourPlan: "usa tu plan, sin clave de API",
+    notInstalled: "no está instalado aquí, puedo instalarlo",
+    installWhat: (n, c) => `${n} no está instalado en esta computadora. Su instalador oficial es:\n  ${c}`,
+    installNow: (n) => `¿Instalar ${n} ahora?`,
+    installed: (n) => `${n} instalado.`,
+    installFailed: (n, c) => `${n} no se instaló, o esta terminal todavía no lo ve. Cierra y abre la terminal y ejecuta screendocs de nuevo, o instálalo tú con:\n  ${c}`,
+    agentLogin: (n, c) => `Ahora inicia sesión en ${n}: abre otra terminal, ejecuta ${c}, entra con tu cuenta y vuelve aquí.`,
+    loggedIn: "Listo, ya inicié sesión",
+    chat: "Un chat en tu navegador (ChatGPT, Gemini, Claude.ai...)",
+    chatHint: "paso a paso, sin clave",
+    later: "Por ahora, solo el escaneo de la página",
+    laterHint: "una IA puede describir después: npx screendocs describe <sitio>",
+    api: "Una API (con tu clave)",
+    provider: "¿Qué proveedor?",
+    other: "Otro (escribir la dirección)",
+    apiUrl: "Dirección de la API (compatible con OpenAI)",
+    model: "Modelo (uno que lea imágenes)",
+    modelHint: (ex) => `ej.: ${ex}`,
+    apiKey: "Clave de la API (Enter si este servidor no usa)",
+    baseUrl: (u) => `Para repetir el comando después, define antes OPENAI_BASE_URL=${u}`,
+    keyFor: (n) => `Clave de la API de ${n} (no se ve mientras escribes)`,
+    keySave: (f) => `¿Guardarla para la próxima vez? (en ${f}, fuera del proyecto)`,
+    keySaved: (f) => `Clave guardada en ${f}.`,
+    keyFound: (n, from) => `Usando la clave de ${n} de ${from}.`,
+    checkingLocal: (n) => `Revisando ${n}...`,
+    localOk: (n) => `${n} respondió.`,
+    noKey: "Las descripciones usarán el título y el primer párrafo de cada sección. Para que una IA las escriba después: npx screendocs describe <sitio>",
+    lang: "Idioma de las descripciones",
+    previous: (h) => `Ya existe una captura de ${h}. ¿Qué hago con ella?`,
+    replace: "Reemplazarla", keepOld: "Guardarla (renombrada con su fecha)",
+    advanced: "¿Cambiar las opciones avanzadas? (profundidad de enlaces, difuminar más cosas)",
+    depth: "¿A cuántos clics de la página inicial buscar páginas?",
+    maskSel: "Otras cosas para difuminar (selectores CSS, ej.: .nombre-cliente, #saldo)",
+    out: "¿Dónde guardar la captura? (Enter para usar esta carpeta)",
+    headed: "¿Mostrar el navegador durante la captura?",
+    instructions: "¿Las descripciones deben enfocarse en algo específico? (Enter para saltar)",
+    instructionsHint: "ej.: lo que gana el cliente en cada pantalla",
+    docs: "¿Hay una carpeta o archivo con la documentación del sitio para que la IA lea? (Enter para saltar)",
+    docsHint: "ej.: C:\\misitio\\docs o ./manual.pdf",
+    docsTypes: "md, txt, html, json, csv, PDF, Word, Excel, PowerPoint, OpenDocument...",
+    docsMissing: "No lo encontré. Escribe la ruta de una carpeta o de un archivo, o déjalo vacío.",
+    docsBadType: (types) => `screendocs no lee este tipo de archivo. Lee: ${types}`,
+    usingConfig: (f) => `También uso las opciones de ${f}.`,
+    usingUser: (f) => `Tus valores predeterminados vienen de ${f} (cámbialos con: npx screendocs config).`,
+    start: "¿Empezar la captura?",
+    command: "Lo mismo la próxima vez, sin las preguntas",
+    cancel: "Cancelado.",
+    yes: "Sí", no: "No", none: "ninguna",
+    number: "Escribe un número",
   },
 };
 
@@ -181,11 +259,6 @@ const AUTHOR = {
   github: "https://github.com/RuBeNsMoTa13",
   portfolio: "",
 };
-
-export function uiLang() {
-  const loc = process.env.LC_ALL || process.env.LANG || Intl.DateTimeFormat().resolvedOptions().locale || "";
-  return /^pt/i.test(loc) ? "pt" : "en";
-}
 
 export function banner(t = T[uiLang()]) {
   const art = (process.stdout.columns ?? 80) >= 86 ? BIG : SMALL;
@@ -240,7 +313,22 @@ export async function interactive() {
   banner(t);
   p.intro(pc.bold(bgCrimson(pc.white(" ScreenDocs "))));
 
-  const s = { outDir: path.resolve(OUT), maxPages: "20", depth: "3" };
+  // What runs with no option typed (defaults, the user's config, screendocs.config.json) comes filled in
+  const base = baseConfig();
+  const s = {
+    outDir: path.resolve(base.out),
+    maxPages: String(base.maxPages),
+    depth: String(base.depth),
+    viewports: base.viewports.length > 1 ? "both" : base.viewports[0],
+    video: base.video,
+    headed: base.headed,
+    autoMask: base.autoMask,
+    exclude: base.exclude.join(", "),
+    maskSel: base.mask.join(", "),
+    descLang: base.lang,
+    instructions: base.instructions ?? "",
+    keep: base.keep,
+  };
   const isNum = (v) => (/^\d+$/.test((v ?? "").trim()) ? undefined : t.number);
   const steps = [
     async () => {
@@ -317,7 +405,7 @@ export async function interactive() {
       s.outDir = (await a(p.text({ message: t.out, initialValue: s.outDir, validate: (v) => ((v ?? "").trim() ? undefined : t.out) }))).trim();
     },
     async () => {
-      s.how = await chooseDescriber({ t, a, later: true });
+      s.how = await chooseDescriber({ t, a, later: true, initial: s.how?.describe ?? (base.model ? "api" : base.describe) ?? undefined });
       if (!s.how.describe) p.log.info(pc.dim(t.noKey));
     },
     async () => {
@@ -325,7 +413,11 @@ export async function interactive() {
       s.descLang = await a(p.select({
         message: t.lang,
         initialValue: s.descLang ?? lang,
-        options: [{ value: "pt", label: "Português" }, { value: "en", label: "English" }, { value: "es", label: "Español" }],
+        options: [
+          ...[{ value: "pt", label: "Português" }, { value: "en", label: "English" }, { value: "es", label: "Español" }],
+          // A language set in a config file that is not one of these three stays available
+          ...(["pt", "en", "es"].includes(s.descLang) ? [] : [{ value: s.descLang, label: s.descLang }]),
+        ],
       }));
     },
     { when: () => s.how.describe, run: async () => (s.instructions = await askInstructions(s.instructions, { t, a })) },
@@ -342,6 +434,7 @@ export async function interactive() {
     {
       when: () => fs.existsSync(path.join(s.outDir, s.host.replace(/[^a-z0-9.-]/gi, "_"))),
       run: async () => {
+        s.asked = { ...s.asked, keep: true };
         s.keep = await a(p.select({
           message: t.previous(s.host),
           initialValue: s.keep ?? false,
@@ -350,8 +443,9 @@ export async function interactive() {
       },
     },
     async () => {
-      if (fs.existsSync("screendocs.config.json")) p.log.info(t.usingConfig("screendocs.config.json"));
-      p.note(`npx screendocs ${toArgs(s).map(quote).join(" ")}`, t.command);
+      if (Object.keys(readUserConfig()).some((k) => k !== "language")) p.log.info(t.usingUser(shortHome(USER_CONFIG)));
+      if (projectFile()) p.log.info(t.usingConfig(projectFile()));
+      p.note(`npx screendocs ${toArgs(s, base).map(quote).join(" ")}`, t.command);
       if (!(await a(yesNo({ message: t.start, initialValue: true })))) {
         p.cancel(t.cancel);
         process.exit(0);
@@ -375,43 +469,49 @@ export async function interactive() {
     }
   }
   p.outro("ScreenDocs");
-  return [...toArgs(s), "--open"];
+  return [...toArgs(s, base), "--open"];
 }
 
-/** The menu's answers as command line arguments. */
-function toArgs(s) {
+/**
+ * The menu's answers as command line arguments: only what differs from what runs with no
+ * option typed (`base`), which may come from the user's config or screendocs.config.json.
+ */
+function toArgs(s, base) {
   const args = [s.url];
-  if (s.viewports !== "both") args.push("--viewports", s.viewports);
-  if (!s.video) args.push("--no-video");
+  const flag = (on, off, value, was) => value !== was && args.push(value ? on : off);
+  const viewports = s.viewports === "both" ? ["desktop", "mobile"] : [s.viewports];
+  if (viewports.join() !== base.viewports.join()) args.push("--viewports", viewports.join(","));
+  flag("--video", "--no-video", s.video, base.video);
   if (s.mode === "discover") {
-    if (s.maxPages !== "20") args.push("--max-pages", s.maxPages);
+    if (Number(s.maxPages) !== base.maxPages) args.push("--max-pages", s.maxPages);
     const list = (s.exclude ?? "").split(",").map((x) => x.trim()).filter(Boolean);
-    if (list.length) args.push("--exclude", list.join(","));
+    if (list.join() !== base.exclude.join()) args.push("--exclude", list.join(","));
   } else {
     args.push("--pages", s.paths.split(",").map((x) => x.trim()).filter(Boolean).join(","));
   }
-  if (!s.autoMask) args.push("--no-auto-mask");
-  if (s.headed) args.push("--headed");
-  if (path.resolve(s.outDir) !== path.resolve(OUT)) args.push("--out", s.outDir);
+  flag("--auto-mask", "--no-auto-mask", s.autoMask, base.autoMask);
+  flag("--headed", "--no-headed", s.headed, base.headed);
+  if (path.resolve(s.outDir) !== path.resolve(base.out)) args.push("--out", s.outDir);
   // --model alone already means an API
   if (s.how.describe === "api") {
     args.push("--model", s.how.model);
   } else if (s.how.describe) {
     args.push("--describe", s.how.describe);
+  } else if (base.describe || base.model) {
+    // Just the page scan, although the config names an AI
+    args.push("--describe", "none");
   }
-  if (s.descLang !== "en") args.push("--lang", s.descLang);
-  if (s.how.describe && s.instructions) args.push("--instructions", s.instructions);
+  if (s.descLang !== base.lang) args.push("--lang", s.descLang);
+  if (s.how.describe && (s.instructions ?? "") !== (base.instructions ?? "")) args.push("--instructions", s.instructions);
   if (s.how.describe && s.docs) args.push("--docs", s.docs);
   if (s.advanced) {
-    if (s.mode === "discover" && s.depth !== "3") args.push("--depth", s.depth);
-    if (s.maskSel?.trim()) args.push("--mask", s.maskSel.trim());
+    if (s.mode === "discover" && Number(s.depth) !== base.depth) args.push("--depth", s.depth);
+    const mask = (s.maskSel ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+    if (mask.join() !== base.mask.join()) args.push("--mask", mask.join(","));
   }
-  if (s.keep) args.push("--keep");
+  if (s.asked?.keep) flag("--keep", "--no-keep", s.keep, base.keep);
   return args;
 }
-
-/** The default output folder, inside the folder where screendocs runs. */
-const OUT = "screendocs-output";
 
 /**
  * The two optional questions after choosing who describes: something specific the
@@ -448,12 +548,13 @@ const unquote = (v) => String(v ?? "").trim().replace(/^(["'])(.*)\1$/, "$2");
  * "Who writes the descriptions?": an AI tool installed here, an API, an AI chat in the
  * browser (guided) or, in the capture menu, just the page scan for now. Also used by "screendocs describe".
  */
-export async function chooseDescriber({ t = T[uiLang()], a = ask(t), later = false } = {}) {
+export async function chooseDescriber({ t = T[uiLang()], a = ask(t), later = false, initial } = {}) {
   // Every AI tool is listed; one that is missing can be installed from here
   for (;;) {
     const agents = installedAgents();
     const tool = await a(p.select({
       message: t.describe,
+      initialValue: initial,
       options: [
         ...Object.keys(AGENTS).map((k) => ({ value: k, label: AGENTS[k].name, hint: agents.includes(k) ? t.yourPlan : t.notInstalled })),
         { value: "api", label: t.api, hint: "OpenAI, Gemini, OpenRouter, Anthropic, Ollama..." },
@@ -556,7 +657,7 @@ async function askUrl(t, a, lang, typed = "") {
   for (;;) {
     typed = await a(p.text({
       message: t.url,
-      placeholder: lang === "pt" ? "meusite.com.br" : "mysite.com",
+      placeholder: { pt: "meusite.com.br", es: "misitio.com" }[lang] ?? "mysite.com",
       initialValue: typed,
       validate: (v) => (toUrl(v) ? undefined : t.urlBad),
     }));

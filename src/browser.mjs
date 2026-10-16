@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { chromium } from "playwright-core";
+import { tr } from "./i18n.mjs";
 
 /**
  * screendocs never downloads a browser: it drives the Chrome or Edge already installed
@@ -20,8 +21,11 @@ async function launchInstalled(opts) {
     } catch {}
   }
   throw new Error(
-    "no Google Chrome or Microsoft Edge found on this computer. Install one of them, " +
-      "or set CHROMIUM_PATH to the executable of another Chromium-based browser."
+    tr({
+      en: "no Google Chrome or Microsoft Edge found on this computer. Install one of them, or set CHROMIUM_PATH to the executable of another Chromium-based browser.",
+      pt: "não achei o Google Chrome nem o Microsoft Edge neste computador. Instale um deles, ou aponte CHROMIUM_PATH para o executável de outro navegador baseado no Chromium.",
+      es: "no encontré Google Chrome ni Microsoft Edge en esta computadora. Instala uno de ellos, o apunta CHROMIUM_PATH al ejecutable de otro navegador basado en Chromium.",
+    }),
   );
 }
 
@@ -55,9 +59,9 @@ export async function ensureVideoEncoder(browser) {
     await context.close().catch(() => {});
     fs.rmSync(dir, { recursive: true, force: true });
   }
-  console.log("Downloading the video encoder (ffmpeg, first run only)...");
+  console.log(tr({ en: "Downloading the video encoder (ffmpeg, first run only)...", pt: "Baixando o codificador de vídeo (ffmpeg, só na primeira vez)...", es: "Descargando el codificador de video (ffmpeg, solo la primera vez)..." }));
   const cli = path.join(path.dirname(createRequire(import.meta.url).resolve("playwright-core/package.json")), "cli.js");
   // Its output goes to stderr: under `screendocs mcp`, stdout carries the protocol
   const r = spawnSync(process.execPath, [cli, "install", "ffmpeg"], { stdio: ["ignore", 2, 2] });
-  if (r.status !== 0) throw new Error("could not download ffmpeg for the videos. Run again, or use --no-video.");
+  if (r.status !== 0) throw new Error(tr({ en: "could not download ffmpeg for the videos. Run again, or use --no-video.", pt: "não consegui baixar o ffmpeg para os vídeos. Rode de novo, ou use --no-video.", es: "no pude descargar ffmpeg para los videos. Ejecuta de nuevo, o usa --no-video." }));
 }

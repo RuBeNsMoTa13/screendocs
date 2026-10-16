@@ -1,6 +1,6 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import { USER_DIR } from "./userconfig.mjs";
 
 /**
  * Describing with an API, the way tools like llm and aider do it: the person names only the
@@ -70,7 +70,7 @@ export function resolveModel(model) {
 }
 
 /** ~/.screendocs/keys.json: outside any project, so it never goes to Git. */
-export const KEYS_FILE = path.join(os.homedir(), ".screendocs", "keys.json");
+export const KEYS_FILE = path.join(USER_DIR, "keys.json");
 
 export function savedKeys() {
   try {

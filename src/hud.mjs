@@ -1,6 +1,6 @@
 import { Prompt, SelectPrompt, ConfirmPrompt } from "@clack/core";
 import pc from "./theme.mjs";
-import { uiLang } from "./interactive.mjs";
+import { uiLang } from "./i18n.mjs";
 
 /**
  * A line of key hints on the bottom bar of every question ("↑↓ choose · Enter confirm ·
@@ -17,6 +17,7 @@ export function setBack(on) {
 const T = {
   en: { move: "↑↓ choose", toggle: "←→ choose", enter: "Enter confirm", back: "Esc back", quit: "Ctrl+C quit", esc: "Esc/Ctrl+C quit" },
   pt: { move: "↑↓ escolher", toggle: "←→ escolher", enter: "Enter confirmar", back: "Esc voltar", quit: "Ctrl+C sair", esc: "Esc/Ctrl+C sair" },
+  es: { move: "↑↓ elegir", toggle: "←→ elegir", enter: "Enter confirmar", back: "Esc volver", quit: "Ctrl+C salir", esc: "Esc/Ctrl+C salir" },
 };
 
 function hints(prompt) {

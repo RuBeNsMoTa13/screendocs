@@ -34,18 +34,19 @@ With just the link (`npx screendocs mysite.com`), it asks nothing and uses the d
 | Video | one scrolling each page | `--no-video` |
 | Personal data | blurs emails, phones, CPF/CNPJ and filled form fields | `--mask`, `--no-auto-mask` |
 | Descriptions | no AI: each screen keeps the page's own text (title and first paragraph) | `--describe`, or later `npx screendocs describe <site>` |
-| Description language | English | `--lang pt` |
+| Description language | the language of screendocs (asked on the first run) | `--lang pt` |
 | Folder | `screendocs-output/<site>/` inside the folder where you run the command (the terminal shows the full path at the start), replacing the previous capture of the same site | `--out`, `--keep` |
 | Browser | hidden | `--headed` |
 | Report | not opened; the terminal shows the path to `index.html` | `--open` |
 
-There are three ways to change the defaults:
+There are four ways to change the defaults:
 
 1. **On the command**, for that run only: `npx screendocs mysite.com --no-video --describe chat --lang pt --open`. Every option is in [Options](#options) and in `npx screendocs --help`.
 2. **In a `screendocs.config.json` file**, in the folder where you run the command, to apply every time there. See [Config file](#config-file).
-3. **With the menu** (`npx screendocs` with no link): it asks about each thing and shows the equivalent command at the end, to repeat later without the questions.
+3. **With `npx screendocs config`**, your own defaults wherever you run screendocs, also when it comes from npm. See [Your defaults and language](#your-defaults-and-language).
+4. **With the menu** (`npx screendocs` with no link): it asks about each thing, starting from your defaults, and shows the equivalent command at the end, to repeat later without the questions.
 
-When more than one sets the same option, the command wins, then the file, then the default.
+When more than one sets the same option, the command wins, then `screendocs.config.json`, then your defaults, then screendocs' own.
 
 ## Pages behind a login
 
@@ -88,7 +89,7 @@ Before each run it opens the page you were on when you logged in; if the site se
 | `--model <provider/model>` | | describe with an API (e.g. `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; see below) |
 | `--instructions <text>` | | what else the descriptions should take into account, e.g. `"focus on what the customer gains"` |
 | `--docs <path>` | | the project's documentation for the AI to read: a folder or one file (see [Extra request and documentation](#extra-request-and-documentation)) |
-| `--lang <code>` | `en` | description language (`pt`, `es`...) |
+| `--lang <code>` | the language of screendocs | description language (`pt`, `en`, `es`...) |
 | `--config <file>` | `screendocs.config.json` | config file (see below) |
 | `--headed` | | show the browser |
 | `--no-url-check` | | skip checking that the address opens (sites only reachable on your network or VPN) |
@@ -106,6 +107,29 @@ Environment variables:
 | `OLLAMA_HOST` | where Ollama runs, when it is not `localhost:11434` |
 | `CHROMIUM_PATH` | use another Chromium-based browser instead of Chrome or Edge |
 | `SCREENDOCS_DEBUG` | set to `1` to print the full error |
+| `SCREENDOCS_LANGUAGE` | the language of screendocs for this run: `en`, `pt` or `es` |
+| `SCREENDOCS_HOME` | another folder for your defaults and saved keys (default `~/.screendocs`) |
+
+## Your defaults and language
+
+screendocs talks in English, Portuguese or Spanish. The first time it runs in a terminal it asks which one (the computer's language comes selected) and saves the answer.
+
+Whoever installs from npm cannot change the package's files, so your own defaults live in your user folder: `~/.screendocs/config.json` (on Windows `C:\Users\<you>\.screendocs\config.json`), next to the saved API keys and outside any project. They apply in every folder, and `screendocs.config.json` or an option typed on the command still win over them.
+
+```bash
+npx screendocs config                         # menu: pick a setting, change it, Done
+npx screendocs config list                    # what is saved
+npx screendocs config set language es         # en, pt or es
+npx screendocs config set max-pages 30
+npx screendocs config set viewports desktop
+npx screendocs config set video false
+npx screendocs config set describe claude     # or: config set model gemini/gemini-2.5-flash
+npx screendocs config unset video             # back to the default
+npx screendocs config reset                   # erase everything (the language is asked again)
+npx screendocs config path                    # where the file is
+```
+
+The settings are the same names as in `screendocs.config.json` (`maxPages` or `max-pages` both work), plus `language`. When your defaults name an AI and one run should skip it, use `--describe none`.
 
 ## Config file
 

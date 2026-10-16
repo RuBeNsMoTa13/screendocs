@@ -5,6 +5,7 @@ import { primaryScreens, task } from "./report.mjs";
 import { parseAnswer, applyItems, sameFile } from "./answers.mjs";
 import { resolveModel, findKey, checkLocal, KEYS_FILE } from "./providers.mjs";
 import { DOCS_FILE, docsText } from "./docs.mjs";
+import { tr } from "./i18n.mjs";
 
 /**
  * Two ways to describe the screens automatically (the third, an AI chat in the browser, is chat.mjs):
@@ -117,15 +118,27 @@ export function installedAgents() {
 export async function checkAgent(agent, config = {}) {
   if (agent === "api") return prepareApi(config);
   if (agent === "chat") {
-    if (!process.stdin.isTTY) throw new Error("--describe chat is step by step, so it needs a terminal you can type in");
+    if (!process.stdin.isTTY) throw new Error(tr({ en: "--describe chat is step by step, so it needs a terminal you can type in", pt: "--describe chat é passo a passo, então precisa de um terminal onde dê para digitar", es: "--describe chat es paso a paso, así que necesita una terminal donde puedas escribir" }));
     return;
   }
-  if (!AGENTS[agent]) throw new Error(`--describe accepts ${[...Object.keys(AGENTS), "chat"].join(", ")}, and --model <provider/model> describes with an API`);
-  if (!installedAgents().includes(agent)) {
+  if (!AGENTS[agent]) {
+    const names = [...Object.keys(AGENTS), "chat", "none"].join(", ");
     throw new Error(
-      `${AGENTS[agent].name} was not found. Install it with: ${installCommand(agent)}` +
-        `\nthen log in by running: ${AGENTS[agent].login}` +
-        `\n(or use --describe chat, an AI chat in your browser)`,
+      tr({
+        en: `--describe accepts ${names}, and --model <provider/model> describes with an API`,
+        pt: `--describe aceita ${names}, e --model <provedor/modelo> descreve com uma API`,
+        es: `--describe acepta ${names}, y --model <proveedor/modelo> describe con una API`,
+      }),
+    );
+  }
+  if (!installedAgents().includes(agent)) {
+    const { name, login } = AGENTS[agent];
+    throw new Error(
+      tr({
+        en: `${name} was not found. Install it with: ${installCommand(agent)}\nthen log in by running: ${login}\n(or use --describe chat, an AI chat in your browser)`,
+        pt: `não achei o ${name}. Instale com: ${installCommand(agent)}\ndepois faça login rodando: ${login}\n(ou use --describe chat, um chat de IA no navegador)`,
+        es: `no encontré ${name}. Instálalo con: ${installCommand(agent)}\nluego inicia sesión ejecutando: ${login}\n(o usa --describe chat, un chat de IA en tu navegador)`,
+      }),
     );
   }
 }
@@ -152,8 +165,11 @@ async function prepareApi(config) {
     return;
   }
   throw new Error(
-    `no API key for ${provider.name}. Set ${provider.env[0]}, or save it once with: npx screendocs keys set ${provider.id}` +
-      ` (it goes to ${KEYS_FILE}, outside the project).`,
+    tr({
+      en: `no API key for ${provider.name}. Set ${provider.env[0]}, or save it once with: npx screendocs keys set ${provider.id} (it goes to ${KEYS_FILE}, outside the project).`,
+      pt: `sem chave de API do ${provider.name}. Defina ${provider.env[0]}, ou guarde uma vez com: npx screendocs keys set ${provider.id} (ela vai para ${KEYS_FILE}, fora do projeto).`,
+      es: `no hay clave de API de ${provider.name}. Define ${provider.env[0]}, o guárdala una vez con: npx screendocs keys set ${provider.id} (va a ${KEYS_FILE}, fuera del proyecto).`,
+    }),
   );
 }
 
@@ -164,7 +180,7 @@ export async function describeWith(agent, root, config) {
 
   // The documentation text was saved in the capture folder, where the tool opens it
   const docs = fs.existsSync(path.join(root, DOCS_FILE)) ? { file: DOCS_FILE } : {};
-  console.log(`\nDescribing ${screens.length} screen(s) with ${AGENTS[agent].name}...`);
+  console.log(describing(screens.length, AGENTS[agent].name));
   fs.rmSync(path.join(root, LOG), { force: true });
 
   const items = [];
@@ -172,20 +188,19 @@ export async function describeWith(agent, root, config) {
     const batch = screens.slice(i, i + BATCH);
     const file = `.screendocs-task-${i / BATCH + 1}.md`;
     fs.writeFileSync(path.join(root, file), task(data, batch, { what: "image file listed below (open it from this folder)", docs }));
-    process.stdout.write(`  ${i + 1}-${i + batch.length} of ${screens.length}... `);
+    process.stdout.write(`  ${i + 1}-${i + batch.length} ${tr({ en: "of", pt: "de", es: "de" })} ${screens.length}... `);
     try {
       const answer = parseAnswer(await run(agent, root, file, batch)) ?? [];
       const mine = answer.filter((it) => batch.some((s) => sameFile(it?.file, s.file)));
       items.push(...mine);
-      console.log(
-        mine.length
-          ? `ok (${mine.length} of ${batch.length})`
-          : answer.length
-            ? `the answer did not name the images of this batch, skipped (what it answered is in ${LOG})`
-            : `no JSON in the answer, skipped (what it answered is in ${LOG})`,
-      );
+      const t = tr({
+        en: { ok: `ok (${mine.length} of ${batch.length})`, other: `the answer did not name the images of this batch, skipped (what it answered is in ${LOG})`, none: `no JSON in the answer, skipped (what it answered is in ${LOG})` },
+        pt: { ok: `ok (${mine.length} de ${batch.length})`, other: `a resposta não citou as imagens deste lote, pulei (o que ela respondeu está em ${LOG})`, none: `a resposta veio sem JSON, pulei (o que ela respondeu está em ${LOG})` },
+        es: { ok: `ok (${mine.length} de ${batch.length})`, other: `la respuesta no nombró las imágenes de este lote, lo salté (lo que respondió está en ${LOG})`, none: `la respuesta no trae JSON, la salté (lo que respondió está en ${LOG})` },
+      });
+      console.log(mine.length ? t.ok : answer.length ? t.other : t.none);
     } catch (err) {
-      console.log(`failed: ${err.message}`);
+      console.log(`${tr({ en: "failed", pt: "falhou", es: "falló" })}: ${err.message}`);
     } finally {
       fs.rmSync(path.join(root, file), { force: true });
     }
@@ -276,7 +291,7 @@ async function describeWithApi(data, root, screens, config) {
   const key = config.apiKey || "";
   const url = `${config.apiUrl.replace(/\/+$/, "")}/chat/completions`;
   const docs = { text: docsText(root) };
-  console.log(`\nDescribing ${screens.length} screen(s) with ${config.model}...`);
+  console.log(describing(screens.length, config.model));
 
   const ask = async (batch) => {
     const res = await fetch(url, {
@@ -302,12 +317,20 @@ async function describeWithApi(data, root, screens, config) {
       const msg = body.error?.message || body.message || `HTTP ${res.status}`;
       // A model that only reads text rejects the screenshot; say so in plain words
       if (/image|vision|multimodal|modalit/i.test(msg) && !/401|403/.test(String(res.status)) && batch.length === 1)
-        throw new Error(`${config.model} does not seem to read images. Pick a model that does (e.g. openai/gpt-4o-mini, gemini/gemini-2.5-flash). API said: ${msg}`);
+        throw new Error(
+          tr({
+            en: `${config.model} does not seem to read images. Pick a model that does (e.g. openai/gpt-4o-mini, gemini/gemini-2.5-flash). API said: ${msg}`,
+            pt: `o ${config.model} parece não ler imagens. Escolha um modelo que leia (ex.: openai/gpt-4o-mini, gemini/gemini-2.5-flash). A API disse: ${msg}`,
+            es: `${config.model} parece no leer imágenes. Elige un modelo que lo haga (ej.: openai/gpt-4o-mini, gemini/gemini-2.5-flash). La API dijo: ${msg}`,
+          }),
+        );
       // A wrong key fails every screen: say so once, with how to fix it
       if (res.status === 401 || res.status === 403)
         throw new Error(
-          `the API refused the key (HTTP ${res.status}: ${msg}).` +
-            (config.provider && !config.provider.local ? ` Save the right one with: npx screendocs keys set ${config.provider.id}` : ""),
+          tr({ en: `the API refused the key (HTTP ${res.status}: ${msg}).`, pt: `a API recusou a chave (HTTP ${res.status}: ${msg}).`, es: `la API rechazó la clave (HTTP ${res.status}: ${msg}).` }) +
+            (config.provider && !config.provider.local
+              ? tr({ en: " Save the right one with: ", pt: " Guarde a certa com: ", es: " Guarda la correcta con: " }) + `npx screendocs keys set ${config.provider.id}`
+              : ""),
         );
       throw new Error(msg);
     }
@@ -318,7 +341,7 @@ async function describeWithApi(data, root, screens, config) {
     return answer.filter((it) => batch.some((s) => sameFile(it?.file, s.file)));
   };
   // A bad key or a model that does not read images fails every screen
-  const fatal = (err) => /401|403|api key|unauthorized|does not seem to read images/i.test(err.message);
+  const fatal = (err) => /401|403|api key|unauthorized|does not seem to read images|parece não ler imagens|parece no leer imágenes/i.test(err.message);
 
   const items = [];
   let done = 0;
@@ -341,7 +364,7 @@ async function describeWithApi(data, root, screens, config) {
       items.push(...got);
       const missing = batch.filter((s) => !got.some((it) => sameFile(it.file, s.file)));
       if (batch.length > 1 && missing.length) queue.push(...missing.map((s) => [s]));
-      else if (batch.length === 1 && !got.length) console.log(`\n  ${batch[0].file}: no JSON in the answer`);
+      else if (batch.length === 1 && !got.length) console.log(`\n  ${batch[0].file}: ${tr({ en: "no JSON in the answer", pt: "a resposta veio sem JSON", es: "la respuesta no trae JSON" })}`);
       done += batch.length - (batch.length > 1 ? missing.length : 0);
       process.stdout.write(`\r  ${done}/${screens.length}`);
     }
@@ -350,6 +373,9 @@ async function describeWithApi(data, root, screens, config) {
   process.stdout.write("\n");
   return items;
 }
+
+const describing = (n, who) =>
+  tr({ en: `\nDescribing ${n} screen(s) with ${who}...`, pt: `\nDescrevendo ${n} tela(s) com ${who}...`, es: `\nDescribiendo ${n} pantalla(s) con ${who}...` });
 
 /** Some models answer with a single object instead of an array. */
 function parseObject(text) {

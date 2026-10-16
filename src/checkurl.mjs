@@ -9,6 +9,7 @@ const TIMEOUT = 8000;
 export const EXAMPLES = {
   en: ["mysite.com", "www.mysite.net", "mysite.io", "app.mysite.dev/login", "http://localhost:3000"],
   pt: ["meusite.com.br", "www.meusite.com", "meusite.net.br", "meusite.app", "app.meusite.io/login", "http://localhost:3000"],
+  es: ["misitio.com", "www.misitio.es", "misitio.com.mx", "misitio.app", "app.misitio.io/login", "http://localhost:3000"],
 };
 
 /**
@@ -110,6 +111,13 @@ const REASON = {
     tls: "o certificado de segurança (https) do site falhou",
     other: "não consegui abrir",
   },
+  es: {
+    notfound: "esta dirección no existe",
+    refused: "el servidor rechazó la conexión",
+    timeout: "el sitio no respondió a tiempo",
+    tls: "falló el certificado de seguridad (https) del sitio",
+    other: "no se pudo abrir",
+  },
 };
 
 export const URL_TEXT = {
@@ -142,6 +150,21 @@ export const URL_TEXT = {
       (sug.length ? `\nEstes responderam, você quis dizer um deles?\n${sug.map((s) => `  ${s}`).join("\n")}` : "") +
       `\nExemplos de endereços: ${EXAMPLES.pt.join(", ")}` +
       `\nSe o endereço está certo (um site que só abre na sua rede ou VPN), adicione --no-url-check.`,
+  },
+  es: {
+    checking: "Revisando la dirección...",
+    ok: (h) => `${h} respondió.`,
+    moved: (h, to) => `${h} respondió y lleva a ${to}.`,
+    fail: (h, r) => `${h} no abrió: ${REASON.es[r] ?? REASON.es.other}.`,
+    pick: "¿Quisiste decir una de estas? (respondieron)",
+    noneFound: "Revisa la dirección. Ejemplos de direcciones que funcionan:",
+    retype: "Escribirla de nuevo",
+    anyway: "Usarla de todos modos",
+    cliFail: (h, r, sug) =>
+      `${h} no abrió: ${REASON.es[r] ?? REASON.es.other}.` +
+      (sug.length ? `\nEstas respondieron, ¿quisiste decir una de ellas?\n${sug.map((s) => `  ${s}`).join("\n")}` : "") +
+      `\nEjemplos de direcciones: ${EXAMPLES.es.join(", ")}` +
+      `\nSi la dirección es correcta (un sitio que solo abre en tu red o VPN), agrega --no-url-check.`,
   },
 };
 
