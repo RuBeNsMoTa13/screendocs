@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { primaryScreens, task } from "./report.mjs";
-import { parseAnswer, applyItems } from "./answers.mjs";
+import { parseAnswer, applyItems, sameFile } from "./answers.mjs";
 
 /**
  * Two ways to describe the screens automatically (the third, an AI chat in the browser, is chat.mjs):
@@ -154,9 +154,16 @@ export async function describeWith(agent, root, config) {
     fs.writeFileSync(path.join(root, file), task(data, batch, "image file listed below (open it from this folder)", docsDir));
     process.stdout.write(`  ${i + 1}-${i + batch.length} of ${screens.length}... `);
     try {
-      const answer = parseAnswer(await run(agent, root, file, batch, docsDir));
-      if (answer) items.push(...answer);
-      console.log(answer ? "ok" : `no JSON in the answer, skipped (what it answered is in ${LOG})`);
+      const answer = parseAnswer(await run(agent, root, file, batch, docsDir)) ?? [];
+      const mine = answer.filter((it) => batch.some((s) => sameFile(it?.file, s.file)));
+      items.push(...mine);
+      console.log(
+        mine.length
+          ? `ok (${mine.length} of ${batch.length})`
+          : answer.length
+            ? `the answer did not name the images of this batch, skipped (what it answered is in ${LOG})`
+            : `no JSON in the answer, skipped (what it answered is in ${LOG})`,
+      );
     } catch (err) {
       console.log(`failed: ${err.message}`);
     } finally {
@@ -174,12 +181,22 @@ export const LOG = "screendocs-agent-log.txt";
  * (not logged in, no quota) comes as a status, which is shown instead of "no JSON".
  */
 function envelope(out, err) {
+  // One JSON object, or one per line (the last one has the answer)
+  const lines = out.trim().split(/\r?\n/).reverse();
+  const e = [out.trim(), ...lines].map((l) => {
+    try {
+      return JSON.parse(l);
+    } catch {
+      return null;
+    }
+  }).find((o) => o && typeof o === "object" && !Array.isArray(o) && ("response" in o || "status" in o || "result" in o));
   try {
-    const e = JSON.parse(out.trim());
+    if (!e) throw null;
+    if (typeof e.result === "string" && e.result.trim()) return e.result;
     if (typeof e.response === "string" && e.response.trim()) return e.response;
     if (e.status && !/^(ok|success|completed?)$/i.test(String(e.status))) throw new Error(`Antigravity CLI: ${e.error?.message ?? e.error ?? e.status}`);
   } catch (x) {
-    if (x.message?.startsWith("Antigravity CLI:")) throw x;
+    if (x?.message?.startsWith("Antigravity CLI:")) throw x;
   }
   if (!out.trim() && err.trim()) throw new Error(err.trim().split("\n").slice(-1)[0]);
   return out;

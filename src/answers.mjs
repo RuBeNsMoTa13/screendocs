@@ -103,7 +103,7 @@ export function applyItems(root, items, by) {
     const main = page.viewports[primary]?.screens ?? [];
     for (const s of main) {
       // The chat answers with the unique names of for-ai/ (home-desktop-01.jpg)
-      const a = byFile.get(normalize(s.file)) ?? byFile.get(aiName(s.file));
+      const a = byFile.get(normalize(s.file)) ?? byFile.get(aiName(s.file)) ?? items.find((i) => sameFile(i?.file, s.file));
       if (!a) {
         if (!s.describedBy) missing.push(s.file);
         continue;
@@ -114,7 +114,7 @@ export function applyItems(root, items, by) {
       Object.assign(s, { describedBy: by, describedAt: at });
       updated++;
     }
-    const done = (m) => byFile.has(normalize(m.file)) || byFile.has(aiName(m.file));
+    const done = (m) => items.some((i) => sameFile(i?.file, m.file));
     for (const vp of others) {
       const list = page.viewports[vp]?.screens ?? [];
       for (const [i, s] of list.entries()) {
@@ -139,6 +139,16 @@ export function applyItems(root, items, by) {
  */
 function keepOriginal(s) {
   if (!s.original && !s.describedBy) s.original = { title: s.title, description: s.description };
+}
+
+/**
+ * The same screen, even when the AI wrote the name another way: "desktop/home/01.jpg",
+ * "home-desktop-01.jpg", ".\\desktop\\home\\01.jpg" or the full path on the computer.
+ */
+export function sameFile(answered, file) {
+  const a = normalize(answered ?? "").toLowerCase();
+  const f = normalize(file).toLowerCase();
+  return !!a && (a === f || a === aiName(f) || a.endsWith(`/${f}`) || a.endsWith(`/${aiName(f)}`));
 }
 
 const normalize = (f) => String(f).replace(/\\/g, "/").replace(/^\.\//, "").trim();
