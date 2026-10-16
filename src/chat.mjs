@@ -167,7 +167,7 @@ function readAnswer(input, t, known, expected) {
       if (t.skip.includes(buf.trim().toLowerCase())) return done(null);
       const items = parseAnswer(buf);
       // A slow paste stopped halfway through the list: wait for the rest
-      if (!items && buf.lastIndexOf("[") > buf.lastIndexOf("]")) return;
+      if (!items && unfinished(buf)) return;
       const named = (items ?? [])
         .filter((it) => it && typeof it === "object" && !/^2 to 6 words$/i.test(String(it.title ?? "").trim()))
         .map((it) => ({ ...it, file: String(it.file ?? "").trim().split(/[\\/]/).pop() }));
@@ -196,6 +196,29 @@ function readAnswer(input, t, known, expected) {
       () => done(null),
     );
   });
+}
+
+/**
+ * True while the list that was started is not closed yet. Brackets inside the text (like
+ * the "[cite: 9]" some chats add) do not count. On Windows the last line of a paste ("]")
+ * only arrives when Enter is pressed, so the answer must wait for it.
+ */
+export function unfinished(text) {
+  const start = text.indexOf("[");
+  if (start < 0) return false;
+  let depth = 0;
+  let inString = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (inString) {
+      if (c === "\\") i++;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === "[" || c === "{") depth++;
+    else if (c === "]" || c === "}") depth--;
+    if (depth === 0) return false;
+  }
+  return true;
 }
 
 /** "a.jpg, b.jpg, c.jpg and 4 more" */
