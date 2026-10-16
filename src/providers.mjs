@@ -48,21 +48,15 @@ function ollamaUrl() {
 }
 
 /**
- * The provider, address and model id of --model (and --api-url, when given).
+ * The provider, address and model id of --model.
  * { provider, url, model } or an Error explaining what to type.
  */
-export function resolveModel(model, apiUrl) {
+export function resolveModel(model) {
   const full = String(model ?? "").trim();
   if (!full) throw new Error("--model is missing: say which model describes the screens (e.g. gemini/gemini-2.5-flash, openai/gpt-4o-mini, ollama/llama3.2-vision)");
   const slash = full.indexOf("/");
   const prefixed = slash > 0 ? providerById(full.slice(0, slash)) : undefined;
   const id = prefixed ? full.slice(slash + 1) : full;
-  if (apiUrl) {
-    const url = apiUrl.replace(/\/+$/, "");
-    // A known address still gets that provider's key variable
-    const known = prefixed ?? PROVIDERS.find((p) => p.url === url) ?? null;
-    return { provider: known, url, model: id };
-  }
   const provider = prefixed ?? PROVIDERS.find((p) => p.match?.test(id));
   if (!provider) {
     throw new Error(
@@ -101,11 +95,10 @@ export function removeKey(providerId) {
 }
 
 /**
- * The key, in this order: --api-key, the provider's usual variable, SCREENDOCS_API_KEY, the
+ * The key, in this order: the provider's usual variable, SCREENDOCS_API_KEY, the
  * key saved with "screendocs keys set". { key, from } or null; never printed.
  */
-export function findKey(provider, flagKey) {
-  if (flagKey) return { key: flagKey, from: "--api-key" };
+export function findKey(provider) {
   for (const v of provider?.env ?? []) if (process.env[v]) return { key: process.env[v], from: v };
   if (process.env.SCREENDOCS_API_KEY) return { key: process.env.SCREENDOCS_API_KEY, from: "SCREENDOCS_API_KEY" };
   const saved = provider && savedKeys()[provider.id];

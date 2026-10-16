@@ -179,7 +179,7 @@ Para OpenAI, Gemini e Anthropic o prefixo pode ficar de fora (`--model gemini-2.
 
 **Modelos locais** (Ollama, LM Studio) não precisam de chave. Antes de capturar, o screendocs confere se o servidor responde e, no Ollama, se o modelo foi baixado (se não foi, mostra o comando `ollama pull`). Se o Ollama roda em outro endereço, defina `OLLAMA_HOST`. O modelo precisa ler imagens (ex.: `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) e precisa de um computador com memória suficiente.
 
-Para outro servidor compatível com OpenAI, faça como as ferramentas da OpenAI: defina `OPENAI_BASE_URL` com o endereço dele e use `--model openai/<modelo>`. Comandos de versões anteriores (`--describe api --api-url ... --api-key ...`) continuam funcionando.
+Para outro servidor compatível com OpenAI, faça como as ferramentas da OpenAI: defina `OPENAI_BASE_URL` com o endereço dele e use `--model openai/<modelo>`.
 
 Escolha um modelo que leia imagens; se escolher um que não lê, o screendocs avisa. O menu pergunta o provedor e o modelo, usa a chave guardada quando houver e nunca mostra a chave.
 

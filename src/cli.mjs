@@ -98,8 +98,6 @@ export async function run(argv) {
       "no-url-check": { type: "boolean" },
       describe: { type: "string" },
       docs: { type: "string" },
-      "api-url": { type: "string" },
-      "api-key": { type: "string" },
       model: { type: "string" },
       lang: { type: "string" },
       config: { type: "string" },
@@ -133,7 +131,7 @@ export async function run(argv) {
       if (!process.stdin.isTTY) throw new Error("choose who describes: --describe claude, codex, antigravity or chat, or --model <model> for an API");
       p.intro(`${data.site} · ${new Date(data.createdAt).toLocaleString()}`);
       const how = await chooseDescriber();
-      Object.assign(values, { describe: how.describe, model: how.model });
+      Object.assign(values, how.describe === "api" ? { model: how.model } : { describe: how.describe });
       open = true;
     }
     const config = loadConfig(data.url, { ...values, lang: values.lang ?? data.lang });

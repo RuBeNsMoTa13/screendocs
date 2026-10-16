@@ -9,7 +9,7 @@ import { resolveModel, findKey, checkLocal, KEYS_FILE } from "./providers.mjs";
  * Two ways to describe the screens automatically (the third, an AI chat in the browser, is chat.mjs):
  * - an AI tool already installed and logged in on the computer (Claude Code, Codex, Antigravity CLI), which
  *   runs on the person's own plan with no API key;
- * - "api": any provider with an OpenAI-compatible API (OpenAI, Gemini, OpenRouter, Anthropic,
+ * - an API (--model <provider/model>): any provider with an OpenAI-compatible API (OpenAI, Gemini, OpenRouter, Anthropic,
  *   Ollama...), called with fetch, so no SDK is installed.
  */
 export const AGENTS = {
@@ -119,7 +119,7 @@ export async function checkAgent(agent, config = {}) {
     if (!process.stdin.isTTY) throw new Error("--describe chat is step by step, so it needs a terminal you can type in");
     return;
   }
-  if (!AGENTS[agent]) throw new Error(`--describe accepts ${[...Object.keys(AGENTS), "api", "chat"].join(", ")}`);
+  if (!AGENTS[agent]) throw new Error(`--describe accepts ${[...Object.keys(AGENTS), "chat"].join(", ")}, and --model <provider/model> describes with an API`);
   if (!installedAgents().includes(agent)) {
     throw new Error(
       `${AGENTS[agent].name} was not found. Install it with: ${installCommand(agent)}` +
@@ -135,10 +135,10 @@ export async function checkAgent(agent, config = {}) {
  */
 async function prepareApi(config) {
   if (config.provider !== undefined) return;
-  const { provider, url, model, custom } = resolveModel(config.model, config.apiUrl);
+  const { provider, url, model, custom } = resolveModel(config.model);
   Object.assign(config, { provider, apiUrl: url, model });
   if (provider?.local) return checkLocal(provider, url, model);
-  const found = findKey(provider, config.apiKey);
+  const found = findKey(provider);
   if (found) {
     config.apiKey = found.key;
     return;

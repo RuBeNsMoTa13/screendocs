@@ -179,7 +179,7 @@ For OpenAI, Gemini and Anthropic the prefix can be left out (`--model gemini-2.5
 
 **Local models** (Ollama, LM Studio) need no key. Before capturing, screendocs checks that the server answers and, on Ollama, that the model is downloaded (if not, it shows the `ollama pull` command). If Ollama runs on another address, set `OLLAMA_HOST`. The model must read images (e.g. `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) and needs a computer with enough memory.
 
-For another OpenAI-compatible server, do as the OpenAI tools do: set `OPENAI_BASE_URL` to its address and use `--model openai/<model>`. Commands from older versions (`--describe api --api-url ... --api-key ...`) still work.
+For another OpenAI-compatible server, do as the OpenAI tools do: set `OPENAI_BASE_URL` to its address and use `--model openai/<model>`.
 
 Pick a model that reads images; with one that doesn't, screendocs tells you. The menu asks for the provider and the model, uses the saved key when there is one, and never shows the key.
 
