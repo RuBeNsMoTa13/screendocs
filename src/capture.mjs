@@ -4,6 +4,7 @@ import { VIEWPORTS } from "./config.mjs";
 import { open } from "./discover.mjs";
 import { applyMask } from "./mask.mjs";
 import { slugOf } from "./paths.mjs";
+import { tr } from "./i18n.mjs";
 
 /**
  * Captures every page on every viewport: one image per section of the page
@@ -63,10 +64,10 @@ export async function capture(browser, config, pages, storageState, onPage) {
           }
           await page.screenshot({ path: path.join(dir, "full.jpg"), type: "jpeg", quality: 75, fullPage: true });
           shot.full = rel(root, path.join(dir, "full.jpg"));
-          console.log(`  ${step} ${vp.padEnd(7)} ${url}  ${sections.length} section(s)`);
+          console.log(`  ${step} ${vp.padEnd(7)} ${url}  ${sections.length} ${tr({ en: "section(s)", pt: "seção(ões)", es: "sección(es)" })}`);
         });
       } catch (err) {
-        console.log(`  ${step} ${vp.padEnd(7)} ${url}  failed: ${err.message.split("\n")[0]}`);
+        console.log(`  ${step} ${vp.padEnd(7)} ${url}  ${tr({ en: "failed", pt: "falhou", es: "falló" })}: ${err.message.split("\n")[0]}`);
       }
 
       const video = page.video();
@@ -91,7 +92,7 @@ const PAGE_TIMEOUT = 120_000;
 function withTimeout(ms, work) {
   let timer;
   const limit = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`took longer than ${ms / 1000}s, skipped`)), ms);
+    timer = setTimeout(() => reject(new Error(tr({ en: `took longer than ${ms / 1000}s, skipped`, pt: `levou mais de ${ms / 1000}s, pulei`, es: `tardó más de ${ms / 1000}s, la salté` }))), ms);
   });
   return Promise.race([work(), limit]).finally(() => clearTimeout(timer));
 }
@@ -173,7 +174,7 @@ function archive(root) {
   let dest = `${root}_${stamp}`;
   for (let i = 2; fs.existsSync(dest); i++) dest = `${root}_${stamp}-${i}`;
   fs.renameSync(root, dest);
-  console.log(`Previous capture kept in ${dest}`);
+  console.log(tr({ en: `Previous capture kept in ${dest}`, pt: `Captura anterior guardada em ${dest}`, es: `Captura anterior guardada en ${dest}` }));
 }
 
 function uniqueSlug(pages, slug) {

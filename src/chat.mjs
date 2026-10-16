@@ -6,7 +6,7 @@ import * as p from "@clack/prompts";
 import pc from "./theme.mjs";
 import { writeForAi } from "./report.mjs";
 import { parseAnswer, applyItems } from "./answers.mjs";
-import { uiLang } from "./interactive.mjs";
+import { uiLang } from "./i18n.mjs";
 
 const MAC = process.platform === "darwin";
 const WIN = process.platform === "win32";
@@ -57,6 +57,28 @@ const T = {
     skipped: "Parte pulada.",
     skip: ["pular", "skip"],
   },
+  es: {
+    intro: "Usa un chat con una IA que lea imágenes (ChatGPT, Gemini, Claude.ai...). Los planes gratuitos pueden limitar cuántas imágenes puedes enviar.",
+    part: (i, n) => `Parte ${i} de ${n}`,
+    drag: (n, dir) => `Abrí la carpeta ${dir}. Selecciona ${n > 1 ? `sus ${n} imágenes (${KEY}+A)` : "la imagen"} y arrástralas al chat.`,
+    open: (n, dir) => `Abre la carpeta ${dir}, selecciona ${n > 1 ? `sus ${n} imágenes` : "la imagen"} y arrástralas al chat.`,
+    copied: `El texto para la IA ya está copiado. Pégalo en el chat (${KEY}+V) y envíalo.`,
+    notCopied: (f) => `Abre ${f}, cópialo todo, pégalo en el chat y envíalo.`,
+    back: (n) => `La IA debe responder con ${n} descripción(es), una por imagen. Copia su respuesta completa, pégala aquí y presiona Enter. (Escribe saltar para saltar esta parte.)`,
+    dups: (names) => `Llegaron repetidas: ${list(names)}. Me quedé con la última.`,
+    unknown: (names) => `No son imágenes de esta captura, las ignoré: ${list(names)}.`,
+    empty: (names) => `Llegaron sin título o descripción: ${list(names)}.`,
+    sameChat: "Puedes seguir en el mismo chat.",
+    got: (n, total) => `${n} de ${total} descripciones recibidas.`,
+    pastedPrompt: "Lo que llegó aquí es el texto para la IA, no su respuesta (screendocs copió ese texto al empezar esta parte, en lugar de lo que había en tu portapapeles). Si la IA ya respondió, copia su respuesta de nuevo en el chat y pégala aquí.",
+    noJson: "No encontré las descripciones en esa respuesta. Copia la respuesta completa de la IA y pégala de nuevo (o escribe saltar).",
+    wrongFiles: (names) => `Esa respuesta no menciona ninguna imagen de esta captura. Las imágenes de esta parte son ${list(names)}. Revisa que las enviaste y pega de nuevo (o escribe saltar).`,
+    otherParts: (n) => `(y ${n} más de otras partes)`,
+    missing: (names) => `La IA no describió ${list(names)}. Pídele en el chat que describa estas también y pega la respuesta, o escribe saltar para dejarlas con el texto de la página.`,
+    already: (i) => `La parte ${i} ya fue respondida.`,
+    skipped: "Parte saltada.",
+    skip: ["saltar", "skip"],
+  },
 };
 
 /**
@@ -64,7 +86,7 @@ const T = {
  * for-ai/ it opens the folder, copies the text for the AI and reads the answer pasted back.
  */
 export async function chatFlow(root) {
-  const t = T[uiLang()];
+  const t = T[uiLang()] ?? T.en;
   const parts = writeForAi(root);
   p.log.info(t.intro);
 

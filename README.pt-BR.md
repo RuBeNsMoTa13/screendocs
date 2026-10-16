@@ -34,18 +34,19 @@ Com só o link (`npx screendocs meusite.com.br`), ele não pergunta nada e usa o
 | Vídeo | um rolando cada página | `--no-video` |
 | Dados pessoais | borra e-mails, telefones, CPF/CNPJ e campos preenchidos | `--mask`, `--no-auto-mask` |
 | Descrições | nenhuma IA: cada tela fica com o texto da página (título e primeiro parágrafo) | `--describe`, ou depois `npx screendocs describe <site>` |
-| Idioma das descrições | inglês | `--lang pt` |
+| Idioma das descrições | o idioma do screendocs (perguntado na primeira vez) | `--lang pt` |
 | Pasta | `screendocs-output/<site>/` dentro da pasta onde você roda o comando (o terminal mostra o caminho completo no começo), substituindo a captura anterior do mesmo site | `--out`, `--keep` |
 | Navegador | escondido | `--headed` |
 | Relatório | não abre sozinho; o terminal mostra o caminho do `index.html` | `--open` |
 
-Há três jeitos de mudar os padrões:
+Há quatro jeitos de mudar os padrões:
 
 1. **No comando**, só para essa vez: `npx screendocs meusite.com.br --no-video --describe chat --lang pt --open`. Todas as opções estão em [Opções](#opções) e em `npx screendocs --help`.
 2. **No arquivo `screendocs.config.json`**, na pasta onde roda o comando, para valer sempre ali. Veja [Arquivo de configuração](#arquivo-de-configuração).
-3. **Pelo menu** (`npx screendocs` sem link): ele pergunta cada coisa e mostra no fim o comando equivalente, para repetir depois sem as perguntas.
+3. **Com `npx screendocs config`**, os seus padrões em qualquer pasta, inclusive quando o screendocs vem do npm. Veja [Seus padrões e idioma](#seus-padrões-e-idioma).
+4. **Pelo menu** (`npx screendocs` sem link): ele pergunta cada coisa, partindo dos seus padrões, e mostra no fim o comando equivalente, para repetir depois sem as perguntas.
 
-Quando mais de um define a mesma opção, vale o que estiver no comando, depois o arquivo, depois o padrão.
+Quando mais de um define a mesma opção, vale o que estiver no comando, depois o `screendocs.config.json`, depois os seus padrões, depois os do screendocs.
 
 ## Páginas com login
 
@@ -88,7 +89,7 @@ A pasta `.screendocs/` dá acesso à sua conta. Ela entra no `.gitignore` automa
 | `--model <provedor/modelo>` | | descreve com uma API (ex.: `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; veja abaixo) |
 | `--instructions <texto>` | | o que mais as descrições devem levar em conta, ex.: `"fale do que o cliente ganha"` |
 | `--docs <caminho>` | | documentação do projeto para a IA ler: uma pasta ou um arquivo (veja [Pedido extra e documentação](#pedido-extra-e-documentação)) |
-| `--lang <código>` | `en` | idioma das descrições (`pt`, `es`...) |
+| `--lang <código>` | o idioma do screendocs | idioma das descrições (`pt`, `en`, `es`...) |
 | `--config <arquivo>` | `screendocs.config.json` | arquivo de configuração (veja abaixo) |
 | `--headed` | | mostra o navegador |
 | `--no-url-check` | | não confere se o endereço abre (sites que só abrem na sua rede ou VPN) |
@@ -106,6 +107,29 @@ Variáveis de ambiente:
 | `OLLAMA_HOST` | onde o Ollama roda, quando não é `localhost:11434` |
 | `CHROMIUM_PATH` | usa outro navegador baseado em Chromium no lugar do Chrome ou Edge |
 | `SCREENDOCS_DEBUG` | defina como `1` para ver o erro completo |
+| `SCREENDOCS_LANGUAGE` | o idioma do screendocs nesta execução: `en`, `pt` ou `es` |
+| `SCREENDOCS_HOME` | outra pasta para os seus padrões e chaves salvas (padrão `~/.screendocs`) |
+
+## Seus padrões e idioma
+
+O screendocs fala inglês, português ou espanhol. Na primeira vez que roda num terminal ele pergunta qual (já vem marcado o idioma do computador) e guarda a resposta.
+
+Quem instala pelo npm não consegue mudar os arquivos do pacote, então os seus padrões ficam na sua pasta de usuário: `~/.screendocs/config.json` (no Windows `C:\Users\<você>\.screendocs\config.json`), junto das chaves de API salvas e fora de qualquer projeto. Eles valem em qualquer pasta, e o `screendocs.config.json` ou uma opção digitada no comando ainda ganham deles.
+
+```bash
+npx screendocs config                         # menu: escolha uma opção, mude, Pronto
+npx screendocs config list                    # o que está guardado
+npx screendocs config set language pt         # en, pt ou es
+npx screendocs config set max-pages 30
+npx screendocs config set viewports desktop
+npx screendocs config set video false
+npx screendocs config set describe claude     # ou: config set model gemini/gemini-2.5-flash
+npx screendocs config unset video             # volta ao padrão
+npx screendocs config reset                   # apaga tudo (o idioma é perguntado de novo)
+npx screendocs config path                    # onde fica o arquivo
+```
+
+As opções têm os mesmos nomes do `screendocs.config.json` (`maxPages` ou `max-pages`, tanto faz), mais `language`. Quando os seus padrões escolhem uma IA e uma execução não deve usá-la, use `--describe none`.
 
 ## Arquivo de configuração
 

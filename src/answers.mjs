@@ -1,16 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
 import { writeData, aiName } from "./report.mjs";
+import { tr } from "./i18n.mjs";
 
 /** The capture folder of a site ("mysite.com", its URL or the folder itself). */
 export function findCapture(target, out = "screendocs-output") {
   const root = locateCapture(target, out);
   if (root) return root;
   const all = listCaptures(out).map((c) => c.name);
-  throw new Error(
-    `no capture found for "${target}". ` +
-      (all.length ? `Captures there are: ${all.join(", ")}.` : `Capture it first (npx screendocs ${target}) or give the capture folder.`),
-  );
+  const t = tr({
+    en: { none: `no capture found for "${target}". `, list: `Captures there are: ${all.join(", ")}.`, first: `Capture it first (npx screendocs ${target}) or give the capture folder.` },
+    pt: { none: `não achei captura de "${target}". `, list: `Capturas que existem: ${all.join(", ")}.`, first: `Capture antes (npx screendocs ${target}) ou informe a pasta da captura.` },
+    es: { none: `no encontré una captura de "${target}". `, list: `Capturas que hay: ${all.join(", ")}.`, first: `Captúralo primero (npx screendocs ${target}) o indica la carpeta de la captura.` },
+  });
+  throw new Error(t.none + (all.length ? t.list : t.first));
 }
 
 /** Like findCapture, but null when there is none. */

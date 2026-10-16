@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { tr } from "./i18n.mjs";
 
 /**
  * The project documentation the AI reads along with the screenshots: a folder or a single
@@ -21,9 +22,9 @@ const ext = (file) => path.extname(file).slice(1).toLowerCase();
 /** The text of a folder (and its subfolders) or of one file: { text, files, skipped, cut }. */
 export async function readDocs(target) {
   const from = path.resolve(String(target).trim());
-  if (!fs.existsSync(from)) throw new Error(`documentation not found: ${from}`);
+  if (!fs.existsSync(from)) throw new Error(tr({ en: `documentation not found: ${from}`, pt: `documentação não encontrada: ${from}`, es: `no encontré la documentación: ${from}` }));
   const one = fs.statSync(from).isFile();
-  if (one && !DOC_TYPES.includes(ext(from))) throw new Error(`${path.basename(from)}: screendocs reads ${DOC_TYPES.join(", ")}`);
+  if (one && !DOC_TYPES.includes(ext(from))) throw new Error(`${path.basename(from)}: ${tr({ en: "screendocs reads", pt: "o screendocs lê", es: "screendocs lee" })} ${DOC_TYPES.join(", ")}`);
 
   const files = one ? [from] : walk(from);
   const parts = [];
@@ -177,7 +178,14 @@ export async function saveBrief(root, { instructions, docs } = {}) {
     const out = path.join(root, DOCS_FILE);
     if (String(docs ?? "").trim()) {
       read = await readDocs(docs);
-      if (!read.text) throw new Error(`no text found in ${path.resolve(docs)} (screendocs reads ${DOC_TYPES.join(", ")}; a scanned PDF has only images)`);
+      if (!read.text)
+        throw new Error(
+          tr({
+            en: `no text found in ${path.resolve(docs)} (screendocs reads ${DOC_TYPES.join(", ")}; a scanned PDF has only images)`,
+            pt: `não achei texto em ${path.resolve(docs)} (o screendocs lê ${DOC_TYPES.join(", ")}; um PDF escaneado só tem imagens)`,
+            es: `no encontré texto en ${path.resolve(docs)} (screendocs lee ${DOC_TYPES.join(", ")}; un PDF escaneado solo tiene imágenes)`,
+          }),
+        );
       fs.writeFileSync(out, read.text + "\n");
       data.docs = path.resolve(docs);
     } else {
@@ -199,8 +207,10 @@ export const docsText = (root) => {
 export function docsSummary(read) {
   if (!read) return "";
   const names = (list) => list.map((f) => path.basename(f)).join(", ");
-  return (
-    `Documentation for the AI: ${read.files.length} file(s) read${read.cut ? " (cut at about 150 KB of text)" : ""}` +
-    (read.skipped.length ? `; without text, skipped: ${names(read.skipped)}` : "")
-  );
+  const t = tr({
+    en: { read: (n) => `Documentation for the AI: ${n} file(s) read`, cut: " (cut at about 150 KB of text)", skipped: "; without text, skipped: " },
+    pt: { read: (n) => `Documentação para a IA: ${n} arquivo(s) lido(s)`, cut: " (cortada em uns 150 KB de texto)", skipped: "; sem texto, pulei: " },
+    es: { read: (n) => `Documentación para la IA: ${n} archivo(s) leído(s)`, cut: " (cortada en unos 150 KB de texto)", skipped: "; sin texto, salté: " },
+  });
+  return t.read(read.files.length) + (read.cut ? t.cut : "") + (read.skipped.length ? t.skipped + names(read.skipped) : "");
 }

@@ -1,4 +1,5 @@
 import { VIEWPORTS } from "./config.mjs";
+import { tr } from "./i18n.mjs";
 
 const LOGOUT = /(log-?out|sign-?out|sign-?off|logoff|sair|deslogar|desconectar|encerrar-sessao)/i;
 const FILE = /\.(pdf|zip|rar|7z|png|jpe?g|gif|webp|svg|mp4|mp3|webm|docx?|xlsx?|pptx?|csv|json|xml|txt)$/i;
@@ -22,7 +23,7 @@ export async function discover(browser, config, storageState) {
   const found = [];
   const queue = [{ url: clean(start), depth: 0 }];
 
-  console.log(`\nLooking for pages (up to ${config.maxPages})...`);
+  console.log(tr({ en: `\nLooking for pages (up to ${config.maxPages})...`, pt: `\nProcurando páginas (até ${config.maxPages})...`, es: `\nBuscando páginas (hasta ${config.maxPages})...` }));
   while (queue.length && found.length < config.maxPages) {
     const { url, depth } = queue.shift();
     if (seen.has(url)) continue;
@@ -31,7 +32,7 @@ export async function discover(browser, config, storageState) {
     try {
       await open(page, url);
     } catch (err) {
-      console.log(`  skip ${url} (${err.message.split("\n")[0]})`);
+      console.log(`  ${tr({ en: "skip", pt: "pulei", es: "salté" })} ${url} (${err.message.split("\n")[0]})`);
       continue;
     }
     // A redirect (e.g. to the login page) lands on a page we may already have
@@ -39,7 +40,7 @@ export async function discover(browser, config, storageState) {
     if (landed !== url && seen.has(landed)) continue;
     seen.add(landed);
     if (!sameSite(new URL(landed).host, start.host)) {
-      console.log(`  skip ${url} (it opened ${new URL(landed).host}, another site)`);
+      console.log(tr({ en: `  skip ${url} (it opened ${new URL(landed).host}, another site)`, pt: `  pulei ${url} (abriu ${new URL(landed).host}, outro site)`, es: `  salté ${url} (abrió ${new URL(landed).host}, otro sitio)` }));
       continue;
     }
 
@@ -47,7 +48,7 @@ export async function discover(browser, config, storageState) {
     if (templates.has(template)) continue;
     templates.add(template);
     found.push({ url: landed });
-    console.log(`  [${found.length}/${config.maxPages} max] found ${landed}`);
+    console.log(`  [${found.length}/${config.maxPages} max] ${tr({ en: "found", pt: "achei", es: "encontré" })} ${landed}`);
 
     if (depth >= config.depth) continue;
     const links = await page.$$eval("a[href]", (as) => as.map((a) => a.href));

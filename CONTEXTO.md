@@ -19,9 +19,10 @@ Nasceu porque eu precisava das fotos e descrições das telas dos meus projetos 
 
 ## Como funciona (arquivos)
 - `bin/screendocs.mjs`: entrada da linha de comando.
-- `src/interactive.mjs`: rodando `screendocs` sem argumentos abre um menu (banner ScreenDocs, @clack/prompts 0.11.0 por suportar Node 18, pt/en pelo idioma do sistema) que monta os mesmos argumentos da linha de comando.
+- `src/interactive.mjs`: rodando `screendocs` sem argumentos abre um menu (banner ScreenDocs, @clack/prompts 0.11.0 por suportar Node 18) que monta os mesmos argumentos da linha de comando.
 - `src/cli.mjs`: opções (`--max-pages 20`, `--depth 3`, `--pages`, `--exclude`, `--viewports desktop,mobile`, `--no-video`, `--out`, `--mask`, `--no-auto-mask`, `--describe claude|codex|antigravity|chat`, `--model <provedor/modelo>`, `--docs`, `--instructions`, `--lang`, `--keep`, `--open`, `--config`, `--headed`) e os comandos `screendocs login <url>` e `screendocs describe <site>` (descreve uma captura antiga).
-- `src/config.mjs`: padrões + `screendocs.config.json` + opções; telas 1440x900 e 390x844.
+- `src/config.mjs`: padrões + config do usuário + `screendocs.config.json` + opções; telas 1440x900 e 390x844.
+- `src/i18n.mjs` + `src/userconfig.mjs` + `src/configcmd.mjs`: o CLI fala en/pt/es (pergunta na primeira execução); padrões de cada pessoa em `~/.screendocs/config.json` (quem usa pelo npm não mexe no pacote), editados com `screendocs config`. O idioma das descrições segue o do CLI quando ninguém define `lang`.
 - `src/login.mjs` + `src/browser.mjs`: login abre o Chrome instalado sem os sinais de automação (senão o Google recusa: "navegador pode não ser seguro"), salva a sessão em `.screendocs/auth/<site>.json` com `indexedDB: true` (Firebase guarda login lá) e põe `.screendocs/` no .gitignore.
 - `src/discover.mjs`: percorre os links do mesmo site (busca em largura; com e sem www conta como o mesmo site, subdomínios e outros domínios ficam de fora), pula sair/logout e arquivos, ignora query string e trata `/posts/12` e `/posts/13` como uma tela só.
 - `src/capture.mjs`: por página e tela, rola a página (filma), corta em seções (header/section/footer/article/main > div; se não houver, fatias da altura da tela), salva `01.jpg...`, `full.jpg`, `video.webm`.
