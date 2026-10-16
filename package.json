@@ -6,7 +6,7 @@
   "bin": {
     "screendocs": "bin/screendocs.mjs"
   },
-  "files": ["bin", "src", "README.md", "README.pt-BR.md", "LICENSE"],
+  "files": ["bin", "src", "README.md", "README.pt-BR.md", "README.es.md", "LICENSE"],
   "engines": {
     "node": ">=18"
   },

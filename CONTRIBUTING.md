@@ -2,7 +2,7 @@
 
 This guide is for whoever downloads the code from GitHub to run it, change it or send a fix. To just use screendocs, you do not need any of this: `npx screendocs` is enough, and the [README](README.md) explains everything.
 
-[Português](CONTRIBUTING.pt-BR.md)
+[Português](CONTRIBUTING.pt-BR.md) · [Español](CONTRIBUTING.es.md)
 
 ## Run it
 
@@ -69,7 +69,7 @@ Every text the user sees is written in English, Portuguese and Spanish next to t
 ## Sending a change
 
 1. Create a branch, make the change and try it with `node bin/screendocs.mjs` on a real site.
-2. If it changes an option, a question of the menu or what the terminal shows, update `README.md` and `README.pt-BR.md` too.
+2. If it changes an option, a question of the menu or what the terminal shows, update `README.md`, `README.pt-BR.md` and `README.es.md` too.
 3. Open a pull request saying what was wrong before and what happens now.
 
 Publishing to npm is in [PUBLICAR.md](PUBLICAR.md).

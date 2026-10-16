@@ -4,7 +4,7 @@ Aponte para um site e receba todas as telas documentadas: uma foto de cada seç�
 
 Funciona com qualquer site, em qualquer stack. Nada é instalado no projeto documentado.
 
-[English](README.md)
+[English](README.md) · [Español](README.es.md)
 
 ## Começo rápido
 

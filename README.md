@@ -4,7 +4,7 @@ Point it at a website and get every screen documented: a screenshot of each sect
 
 Works with any site, in any stack. Nothing is installed in the project being documented.
 
-[Português](README.pt-BR.md)
+[Português](README.pt-BR.md) · [Español](README.es.md)
 
 ## Quick start
 
