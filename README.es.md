@@ -6,9 +6,11 @@ Funciona con cualquier sitio, en cualquier stack. No se instala nada en el proye
 
 [English](README.md) · [Português](README.pt-BR.md)
 
+> **Este README es para quien usa screendocs desde npm** (`npx screendocs`): cómo usarlo, sin descargar ni compilar nada. Para ejecutarlo desde el código de GitHub, cambiarlo o mandar una corrección, mira la [guía para desarrolladores](CONTRIBUTING.es.md).
+
 ## Inicio rápido
 
-**Manual visual:** las imágenes de abajo vienen de [docs/manual.html](docs/manual.html), un manual de una página en inglés, portugués y español. Descárgalo y ábrelo en el navegador para ver todo, incluida cada flag.
+**Manual del usuario (npm):** las imágenes de abajo vienen de [docs/user-manual.html](docs/user-manual.html), un manual de una página en inglés, portugués y español. Descárgalo y ábrelo en el navegador para ver todo, incluida cada flag.
 
 ![Dos formas de usarlo](docs/images/es/ways.png)
 

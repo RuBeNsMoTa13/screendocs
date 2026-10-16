@@ -1,6 +1,6 @@
-# Running screendocs from the code
+# Developer guide (repository)
 
-This guide is for whoever downloads the code from GitHub to run it, change it or send a fix. To just use screendocs, you do not need any of this: `npx screendocs` is enough, and the [README](README.md) explains everything.
+> **This guide is for people who work on the code in this repository.** To use screendocs from npm, see the [README](README.md) and the user manual in `docs/user-manual.html`.
 
 [Português](CONTRIBUTING.pt-BR.md) · [Español](CONTRIBUTING.es.md)
 
@@ -68,18 +68,18 @@ Every text the user sees is written in English, Portuguese and Spanish next to t
 
 ## The visual manual
 
-`docs/manual.html` is the visual manual, one page in English, Portuguese and Spanish. The images in the READMEs are pieces of it, in `docs/images/<language>/`. Neither goes into the npm package.
+`docs/user-manual.html` is the user manual for npm users, one page in English, Portuguese and Spanish. The images in the READMEs are pieces of it, in `docs/images/<language>/`. Neither goes into the npm package.
 
 The manual does not follow the code by itself: its terminal screens are drawn in the page, with the texts copied from the CLI. So when a change touches something the manual shows (a menu question, an option, a message in the terminal):
 
-1. Edit the same text in `docs/manual.html`, in the three languages.
+1. Edit the same text in `docs/user-manual.html`, in the three languages.
 2. Run `npm run manual:images`. It opens the manual in your Chrome or Edge, takes the 11 pieces in each language and saves them, already compressed, over the old images.
 3. Look at the new images and commit them with the change.
 
 ## Sending a change
 
 1. Create a branch, make the change and try it with `node bin/screendocs.mjs` on a real site.
-2. If it changes an option, a question of the menu or what the terminal shows, update `README.md`, `README.pt-BR.md`, `README.es.md` and `docs/manual.html` too.
+2. If it changes an option, a question of the menu or what the terminal shows, update `README.md`, `README.pt-BR.md`, `README.es.md` and `docs/user-manual.html` too.
 3. Open a pull request saying what was wrong before and what happens now.
 
 Publishing to npm is in [PUBLICAR.md](PUBLICAR.md).

@@ -1,6 +1,6 @@
-# Ejecutar screendocs desde el código
+# Guía para desarrolladores (repositorio)
 
-Esta guía es para quien descarga el código de GitHub para ejecutarlo, cambiarlo o mandar una corrección. Para solo usar screendocs, nada de esto hace falta: basta con `npx screendocs`, y el [README](README.es.md) lo explica todo.
+> **Esta guía es para quien trabaja en el código de este repositorio.** Para usar screendocs desde npm, mira el [README](README.es.md) y el manual del usuario en `docs/user-manual.html`.
 
 [English](CONTRIBUTING.md) · [Português](CONTRIBUTING.pt-BR.md)
 
@@ -68,18 +68,18 @@ Todo texto que ve el usuario está escrito en inglés, portugués y español, ju
 
 ## El manual visual
 
-`docs/manual.html` es el manual visual, una página en inglés, portugués y español. Las imágenes de los README son partes de él, en `docs/images/<idioma>/`. Ninguno de los dos entra en el paquete de npm.
+`docs/user-manual.html` es el manual del usuario, para quien lo usa desde npm, una página en inglés, portugués y español. Las imágenes de los README son partes de él, en `docs/images/<idioma>/`. Ninguno de los dos entra en el paquete de npm.
 
 El manual no sigue al código solo: sus pantallas de terminal están dibujadas en la página, con los textos copiados del CLI. Así que, cuando un cambio toca algo que el manual muestra (una pregunta del menú, una opción, un mensaje en la terminal):
 
-1. Cambia el mismo texto en `docs/manual.html`, en los tres idiomas.
+1. Cambia el mismo texto en `docs/user-manual.html`, en los tres idiomas.
 2. Ejecuta `npm run manual:images`. Abre el manual en tu Chrome o Edge, toma las 11 partes en cada idioma y las guarda, ya comprimidas, sobre las imágenes anteriores.
 3. Revisa las imágenes nuevas y haz el commit junto con el cambio.
 
 ## Mandar un cambio
 
 1. Crea una rama, haz el cambio y pruébalo con `node bin/screendocs.mjs` en un sitio real.
-2. Si cambia una opción, una pregunta del menú o lo que aparece en la terminal, actualiza también `README.md`, `README.pt-BR.md`, `README.es.md` y `docs/manual.html`.
+2. Si cambia una opción, una pregunta del menú o lo que aparece en la terminal, actualiza también `README.md`, `README.pt-BR.md`, `README.es.md` y `docs/user-manual.html`.
 3. Abre un pull request que diga qué estaba mal antes y qué pasa ahora.
 
 La publicación en npm está en [PUBLICAR.md](PUBLICAR.md).

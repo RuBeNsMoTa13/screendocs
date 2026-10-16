@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Takes the README images from docs/manual.html: one PNG per part of the manual, in each
+ * Takes the README images from docs/user-manual.html: one PNG per part of the manual, in each
  * language, in docs/images/<lang>/, reduced to 128 colors so the repository stays small.
  * Run after changing the manual: npm run manual:images
  */
@@ -29,7 +29,7 @@ const browser = await launch({ headless: true });
 try {
   for (const lang of ["en", "pt", "es"]) {
     const page = await browser.newPage({ viewport: { width: 1240, height: 900 }, deviceScaleFactor: 1.5, colorScheme: "light" });
-    await page.goto(`file://${docs}manual.html`);
+    await page.goto(`file://${docs}user-manual.html`);
     await page.click(`#lang-${lang}`);
     await page.addStyleTag({ content: "header.top{position:static !important} .part{padding-top:28px !important}" });
     await page.waitForTimeout(500);
