@@ -35,6 +35,8 @@ npx screendocs https://seu-site.com
 
 Ele usa o Chrome ou o Edge já instalado no seu computador; nenhum navegador é baixado. O resultado fica em `screendocs-output/<site>/`; abra o `index.html`.
 
+O `npx` baixa e roda a versão mais nova sem instalar nada. Se você usa o screendocs sempre, instale uma vez com `npm install -g screendocs`; aí o comando fica só `screendocs` (por exemplo `screendocs https://seu-site.com`), e rodar a mesma instalação de novo atualiza.
+
 ## O que roda por padrão
 
 Com só o link (`npx screendocs meusite.com.br`), ele não pergunta nada e usa os padrões:
@@ -84,7 +86,7 @@ Abre uma janela do navegador. Faça login normalmente (login com Google funciona
 
 Antes de cada captura ele abre a página em que você estava quando fez login; se o site mandar para outro lugar ou pedir senha, ele avisa que o login expirou (o menu oferece fazer login de novo).
 
-Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você rodar o screendocs. A sessão salva dá acesso à sua conta, por isso só o seu usuário consegue ler. Para sair de um site, rode `npx screendocs login` de novo ou saia da conta pelo próprio site.
+Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você rodar o screendocs. A sessão salva dá acesso à sua conta, por isso só o seu usuário consegue ler. Ela não é criptografada: quem copiar o arquivo, ou usar a sua conta neste computador, entra no site como você, então nunca mande esse arquivo para ninguém. Para sair de um site, rode `npx screendocs login` de novo ou saia da conta pelo próprio site.
 
 ## O que ele faz
 
@@ -309,7 +311,7 @@ command = "npx"
 args = ["-y", "screendocs", "mcp"]
 ```
 
-As capturas e os logins salvos ficam na pasta em que o cliente inicia o servidor (no Claude Code e no Cursor, o seu projeto). `--dir <pasta>` escolhe essa pasta, o que vale a pena no Claude Desktop, onde ela não é sua (o instalador pergunta). Para usar uma cópia do screendocs que não está no npm, troque `npx -y screendocs` por `node <caminho>/bin/screendocs.mjs`.
+As capturas ficam na pasta em que o cliente inicia o servidor (no Claude Code e no Cursor, o seu projeto). `--dir <pasta>` escolhe essa pasta, o que vale a pena no Claude Desktop, onde ela não é sua (o instalador pergunta). Os logins salvos ficam na sua pasta de usuário, igual no terminal. Para usar uma cópia do screendocs que não está no npm, troque `npx -y screendocs` por `node <caminho>/bin/screendocs.mjs`.
 
 | Ferramenta | O que faz |
 |---|---|
@@ -333,7 +335,7 @@ Na pasta onde você roda o comando, só a `screendocs-output/`: as capturas e os
 | O quê | |
 |---|---|
 | Seus padrões | o que você salvou com `npx screendocs config`, inclusive o idioma |
-| Logins dos sites | um arquivo por site, salvo pelo `npx screendocs login`. Nunca compartilhe |
+| Logins dos sites | um arquivo por site, salvo pelo `npx screendocs login`. Não é criptografado; nunca compartilhe |
 | Chaves de API | só se você escolheu guardar, e só quando o sistema não tem cofre de senhas |
 
 Apagar essa pasta apaga os três: você faz login nos sites de novo, e o idioma é perguntado de novo na próxima vez.

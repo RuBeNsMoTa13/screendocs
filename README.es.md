@@ -35,6 +35,8 @@ npx screendocs https://seu-site.com
 
 Usa el Chrome o el Edge que ya tienes instalado en tu computadora; no se descarga ningún navegador. El resultado queda en `screendocs-output/<site>/`; abre el `index.html`.
 
+`npx` descarga y ejecuta la versión más nueva sin instalar nada. Si usas screendocs seguido, instálalo una vez con `npm install -g screendocs`; así el comando queda solo `screendocs` (por ejemplo `screendocs https://tu-sitio.com`), y ejecutar la misma instalación otra vez lo actualiza.
+
 ## Qué se ejecuta por defecto
 
 Solo con el enlace (`npx screendocs meusite.com.br`), no pregunta nada y usa los valores por defecto:
@@ -84,7 +86,7 @@ Abre una ventana del navegador. Inicia sesión normalmente (el inicio de sesión
 
 Antes de cada captura abre la página en la que estabas cuando iniciaste sesión; si el sitio te manda a otro lugar o pide contraseña, avisa que la sesión expiró (el menú ofrece iniciar sesión de nuevo).
 
-Como queda en tu carpeta de usuario, la sesión vale en cualquier carpeta donde ejecutes screendocs. La sesión guardada da acceso a tu cuenta, por eso solo tu usuario puede leerla. Para salir de un sitio, ejecuta `npx screendocs login` de nuevo o cierra sesión desde el propio sitio.
+Como queda en tu carpeta de usuario, la sesión vale en cualquier carpeta donde ejecutes screendocs. La sesión guardada da acceso a tu cuenta, por eso solo tu usuario puede leerla. No está cifrada: quien copie el archivo, o use tu cuenta en esta computadora, entra al sitio como tú, así que nunca mandes ese archivo a nadie. Para salir de un sitio, ejecuta `npx screendocs login` de nuevo o cierra sesión desde el propio sitio.
 
 ## Qué hace
 
@@ -123,14 +125,14 @@ Como queda en tu carpeta de usuario, la sesión vale en cualquier carpeta donde 
 | `--exclude a,b` | | omite las URL que contienen esos textos |
 | `--viewports <lista>` | `desktop,mobile` | `desktop` (computadora), `mobile` (celular) o los dos |
 | `--no-video` | | sin videos |
-| `--out <pasta>` | `screendocs-output` | carpeta de salida |
+| `--out <carpeta>` | `screendocs-output` | carpeta de salida |
 | `--keep` | | conserva la captura anterior del sitio (renombrada con la fecha) en vez de reemplazarla |
 | `--mask <seletores>` | | selectores CSS extra para difuminar |
 | `--no-auto-mask` | | no difumina correos, teléfonos ni documentos |
 | `--describe <como>` | | quién escribe las descripciones: `claude`, `codex`, `antigravity` o `chat` (ver abajo). `none`: sin IA solo esta vez, para cuando tus valores por defecto tienen una IA y ejecutas directo desde el comando (en el menú, elige "Por ahora, solo el escaneo de la página") |
 | `--model <provedor/modelo>` | | describe con una API (ej.: `gemini/gemini-2.5-flash`, `ollama/llama3.2-vision`; ver abajo) |
 | `--instructions <texto>` | | qué más deben tener en cuenta las descripciones, ej.: `"fale do que o cliente ganha"` |
-| `--docs <caminho>` | | documentación del proyecto para que la IA la lea: una carpeta o un archivo (consulta [Pedido extra y documentación](#pedido-extra-y-documentación)) |
+| `--docs <ruta>` | | documentación del proyecto para que la IA la lea: una carpeta o un archivo (consulta [Pedido extra y documentación](#pedido-extra-y-documentación)) |
 | `--lang <código>` | el idioma de screendocs | idioma de las descripciones (`pt`, `en`, `es`...) |
 | `--config <arquivo>` | `screendocs.config.json` | archivo de configuración (ver abajo) |
 | `--headed` | | muestra el navegador |
@@ -248,11 +250,11 @@ npx screendocs seu-site.com.br --model gemini/gemini-2.5-flash
 
 Para OpenAI, Gemini y Anthropic el prefijo se puede omitir (`--model gemini-2.5-flash` también funciona), porque el nombre ya indica el proveedor.
 
-**La clave** se busca en este orden: la variable del proveedor de arriba (si ya usas otra herramienta de IA, probablemente ya existe), `SCREENDOCS_API_KEY` y la clave guardada con `npx screendocs keys set <provedor>`. Si no encuentra ninguna, screendocs pide la clave sin mostrar lo que escribes y pregunta si debe guardarla (ya viene marcado No, así que por defecto vale solo para esa ejecución).
+**La clave** se busca en este orden: la variable del proveedor de arriba (si ya usas otra herramienta de IA, probablemente ya existe), `SCREENDOCS_API_KEY` y la clave guardada con `npx screendocs keys set <proveedor>`. Si no encuentra ninguna, screendocs pide la clave sin mostrar lo que escribes y pregunta si debe guardarla (ya viene marcado No, así que por defecto vale solo para esa ejecución).
 
 La clave se prueba con el proveedor antes de que empiece la captura. Si la escribes mal, la pide de nuevo en el momento. Si una clave guardada o la de una variable es rechazada (expiró o fue cambiada), screendocs dice cuál fue y, en una terminal, pide la nueva y ofrece reemplazar la guardada.
 
-Una clave guardada va al lugar seguro del propio sistema: el Keychain en macOS, cifrada con tu cuenta de Windows en Windows (solo tú, en esta computadora, puedes leerla), o el llavero de Linux (`secret-tool`). Cuando no existe ninguno, queda en `~/.screendocs/keys.json`, que solo tu usuario puede leer. En los dos casos queda en tu carpeta de usuario, fuera de cualquier proyecto, así que nunca va a Git. `npx screendocs keys list` muestra qué proveedores tienen clave guardada y dónde, y `keys remove <provedor>` borra una. Una clave guardada por una versión anterior sigue en el archivo hasta que la guardes de nuevo con `keys set`.
+Una clave guardada va al lugar seguro del propio sistema: el Keychain en macOS, cifrada con tu cuenta de Windows en Windows (solo tú, en esta computadora, puedes leerla), o el llavero de Linux (`secret-tool`). Cuando no existe ninguno, queda en `~/.screendocs/keys.json`, que solo tu usuario puede leer. En los dos casos queda en tu carpeta de usuario, fuera de cualquier proyecto, así que nunca va a Git. `npx screendocs keys list` muestra qué proveedores tienen clave guardada y dónde, y `keys remove <proveedor>` borra una. Una clave guardada por una versión anterior sigue en el archivo hasta que la guardes de nuevo con `keys set`.
 
 ![Dónde queda una clave guardada y de qué la protege](docs/images/es/keys.png)
 
@@ -269,7 +271,7 @@ screendocs manda hasta 10 pantallas por pedido, así que la documentación se en
 Todas las formas de describir (chat, Claude Code, Codex, Antigravity, API y MCP) reciben el mismo texto con las reglas. Después de elegir quién describe, el menú hace dos preguntas opcionales, y Enter salta cada una:
 
 - **"¿Las descripciones deben enfocarse en algo específico?"**: lo que escribas va junto para la IA, por ejemplo *"habla de lo que gana el cliente en cada pantalla"*. En el comando: `--instructions "..."`.
-- **"¿Hay una carpeta o archivo con la documentación del sitio para que la IA lea?"**: un manual, un README, las notas del proyecto. En el comando: `--docs <caminho>`.
+- **"¿Hay una carpeta o archivo con la documentación del sitio para que la IA lea?"**: un manual, un README, las notas del proyecto. En el comando: `--docs <ruta>`.
 
 La documentación puede ser una carpeta (con subcarpetas) o un solo archivo, en `.md`, `.mdx`, `.txt`, `.html`, `.rst`, `.adoc`, `.json`, `.yaml`, `.csv`, PDF, Word (`.docx`), Excel (`.xlsx`), PowerPoint (`.pptx`) y OpenDocument (`.odt`, `.ods`, `.odp`). screendocs no resume nada: saca el texto, lo guarda en `docs-for-ai.md` en la carpeta de la captura y lo manda completo a la IA, hasta unos 150 KB (cerca de 40 páginas); lo que pase de eso se corta. Un PDF escaneado (solo imagen) no tiene texto y queda fuera.
 
@@ -309,7 +311,7 @@ command = "npx"
 args = ["-y", "screendocs", "mcp"]
 ```
 
-Las capturas y las sesiones guardadas quedan en la carpeta en la que el cliente inicia el servidor (en Claude Code y en Cursor, tu proyecto). `--dir <pasta>` elige esa carpeta, lo que vale la pena en Claude Desktop, donde no es tuya (el instalador la pregunta). Para usar una copia de screendocs que no está en npm, cambia `npx -y screendocs` por `node <caminho>/bin/screendocs.mjs`.
+Las capturas quedan en la carpeta en la que el cliente inicia el servidor (en Claude Code y en Cursor, tu proyecto). `--dir <carpeta>` elige esa carpeta, lo que vale la pena en Claude Desktop, donde no es tuya (el instalador la pregunta). Las sesiones guardadas quedan en tu carpeta de usuario, igual que en la terminal. Para usar una copia de screendocs que no está en npm, cambia `npx -y screendocs` por `node <ruta>/bin/screendocs.mjs`.
 
 | Herramienta | Qué hace |
 |---|---|
@@ -333,7 +335,7 @@ En la carpeta donde ejecutas el comando, solo `screendocs-output/`: las capturas
 | Qué | |
 |---|---|
 | Tus valores por defecto | lo que guardaste con `npx screendocs config`, incluido el idioma |
-| Sesiones de los sitios | un archivo por sitio, guardado por `npx screendocs login`. Nunca lo compartas |
+| Sesiones de los sitios | un archivo por sitio, guardado por `npx screendocs login`. No está cifrado; nunca lo compartas |
 | Claves de API | solo si elegiste guardarlas, y solo cuando el sistema no tiene un almacén de contraseñas |
 
 Borrar esa carpeta borra los tres: vuelves a iniciar sesión en los sitios, y el idioma se pregunta de nuevo la próxima vez.

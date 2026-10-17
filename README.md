@@ -35,6 +35,8 @@ npx screendocs https://your-site.com
 
 It uses the Chrome or Edge already installed on your computer; no browser is downloaded. Output goes to `screendocs-output/<site>/`; open `index.html`.
 
+`npx` downloads and runs the newest version without installing anything. If you use screendocs often, install it once with `npm install -g screendocs`; then the command is just `screendocs` (for example `screendocs https://your-site.com`), and running the same install again updates it.
+
 ## What runs by default
 
 With just the link (`npx screendocs mysite.com`), it asks nothing and uses the defaults:
@@ -84,7 +86,7 @@ A browser window opens. Log in as usual (Google login works), go back to the ter
 
 Before each run it opens the page you were on when you logged in; if the site sends it elsewhere or asks for a password, it warns that the login has expired (the menu offers to log in again).
 
-Because it is saved in your user folder, the login works from any folder where you run screendocs. The saved session gives access to your account, so only your user can read it. To log out of a site, run `npx screendocs login` again or log out on the site itself.
+Because it is saved in your user folder, the login works from any folder where you run screendocs. The saved session gives access to your account, so only your user can read it. It is not encrypted: anyone who copies the file, or uses your account on this computer, gets into the site as you, so never send it to anyone. To log out of a site, run `npx screendocs login` again or log out on the site itself.
 
 ## What it does
 
@@ -309,7 +311,7 @@ command = "npx"
 args = ["-y", "screendocs", "mcp"]
 ```
 
-Captures and saved logins go to the folder the client starts the server in (in Claude Code and Cursor, your project). `--dir <folder>` sets it, which is worth doing in Claude Desktop, where that folder is not yours (the installer asks for it). To use a copy of screendocs that is not on npm, replace `npx -y screendocs` with `node <path>/bin/screendocs.mjs`.
+Captures go to the folder the client starts the server in (in Claude Code and Cursor, your project). `--dir <folder>` sets it, which is worth doing in Claude Desktop, where that folder is not yours (the installer asks for it). Saved logins stay in your user folder, as in the terminal. To use a copy of screendocs that is not on npm, replace `npx -y screendocs` with `node <path>/bin/screendocs.mjs`.
 
 | Tool | What it does |
 |---|---|
@@ -333,7 +335,7 @@ In the folder where you run the command, only `screendocs-output/`: the captures
 | What | |
 |---|---|
 | Your defaults | what you saved with `npx screendocs config`, the language included |
-| Site logins | one file per site, saved by `npx screendocs login`. Never share them |
+| Site logins | one file per site, saved by `npx screendocs login`. Not encrypted; never share them |
 | API keys | only if you chose to save one, and only when the system has no password store |
 
 Deleting that folder erases all three: you log in to the sites again, and the language is asked again on the next run.
