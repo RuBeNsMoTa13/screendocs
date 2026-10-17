@@ -4,22 +4,22 @@ Aponte para um site e receba todas as telas documentadas: uma foto de cada seç�
 
 Funciona com qualquer site, em qualquer stack. Nada é instalado no projeto documentado.
 
-[English](README.md) · [Español](README.es.md)
+[English](https://github.com/RuBeNsMoTa13/screendocs/blob/main/README.md) · [Español](https://github.com/RuBeNsMoTa13/screendocs/blob/main/README.es.md)
 
-> **Este README é para quem usa o screendocs pelo npm** (`npx screendocs`): como usar, sem baixar nem compilar nada. Para rodar pelo código do GitHub, mudar ou mandar uma correção, veja o [guia para desenvolvedores](CONTRIBUTING.pt-BR.md).
+> **Este README é para quem usa o screendocs pelo npm** (`npx screendocs`): como usar, sem baixar nem compilar nada. Para rodar pelo código do GitHub, mudar ou mandar uma correção, veja o [guia para desenvolvedores](https://github.com/RuBeNsMoTa13/screendocs/blob/main/CONTRIBUTING.pt-BR.md).
 
 ## Começo rápido
 
-**Manual do usuário (npm):** as imagens abaixo vêm do [docs/user-manual.html](docs/user-manual.html), um manual de uma página em inglês, português e espanhol. Baixe e abra no navegador para ver tudo, inclusive cada flag.
+**Manual do usuário (npm):** as imagens abaixo vêm do [docs/user-manual.html](https://github.com/RuBeNsMoTa13/screendocs/blob/main/docs/user-manual.html), um manual de uma página em inglês, português e espanhol. Baixe e abra no navegador para ver tudo, inclusive cada flag.
 
-![Dois jeitos de usar](docs/images/pt/ways.png)
+![Dois jeitos de usar](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/ways.png)
 
 <details>
 <summary>O menu, passo a passo</summary>
 
-![O menu: idioma, site e conferência do endereço](docs/images/pt/menu-start.png)
+![O menu: idioma, site e conferência do endereço](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/menu-start.png)
 
-![O menu: revisão, início e a captura](docs/images/pt/menu-run.png)
+![O menu: revisão, início e a captura](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/menu-run.png)
 
 </details>
 
@@ -72,7 +72,7 @@ Por exemplo, com o número de páginas: o screendocs diz 20. Você salvou 40 com
 
 A maioria só precisa das camadas 2 e 4: salve o que quer sempre com `npx screendocs config` e mude uma vez com uma opção no comando.
 
-![Quem vale mais: as quatro camadas](docs/images/pt/layers.png)
+![Quem vale mais: as quatro camadas](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/layers.png)
 
 ## Páginas com login
 
@@ -88,14 +88,14 @@ Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você ro
 
 ## O que ele faz
 
-![Como o site é mapeado](docs/images/pt/mapping-steps.png)
+![Como o site é mapeado](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/mapping-steps.png)
 
 <details>
 <summary>Como as páginas e as seções são encontradas</summary>
 
-![Procurando as páginas](docs/images/pt/mapping-pages.png)
+![Procurando as páginas](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/mapping-pages.png)
 
-![Cortando cada página em seções](docs/images/pt/mapping-sections.png)
+![Cortando cada página em seções](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/mapping-sections.png)
 
 </details>
 
@@ -192,7 +192,7 @@ Opcional, para quando um projeto precisa de opções diferentes dos seus padrõe
 
 ## Resultado
 
-![O que você recebe](docs/images/pt/output.png)
+![O que você recebe](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/output.png)
 
 ```
 screendocs-output/seu-site.com/
@@ -209,7 +209,7 @@ screendocs-output/seu-site.com/
 
 ## Descrições com qualquer IA
 
-![Quem escreve as descrições](docs/images/pt/describe.png)
+![Quem escreve as descrições](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/describe.png)
 
 Escolha quem escreve as descrições no menu ("Quem escreve as descrições das telas?") ou com `--describe`. Para descrever uma captura que você já fez, sem capturar de novo:
 
@@ -254,7 +254,7 @@ A chave é testada com o provedor antes de a captura começar. Se você digitar 
 
 Uma chave guardada vai para o lugar seguro do próprio sistema: o Keychain no macOS, criptografada com a sua conta do Windows no Windows (só você, neste computador, consegue ler), ou o chaveiro do Linux (`secret-tool`). Quando nenhum existe, ela fica em `~/.screendocs/keys.json`, que só o seu usuário pode ler. Nos dois casos ela fica na sua pasta de usuário, fora de qualquer projeto, então nunca vai para o Git. `npx screendocs keys list` mostra quais provedores têm chave guardada e onde, e `keys remove <provedor>` apaga uma. Uma chave guardada por uma versão anterior continua no arquivo até você guardá-la de novo com `keys set`.
 
-![Onde fica uma chave guardada e do que ela está protegida](docs/images/pt/keys.png)
+![Onde fica uma chave guardada e do que ela está protegida](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/keys.png)
 
 **Modelos locais** (Ollama, LM Studio) não precisam de chave. Antes de capturar, o screendocs confere se o servidor responde e, no Ollama, se o modelo foi baixado (se não foi, mostra o comando `ollama pull`). Se o Ollama roda em outro endereço, defina `OLLAMA_HOST`. O modelo precisa ler imagens (ex.: `llama3.2-vision`, `qwen2.5vl`, `llava`, `gemma3`) e precisa de um computador com memória suficiente.
 
@@ -326,7 +326,7 @@ Uma captura leva de um a vários minutos; com `video: false` é mais rápida.
 
 ## O que fica no seu computador
 
-![O que fica no seu computador](docs/images/pt/files.png)
+![O que fica no seu computador](https://raw.githubusercontent.com/RuBeNsMoTa13/screendocs/main/docs/images/pt/files.png)
 
 Na pasta onde você roda o comando, só a `screendocs-output/`: as capturas e os relatórios, uma pasta por site. Todo o resto fica na sua pasta de usuário (`npx screendocs config path` mostra onde):
 
@@ -350,7 +350,7 @@ Node.js 18 ou mais novo. Google Chrome ou Microsoft Edge instalado (o Edge já v
 
 ## Rodar pelo código
 
-Para baixar o código do GitHub e rodar, mudar ou mandar uma correção, veja o [CONTRIBUTING.pt-BR.md](CONTRIBUTING.pt-BR.md).
+Para baixar o código do GitHub e rodar, mudar ou mandar uma correção, veja o [CONTRIBUTING.pt-BR.md](https://github.com/RuBeNsMoTa13/screendocs/blob/main/CONTRIBUTING.pt-BR.md).
 
 ## Licença
 

@@ -1,8 +1,8 @@
 # Como publicar o screendocs no npm
 
-## Primeira versão (0.1.0)
+## Primeira versão
 
-O `package.json` já está em `0.1.0`. Na pasta do projeto, com a `main` atualizada (`git pull`):
+Na pasta do projeto, com a `main` atualizada (`git pull`):
 
 ```
 npm login

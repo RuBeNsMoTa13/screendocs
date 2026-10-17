@@ -1,6 +1,6 @@
 {
   "name": "screendocs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Automatically screenshot, record and document every screen of a website, including pages behind login.",
   "type": "module",
   "bin": {
