@@ -125,7 +125,7 @@ Como queda en tu carpeta de usuario, la sesión vale en cualquier carpeta donde 
 | `--exclude a,b` | | omite las URL que contienen esos textos |
 | `--viewports <lista>` | `desktop,mobile` | `desktop` (computadora), `mobile` (celular) o los dos |
 | `--no-video` | | sin videos |
-| `--scroll-speed <velocidad>` | `normal` | velocidad del desplazamiento del video: `slow` (lento, 200 px/s), `normal` (500), `fast` (rápido, 1000) o cualquier número de píxeles por segundo |
+| `--scroll-speed <velocidad>` | `normal` | velocidad del desplazamiento del video: `slow` (lento, 300 px/s), `normal` (500), `fast` (rápido, 1000) o cualquier número de píxeles por segundo |
 | `--scroll-delay <s>` | 1 | segundos en la parte superior antes de desplazarse, para filmar la carga y las animaciones de apertura |
 | `--gif` | | guarda también cada video como GIF animado (`video.gif`), desde la carga de la página hasta el final |
 | `--gif-width <px>` | 800 | ancho del GIF (el móvil mantiene sus 390) |

@@ -125,7 +125,7 @@ Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você ro
 | `--exclude a,b` | | pula URLs que contêm esses textos |
 | `--viewports <lista>` | `desktop,mobile` | `desktop` (computador), `mobile` (celular) ou os dois |
 | `--no-video` | | sem vídeos |
-| `--scroll-speed <velocidade>` | `normal` | velocidade da rolagem do vídeo: `slow` (devagar, 200 px/s), `normal` (500), `fast` (rápido, 1000) ou qualquer número de pixels por segundo |
+| `--scroll-speed <velocidade>` | `normal` | velocidade da rolagem do vídeo: `slow` (devagar, 300 px/s), `normal` (500), `fast` (rápido, 1000) ou qualquer número de pixels por segundo |
 | `--scroll-delay <s>` | 1 | segundos parado no topo da página antes de rolar, para filmar o carregamento e as animações de abertura |
 | `--gif` | | salva também cada vídeo como GIF animado (`video.gif`), do carregamento da página até o fim dela |
 | `--gif-width <px>` | 800 | largura do GIF (o celular mantém os 390 dele) |
