@@ -55,6 +55,11 @@ Options
   --exclude <a,b>       skip URLs containing any of these texts
   --viewports <list>    desktop, mobile or both (default desktop,mobile)
   --no-video            do not record the scroll videos (--video records them)
+  --scroll-speed <s>    how fast the video scrolls: slow, normal (default), fast, or pixels per second
+  --scroll-delay <n>    seconds on the top of the page before scrolling, for loading animations (default 1)
+  --gif                 also save each video as an animated GIF (video.gif)
+  --gif-width <px>      GIF width (default 800; mobile keeps its own width)
+  --gif-fps <n>         GIF frames per second (default 10; more is smoother and bigger)
   --out <dir>           output folder (default screendocs-output)
   --keep                keep the previous capture (renamed with its date) instead of replacing it
   --mask <selectors>    extra CSS selectors to hide, comma separated
@@ -112,6 +117,11 @@ Opções
   --exclude <a,b>       pula endereços que contêm algum destes textos
   --viewports <lista>   desktop, mobile ou os dois (padrão desktop,mobile)
   --no-video            não grava os vídeos rolando as páginas (--video grava)
+  --scroll-speed <v>    velocidade da rolagem do vídeo: slow (devagar), normal (padrão), fast (rápido) ou pixels por segundo
+  --scroll-delay <n>    segundos parado no topo da página antes de rolar, para animações de carregamento (padrão 1)
+  --gif                 salva também cada vídeo como GIF animado (video.gif)
+  --gif-width <px>      largura do GIF (padrão 800; o celular mantém a largura dele)
+  --gif-fps <n>         quadros por segundo do GIF (padrão 10; mais é mais suave e mais pesado)
   --out <pasta>         pasta da captura (padrão screendocs-output)
   --keep                guarda a captura anterior (renomeada com a data) em vez de substituir
   --mask <seletores>    seletores CSS a mais para esconder, separados por vírgula
@@ -169,6 +179,11 @@ Opciones
   --exclude <a,b>       salta direcciones que contienen alguno de estos textos
   --viewports <lista>   desktop, mobile o las dos (predeterminado desktop,mobile)
   --no-video            no graba los videos desplazándose por las páginas (--video los graba)
+  --scroll-speed <v>    velocidad del desplazamiento del video: slow (lento), normal (predeterminado), fast (rápido) o píxeles por segundo
+  --scroll-delay <n>    segundos en la parte superior antes de desplazarse, para animaciones de carga (predeterminado 1)
+  --gif                 guarda también cada video como GIF animado (video.gif)
+  --gif-width <px>      ancho del GIF (predeterminado 800; el móvil mantiene su ancho)
+  --gif-fps <n>         cuadros por segundo del GIF (predeterminado 10; más es más fluido y más pesado)
   --out <carpeta>       carpeta de la captura (predeterminado screendocs-output)
   --keep                guarda la captura anterior (renombrada con su fecha) en lugar de reemplazarla
   --mask <selectores>   selectores CSS extra para ocultar, separados por comas
@@ -228,6 +243,12 @@ export async function run(argv) {
       viewports: { type: "string" },
       video: { type: "boolean" },
       "no-video": { type: "boolean" },
+      "scroll-speed": { type: "string" },
+      "scroll-delay": { type: "string" },
+      gif: { type: "boolean" },
+      "no-gif": { type: "boolean" },
+      "gif-width": { type: "string" },
+      "gif-fps": { type: "string" },
       "no-keep": { type: "boolean" },
       "auto-mask": { type: "boolean" },
       "no-headed": { type: "boolean" },

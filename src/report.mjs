@@ -21,6 +21,7 @@ export function writeReport(result, config) {
           {
             full: v.full,
             video: v.video,
+            gif: v.gif,
             screens: v.sections.map(({ file, heading, title, description }) => ({ file, heading, title: title || heading || "", description: description || "" })),
           },
         ]),
@@ -158,6 +159,7 @@ const WORDS = {
     before: "Before AI",
     full: "full page",
     video: "video",
+    gif: "GIF",
     none: "No screenshots.",
     title: (site) => `${site} screens`,
     original: "(original)",
@@ -174,6 +176,7 @@ const WORDS = {
     before: "Antes da IA",
     full: "página inteira",
     video: "vídeo",
+    gif: "GIF",
     none: "Sem capturas.",
     title: (site) => `Telas de ${site}`,
     original: "(original)",
@@ -190,6 +193,7 @@ const WORDS = {
     before: "Antes de la IA",
     full: "página completa",
     video: "video",
+    gif: "GIF",
     none: "Sin capturas.",
     title: (site) => `Pantallas de ${site}`,
     original: "(original)",
@@ -247,7 +251,7 @@ function html(data, { original = false, hasOriginal = false } = {}) {
 <figcaption><strong>${esc(s.title)}</strong>${s.description && s.description !== s.title ? `<span>${esc(s.description)}</span>` : ""}${badge(s, w)}${before(s, w)}</figcaption></figure>`,
             )
             .join("");
-          const links = [v.full && `<a href="${esc(v.full)}" target="_blank">${w.full}</a>`, v.video && `<a href="${esc(v.video)}" target="_blank">${w.video}</a>`]
+          const links = [v.full && `<a href="${esc(v.full)}" target="_blank">${w.full}</a>`, v.video && `<a href="${esc(v.video)}" target="_blank">${w.video}</a>`, v.gif && `<a href="${esc(v.gif)}" target="_blank">${w.gif}</a>`]
             .filter(Boolean)
             .join(" · ");
           return `<div class="vp vp-${vp}"${i ? " hidden" : ""}>

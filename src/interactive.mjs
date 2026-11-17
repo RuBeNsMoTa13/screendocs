@@ -49,6 +49,9 @@ const T = {
     viewports: "Which screens?",
     desktop: "Desktop", mobile: "Mobile", both: "Both",
     video: "Record a video scrolling each page?",
+    speed: "How fast should the video scroll?",
+    slow: "Slow", normal: "Normal", fast: "Fast",
+    gif: "Also save each video as an animated GIF?",
     mode: "Which pages?",
     discover: "Find them by following the links", discoverHint: "recommended",
     list: "Only the paths I type",
@@ -126,6 +129,9 @@ const T = {
     viewports: "Quais telas?",
     desktop: "Computador", mobile: "Celular", both: "Os dois",
     video: "Gravar um vídeo rolando cada página?",
+    speed: "Em que velocidade o vídeo rola?",
+    slow: "Devagar", normal: "Normal", fast: "Rápido",
+    gif: "Salvar também cada vídeo como GIF animado?",
     mode: "Quais páginas?",
     discover: "Encontrar seguindo os links", discoverHint: "recomendado",
     list: "Só os caminhos que eu digitar",
@@ -203,6 +209,9 @@ const T = {
     viewports: "¿Qué pantallas?",
     desktop: "Computadora", mobile: "Celular", both: "Las dos",
     video: "¿Grabar un video desplazándose por cada página?",
+    speed: "¿A qué velocidad se desplaza el video?",
+    slow: "Lento", normal: "Normal", fast: "Rápido",
+    gif: "¿Guardar también cada video como GIF animado?",
     mode: "¿Qué páginas?",
     discover: "Encontrarlas siguiendo los enlaces", discoverHint: "recomendado",
     list: "Solo las rutas que yo escriba",
@@ -334,6 +343,8 @@ export async function interactive() {
     depth: String(base.depth),
     viewports: base.viewports.length > 1 ? "both" : base.viewports[0],
     video: base.video,
+    scrollSpeed: String(base.scrollSpeed),
+    gif: base.gif,
     headed: base.headed,
     autoMask: base.autoMask,
     exclude: base.exclude.join(", "),
@@ -381,6 +392,23 @@ export async function interactive() {
       }));
     },
     async () => (s.video = await a(yesNo({ message: t.video, initialValue: s.video ?? true }))),
+    {
+      when: () => s.video,
+      run: async () => {
+        s.scrollSpeed = await a(p.select({
+          message: t.speed,
+          initialValue: s.scrollSpeed,
+          options: [
+            { value: "slow", label: t.slow },
+            { value: "normal", label: t.normal },
+            { value: "fast", label: t.fast },
+            // A speed in pixels per second from a config file stays available
+            ...(["slow", "normal", "fast"].includes(s.scrollSpeed) ? [] : [{ value: s.scrollSpeed, label: `${s.scrollSpeed} px/s` }]),
+          ],
+        }));
+      },
+    },
+    { when: () => s.video, run: async () => (s.gif = await a(yesNo({ message: t.gif, initialValue: s.gif ?? false }))) },
     async () => (s.headed = await a(yesNo({ message: t.headed, initialValue: s.headed ?? false }))),
     async () => {
       s.mode = await a(p.select({
@@ -495,6 +523,13 @@ function toArgs(s, base) {
   const viewports = s.viewports === "both" ? ["desktop", "mobile"] : [s.viewports];
   if (viewports.join() !== base.viewports.join()) args.push("--viewports", viewports.join(","));
   flag("--video", "--no-video", s.video, base.video);
+  if (s.video) {
+    if (s.scrollSpeed !== String(base.scrollSpeed)) args.push("--scroll-speed", s.scrollSpeed);
+    flag("--gif", "--no-gif", s.gif, base.gif);
+  } else if (base.gif) {
+    // No video, so no GIF either
+    args.push("--no-gif");
+  }
   if (s.mode === "discover") {
     if (Number(s.maxPages) !== base.maxPages) args.push("--max-pages", s.maxPages);
     const list = (s.exclude ?? "").split(",").map((x) => x.trim()).filter(Boolean);

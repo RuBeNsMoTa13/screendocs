@@ -125,6 +125,11 @@ Because it is saved in your user folder, the login works from any folder where y
 | `--exclude a,b` | | skip URLs containing these texts |
 | `--viewports <list>` | `desktop,mobile` | `desktop`, `mobile` or both |
 | `--no-video` | | skip videos |
+| `--scroll-speed <speed>` | `normal` | how fast the video scrolls: `slow` (200 px/s), `normal` (500), `fast` (1000) or any number of pixels per second |
+| `--scroll-delay <s>` | 1 | seconds on the top of the page before scrolling, so loading and opening animations are filmed |
+| `--gif` | | also save each video as an animated GIF (`video.gif`), from the page loading to its bottom |
+| `--gif-width <px>` | 800 | GIF width (mobile keeps its own 390) |
+| `--gif-fps <n>` | 10 | GIF frames per second: more is smoother and heavier |
 | `--out <dir>` | `screendocs-output` | output folder |
 | `--keep` | | keep the previous capture of the site (renamed with its date) instead of replacing it |
 | `--mask <selectors>` | | extra CSS selectors to blur |
@@ -205,7 +210,7 @@ screendocs-output/your-site.com/
   prompt.md           how to describe the screens with an AI chat on your own
   docs-for-ai.md      the text taken from the documentation (only with --docs)
   for-ai/part-1/...   the screens to describe, with unique names, plus the text for the AI
-  desktop/<page>/01.jpg, 02.jpg ... full.jpg, video.webm
+  desktop/<page>/01.jpg, 02.jpg ... full.jpg, video.webm, video.gif (with --gif)
   mobile/<page>/...
 ```
 
@@ -315,7 +320,7 @@ Captures go to the folder the client starts the server in (in Claude Code and Cu
 
 | Tool | What it does |
 |---|---|
-| `capture_site` | Captures a site (same options as the command line: `pages`, `exclude`, `viewports`, `maxPages`, `depth`, `video`, `keep`, `mask`, `lang`, `instructions`, `docs`...) |
+| `capture_site` | Captures a site (same options as the command line: `pages`, `exclude`, `viewports`, `maxPages`, `depth`, `video`, `scrollSpeed`, `scrollDelay`, `gif`, `keep`, `mask`, `lang`, `instructions`, `docs`...) |
 | `list_captures` | The sites already captured |
 | `get_capture` | The screens of a capture, with the path of each image, its current description and the same text with the rules the other ways get (takes `instructions` and `docs`) |
 | `view_screens` | Shows up to 10 screenshots to the AI |
