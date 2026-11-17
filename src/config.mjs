@@ -15,7 +15,8 @@ export const DEFAULTS = {
   scrollDelay: 1,
   gif: false,
   gifWidth: 800,
-  gifFps: 10,
+  // the video is filmed at 25 frames per second: fewer makes the scroll look jumpy
+  gifFps: 25,
   out: "screendocs-output",
   mask: [],
   autoMask: true,
@@ -127,7 +128,7 @@ export function loadConfig(url, flags) {
   scrollSpeed(config.scrollSpeed);
   if (!(config.scrollDelay >= 0)) throw new Error("--scroll-delay is a number of seconds, like 3");
   if (!(config.gifWidth >= 100)) throw new Error("--gif-width is a width in pixels, like 800");
-  if (!(config.gifFps >= 1 && config.gifFps <= 30)) throw new Error("--gif-fps is a number from 1 to 30");
+  if (!(config.gifFps >= 1 && config.gifFps <= 25)) throw new Error("--gif-fps is a number from 1 to 25 (the video has 25)");
   // A GIF is made from the video: no video, no GIF
   if (!config.video) config.gif = false;
 

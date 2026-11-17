@@ -129,7 +129,7 @@ Como queda en tu carpeta de usuario, la sesión vale en cualquier carpeta donde 
 | `--scroll-delay <s>` | 1 | segundos en la parte superior antes de desplazarse, para filmar la carga y las animaciones de apertura |
 | `--gif` | | guarda también cada video como GIF animado (`video.gif`), desde la carga de la página hasta el final |
 | `--gif-width <px>` | 800 | ancho del GIF (el móvil mantiene sus 390) |
-| `--gif-fps <n>` | 10 | cuadros por segundo del GIF: más es más fluido y más pesado |
+| `--gif-fps <n>` | 25 | cuadros por segundo del GIF, hasta 25 (los del video): menos es más liviano y más entrecortado |
 | `--out <carpeta>` | `screendocs-output` | carpeta de salida |
 | `--keep` | | conserva la captura anterior del sitio (renombrada con la fecha) en vez de reemplazarla |
 | `--mask <seletores>` | | selectores CSS extra para difuminar |

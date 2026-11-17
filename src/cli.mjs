@@ -59,7 +59,7 @@ Options
   --scroll-delay <n>    seconds on the top of the page before scrolling, for loading animations (default 1)
   --gif                 also save each video as an animated GIF (video.gif)
   --gif-width <px>      GIF width (default 800; mobile keeps its own width)
-  --gif-fps <n>         GIF frames per second (default 10; more is smoother and bigger)
+  --gif-fps <n>         GIF frames per second (default 25, as smooth as the video; fewer is lighter but jumpier)
   --out <dir>           output folder (default screendocs-output)
   --keep                keep the previous capture (renamed with its date) instead of replacing it
   --mask <selectors>    extra CSS selectors to hide, comma separated
@@ -121,7 +121,7 @@ Opções
   --scroll-delay <n>    segundos parado no topo da página antes de rolar, para animações de carregamento (padrão 1)
   --gif                 salva também cada vídeo como GIF animado (video.gif)
   --gif-width <px>      largura do GIF (padrão 800; o celular mantém a largura dele)
-  --gif-fps <n>         quadros por segundo do GIF (padrão 10; mais é mais suave e mais pesado)
+  --gif-fps <n>         quadros por segundo do GIF (padrão 25, tão fluido quanto o vídeo; menos é mais leve e mais travado)
   --out <pasta>         pasta da captura (padrão screendocs-output)
   --keep                guarda a captura anterior (renomeada com a data) em vez de substituir
   --mask <seletores>    seletores CSS a mais para esconder, separados por vírgula
@@ -183,7 +183,7 @@ Opciones
   --scroll-delay <n>    segundos en la parte superior antes de desplazarse, para animaciones de carga (predeterminado 1)
   --gif                 guarda también cada video como GIF animado (video.gif)
   --gif-width <px>      ancho del GIF (predeterminado 800; el móvil mantiene su ancho)
-  --gif-fps <n>         cuadros por segundo del GIF (predeterminado 10; más es más fluido y más pesado)
+  --gif-fps <n>         cuadros por segundo del GIF (predeterminado 25, tan fluido como el video; menos es más liviano y más entrecortado)
   --out <carpeta>       carpeta de la captura (predeterminado screendocs-output)
   --keep                guarda la captura anterior (renombrada con su fecha) en lugar de reemplazarla
   --mask <selectores>   selectores CSS extra para ocultar, separados por comas

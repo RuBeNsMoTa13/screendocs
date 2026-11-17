@@ -21,7 +21,7 @@ const { GIFEncoder, quantize, applyPalette } = gifenc;
  * The blank frames before the page paints are left out, and frames that repeat the one
  * before (the page standing still) become a longer delay instead of a new frame.
  */
-export async function videoToGif(video, out, { around, bottom, width = 800, fps = 10 } = {}) {
+export async function videoToGif(video, out, { around, bottom, width = 800, fps = 25 } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "screendocs-gif-"));
   try {
     // Room for the video's clock running behind

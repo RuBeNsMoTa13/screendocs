@@ -129,7 +129,7 @@ Because it is saved in your user folder, the login works from any folder where y
 | `--scroll-delay <s>` | 1 | seconds on the top of the page before scrolling, so loading and opening animations are filmed |
 | `--gif` | | also save each video as an animated GIF (`video.gif`), from the page loading to its bottom |
 | `--gif-width <px>` | 800 | GIF width (mobile keeps its own 390) |
-| `--gif-fps <n>` | 10 | GIF frames per second: more is smoother and heavier |
+| `--gif-fps <n>` | 25 | GIF frames per second, up to 25 (the video's own): fewer is lighter but jumpier |
 | `--out <dir>` | `screendocs-output` | output folder |
 | `--keep` | | keep the previous capture of the site (renamed with its date) instead of replacing it |
 | `--mask <selectors>` | | extra CSS selectors to blur |

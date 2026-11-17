@@ -129,7 +129,7 @@ Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você ro
 | `--scroll-delay <s>` | 1 | segundos parado no topo da página antes de rolar, para filmar o carregamento e as animações de abertura |
 | `--gif` | | salva também cada vídeo como GIF animado (`video.gif`), do carregamento da página até o fim dela |
 | `--gif-width <px>` | 800 | largura do GIF (o celular mantém os 390 dele) |
-| `--gif-fps <n>` | 10 | quadros por segundo do GIF: mais é mais suave e mais pesado |
+| `--gif-fps <n>` | 25 | quadros por segundo do GIF, até 25 (os do vídeo): menos é mais leve e mais travado |
 | `--out <pasta>` | `screendocs-output` | pasta de saída |
 | `--keep` | | guarda a captura anterior do site (renomeada com a data) em vez de substituir |
 | `--mask <seletores>` | | seletores CSS extras para borrar |
