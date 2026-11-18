@@ -37,7 +37,7 @@ export const VIEWPORTS = {
 };
 
 /** Pixels per second for each named speed of --scroll-speed. */
-export const SCROLL_SPEEDS = { slow: 300, normal: 500, fast: 1000 };
+export const SCROLL_SPEEDS = { slow: 500, normal: 800, fast: 1500 };
 
 /** --scroll-speed as pixels per second: slow, normal, fast or a number. */
 export function scrollSpeed(v) {

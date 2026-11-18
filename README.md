@@ -125,7 +125,7 @@ Because it is saved in your user folder, the login works from any folder where y
 | `--exclude a,b` | | skip URLs containing these texts |
 | `--viewports <list>` | `desktop,mobile` | `desktop`, `mobile` or both |
 | `--no-video` | | skip videos |
-| `--scroll-speed <speed>` | `normal` | how fast the video scrolls: `slow` (300 px/s), `normal` (500), `fast` (1000) or any number of pixels per second |
+| `--scroll-speed <speed>` | `normal` | how fast the video scrolls: `slow` (500 px/s), `normal` (800), `fast` (1500) or any number of pixels per second |
 | `--scroll-delay <s>` | 1 | seconds on the top of the page before scrolling, so loading and opening animations are filmed |
 | `--gif` | | also save each video as an animated GIF (`video.gif`), from the page loading to its bottom |
 | `--gif-width <px>` | 800 | GIF width (mobile keeps its own 390) |
