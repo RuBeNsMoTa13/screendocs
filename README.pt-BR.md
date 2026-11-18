@@ -125,6 +125,11 @@ Como fica na sua pasta de usuário, o login vale em qualquer pasta onde você ro
 | `--exclude a,b` | | pula URLs que contêm esses textos |
 | `--viewports <lista>` | `desktop,mobile` | `desktop` (computador), `mobile` (celular) ou os dois |
 | `--no-video` | | sem vídeos |
+| `--scroll-speed <velocidade>` | `normal` | velocidade da rolagem do vídeo: `slow` (devagar, 500 px/s), `normal` (800), `fast` (rápido, 1500) ou qualquer número de pixels por segundo |
+| `--scroll-delay <s>` | 1 | segundos parado no topo da página antes de rolar, para filmar o carregamento e as animações de abertura |
+| `--gif` | | salva também cada vídeo como GIF animado (`video.gif`), do carregamento da página até o fim dela |
+| `--gif-width <px>` | 800 | largura do GIF (o celular mantém os 390 dele) |
+| `--gif-fps <n>` | 25 | quadros por segundo do GIF, até 25 (os do vídeo): menos é mais leve e mais travado |
 | `--out <pasta>` | `screendocs-output` | pasta de saída |
 | `--keep` | | guarda a captura anterior do site (renomeada com a data) em vez de substituir |
 | `--mask <seletores>` | | seletores CSS extras para borrar |
@@ -205,7 +210,7 @@ screendocs-output/seu-site.com/
   prompt.md           como descrever as telas com um chat de IA por conta própria
   docs-for-ai.md      o texto tirado da documentação (só com --docs)
   for-ai/part-1/...   as telas a descrever, com nomes únicos, e o texto para a IA
-  desktop/<pagina>/01.jpg, 02.jpg ... full.jpg, video.webm
+  desktop/<pagina>/01.jpg, 02.jpg ... full.jpg, video.webm, video.gif (com --gif)
   mobile/<pagina>/...
 ```
 
@@ -315,7 +320,7 @@ As capturas ficam na pasta em que o cliente inicia o servidor (no Claude Code e 
 
 | Ferramenta | O que faz |
 |---|---|
-| `capture_site` | Captura um site (mesmas opções da linha de comando: `pages`, `exclude`, `viewports`, `maxPages`, `depth`, `video`, `keep`, `mask`, `lang`, `instructions`, `docs`...) |
+| `capture_site` | Captura um site (mesmas opções da linha de comando: `pages`, `exclude`, `viewports`, `maxPages`, `depth`, `video`, `scrollSpeed`, `scrollDelay`, `gif`, `keep`, `mask`, `lang`, `instructions`, `docs`...) |
 | `list_captures` | Os sites já capturados |
 | `get_capture` | As telas de uma captura, com o caminho de cada imagem, a descrição atual e o mesmo texto com as regras que os outros modos recebem (aceita `instructions` e `docs`) |
 | `view_screens` | Mostra até 10 fotos para a IA |

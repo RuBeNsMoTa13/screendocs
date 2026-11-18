@@ -1,10 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import { VIEWPORTS } from "./config.mjs";
+import { VIEWPORTS, SCROLL_SPEEDS, scrollSpeed } from "./config.mjs";
 import { open } from "./discover.mjs";
 import { applyMask, hideText } from "./mask.mjs";
 import { slugOf } from "./paths.mjs";
 import { tr } from "./i18n.mjs";
+import { videoToGif } from "./gif.mjs";
 
 /**
  * Captures every page on every viewport: one image per section of the page
@@ -37,17 +38,25 @@ export async function capture(browser, config, pages, storageState, onPage) {
         recordVideo: config.video ? { dir: path.join(root, ".tmp-video"), size } : undefined,
       });
       const page = await context.newPage();
-      const shot = { full: null, video: null, sections: [] };
+      const filmed = Date.now();
+      let scrolled = null;
+      let bottom = null;
+      const shot = { full: null, video: null, gif: null, sections: [] };
 
       try {
-        await withTimeout(PAGE_TIMEOUT, async () => {
+        await withTimeout(PAGE_TIMEOUT + config.scrollDelay * 1000 + MAX_SCROLL, async () => {
           await open(page, url);
           await applyMask(page, config);
           if (!entry.title) {
             const info = await pageInfo(page, config.mask);
             Object.assign(entry, { title: hideText(info.title, config), summary: hideText(info.summary, config) });
           }
-          await scrollThrough(page, size.height);
+          // Without a video nobody watches the scroll, so it goes fast
+          await scrollThrough(page, config.video ? scrollSpeed(config.scrollSpeed) : SCROLL_SPEEDS.fast, config.scrollDelay);
+          scrolled = Date.now() - filmed;
+          // How the bottom looks: the GIF ends where the video reaches it
+          if (config.gif) bottom = await page.screenshot({ type: "png", scale: "css" }).catch(() => null);
+          await backToTop(page);
 
           // The text saved with the capture leaves out what the screenshots blur
           const sections = (await findSections(page, size, config.maxSectionsPerPage, config.mask)).map((s) => ({
@@ -85,6 +94,15 @@ export async function capture(browser, config, pages, storageState, onPage) {
         await video.saveAs(file).catch(() => {});
         await video.delete().catch(() => {});
         if (fs.existsSync(file)) shot.video = rel(root, file);
+        if (shot.video && config.gif) {
+          const gif = path.join(dir, "video.gif");
+          try {
+            await videoToGif(file, gif, { around: scrolled, bottom, width: config.gifWidth, fps: config.gifFps });
+            shot.gif = rel(root, gif);
+          } catch (err) {
+            console.log(`  ${step} ${vp.padEnd(7)} ${url}  GIF ${tr({ en: "failed", pt: "falhou", es: "falló" })}: ${err.message.split("\n")[0]}`);
+          }
+        }
       }
       entry.viewports[vp] = shot;
     }
@@ -127,17 +145,43 @@ async function pageInfo(page, mask = []) {
   }, mask.join(","));
 }
 
-/** Scrolls down and back up: loads lazy images, fires entrance animations and films the page. */
-async function scrollThrough(page, viewportHeight) {
-  await page.evaluate(async (step) => {
-    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-    for (let i = 0; i < 40 && window.scrollY + innerHeight < document.documentElement.scrollHeight - 2; i++) {
-      window.scrollBy({ top: step, behavior: "smooth" });
-      await sleep(450);
-    }
-    await sleep(600);
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, Math.round(viewportHeight * 0.7));
+/** A page that never ends (infinite scroll) stops being filmed after this long. */
+const MAX_SCROLL = 120_000;
+
+/**
+ * Waits `delay` seconds on the top of the page (its loading and opening animations),
+ * then glides down to the bottom at a steady `speed` (pixels per second), in small steps, so the video looks like someone scrolling calmly. Also loads lazy images and
+ * fires entrance animations before the screenshots.
+ */
+async function scrollThrough(page, speed, delay) {
+  await page.evaluate(
+    async ({ speed, delay, max }) => {
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      await sleep(delay * 1000);
+      await new Promise((done) => {
+        const start = performance.now();
+        let last = start;
+        let y = window.scrollY;
+        // A timer instead of requestAnimationFrame, which stops in a window that is not shown
+        const frame = () => {
+          const now = performance.now();
+          const bottom = document.documentElement.scrollHeight - innerHeight;
+          if (y >= bottom - 1 || now - start > max) return done();
+          y = Math.min(bottom, y + (speed * (now - last)) / 1000);
+          last = now;
+          window.scrollTo({ top: y, behavior: "instant" });
+          setTimeout(frame, 16);
+        };
+        frame();
+      });
+      await sleep(1000);
+    },
+    { speed, delay, max: MAX_SCROLL },
+  );
+}
+
+async function backToTop(page) {
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await page.waitForTimeout(1000);
 }
 
