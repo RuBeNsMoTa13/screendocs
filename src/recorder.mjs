@@ -15,6 +15,7 @@ export async function startRecording(page, dir, { width, height, scale = 1 } = {
   const cdp = await page.context().newCDPSession(page);
   const frames = [];
   let end = null;
+  let from = null;
   cdp.on("Page.screencastFrame", ({ data, metadata, sessionId }) => {
     cdp.send("Page.screencastFrameAck", { sessionId }).catch(() => {});
     if (end) return;
@@ -28,6 +29,13 @@ export async function startRecording(page, dir, { width, height, scale = 1 } = {
 
   return {
     frames,
+    /**
+     * The video starts at the page's first paint: the blank page shown before the site
+     * draws anything is left out. `time` is in ms since 1970, like the frames.
+     */
+    startAt(time) {
+      if (time) from = time;
+    },
     /** Stops filming: the video ends here. */
     async stop() {
       end ??= Date.now();
@@ -36,7 +44,7 @@ export async function startRecording(page, dir, { width, height, scale = 1 } = {
     },
     /** A sharp WebM video, at a steady frame rate. */
     async toWebm(out, { fps = 30 } = {}) {
-      await pipe(ticks(frames, end, fps), [
+      await pipe(ticks(frames, from, end, fps), [
         "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
         "-c:v", "libvpx", "-crf", "6", "-b:v", "20M", "-qmin", "0", "-qmax", "20",
         "-deadline", "good", "-cpu-used", "2", "-an", out,
@@ -44,7 +52,7 @@ export async function startRecording(page, dir, { width, height, scale = 1 } = {
     },
     /** The frames as PNG files (for the GIF), at most `width` wide. */
     async toPng(outDir, { fps = 25, width = 800 } = {}) {
-      await pipe(ticks(frames, end, fps), ["-vf", `scale='min(${width},iw)':-2`, path.join(outDir, "%05d.png")], fps);
+      await pipe(ticks(frames, from, end, fps), ["-vf", `scale='min(${width},iw)':-2`, path.join(outDir, "%05d.png")], fps);
     },
     cleanup() {
       fs.rmSync(dir, { recursive: true, force: true });
@@ -52,8 +60,11 @@ export async function startRecording(page, dir, { width, height, scale = 1 } = {
   };
 }
 
-/** For each step of a steady clock, the last frame painted by then. */
-function ticks(frames, end, fps) {
+/** For each step of a steady clock, from `from` to `end`, the last frame painted by then. */
+function ticks(all, from, end, fps) {
+  // A frame can carry a time a few ms after the paint it shows
+  const painted = from ? all.filter((f) => f.t >= from - 20) : all;
+  const frames = painted.length ? painted : all;
   if (!frames.length) throw new Error("no frames were filmed");
   const start = frames[0].t;
   const stop = Math.max(end ?? frames.at(-1).t, frames.at(-1).t);

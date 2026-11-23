@@ -45,6 +45,7 @@ export async function capture(browser, config, pages, storageState, onPage) {
       try {
         await withTimeout(PAGE_TIMEOUT + config.scrollDelay * 1000 + MAX_SCROLL, async () => {
           await open(page, url);
+          if (recording) recording.startAt(await firstPaint(page));
           await applyMask(page, config);
           if (!entry.title) {
             const info = await pageInfo(page, config.mask);
@@ -146,6 +147,17 @@ async function pageInfo(page, mask = []) {
         summary: (document.querySelector('meta[name="description"]')?.content || "").trim().slice(0, 300),
       };
   }, mask.join(","));
+}
+
+/** When the page first drew something (ms since 1970), or null if the browser does not say. */
+function firstPaint(page) {
+  return page
+    .evaluate(() => {
+      const paints = performance.getEntriesByType("paint");
+      const p = paints.find((e) => e.name === "first-paint") ?? paints.find((e) => e.name === "first-contentful-paint");
+      return p ? performance.timeOrigin + p.startTime : null;
+    })
+    .catch(() => null);
 }
 
 /** A page that never ends (infinite scroll) stops being filmed after this long. */
