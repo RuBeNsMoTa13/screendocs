@@ -5,7 +5,8 @@ import { open } from "./discover.mjs";
 import { applyMask, hideText } from "./mask.mjs";
 import { slugOf } from "./paths.mjs";
 import { tr } from "./i18n.mjs";
-import { videoToGif } from "./gif.mjs";
+import { recordingToGif } from "./gif.mjs";
+import { startRecording } from "./recorder.mjs";
 
 /**
  * Captures every page on every viewport: one image per section of the page
@@ -35,12 +36,10 @@ export async function capture(browser, config, pages, storageState, onPage) {
       const context = await browser.newContext({
         ...VIEWPORTS[vp],
         storageState,
-        recordVideo: config.video ? { dir: path.join(root, ".tmp-video"), size } : undefined,
       });
       const page = await context.newPage();
-      const filmed = Date.now();
-      let scrolled = null;
-      let bottom = null;
+      // Filmed from the start, so the video shows the page loading
+      const recording = config.video ? await startRecording(page, path.join(root, ".tmp-video", `${vp}-${slug}`), { ...size, scale: VIEWPORTS[vp].deviceScaleFactor ?? 1 }).catch(() => null) : null;
       const shot = { full: null, video: null, gif: null, sections: [] };
 
       try {
@@ -53,9 +52,8 @@ export async function capture(browser, config, pages, storageState, onPage) {
           }
           // Without a video nobody watches the scroll, so it goes fast
           await scrollThrough(page, config.video ? scrollSpeed(config.scrollSpeed) : SCROLL_SPEEDS.fast, config.scrollDelay);
-          scrolled = Date.now() - filmed;
-          // How the bottom looks: the GIF ends where the video reaches it
-          if (config.gif) bottom = await page.screenshot({ type: "png", scale: "css" }).catch(() => null);
+          // The video ends at the bottom of the page, before the screenshots
+          await recording?.stop();
           await backToTop(page);
 
           // The text saved with the capture leaves out what the screenshots blur
@@ -87,23 +85,28 @@ export async function capture(browser, config, pages, storageState, onPage) {
         console.log(`  ${step} ${vp.padEnd(7)} ${url}  ${tr({ en: "failed", pt: "falhou", es: "falló" })}: ${err.message.split("\n")[0]}`);
       }
 
-      const video = page.video();
+      await recording?.stop();
       await context.close();
-      if (video) {
+      if (recording?.frames.length) {
+        const fail = (what, err) => console.log(`  ${step} ${vp.padEnd(7)} ${url}  ${what} ${tr({ en: "failed", pt: "falhou", es: "falló" })}: ${err.message.split("\n")[0]}`);
         const file = path.join(dir, "video.webm");
-        await video.saveAs(file).catch(() => {});
-        await video.delete().catch(() => {});
-        if (fs.existsSync(file)) shot.video = rel(root, file);
-        if (shot.video && config.gif) {
+        try {
+          await recording.toWebm(file);
+          shot.video = rel(root, file);
+        } catch (err) {
+          fail(tr({ en: "video", pt: "vídeo", es: "video" }), err);
+        }
+        if (config.gif) {
           const gif = path.join(dir, "video.gif");
           try {
-            await videoToGif(file, gif, { around: scrolled, bottom, width: config.gifWidth, fps: config.gifFps });
+            await recordingToGif(recording, gif, { width: config.gifWidth, fps: config.gifFps });
             shot.gif = rel(root, gif);
           } catch (err) {
-            console.log(`  ${step} ${vp.padEnd(7)} ${url}  GIF ${tr({ en: "failed", pt: "falhou", es: "falló" })}: ${err.message.split("\n")[0]}`);
+            fail("GIF", err);
           }
         }
       }
+      recording?.cleanup();
       entry.viewports[vp] = shot;
     }
     onPage?.(result);
