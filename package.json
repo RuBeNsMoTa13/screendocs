@@ -1,6 +1,6 @@
 {
   "name": "screendocs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Automatically screenshot, record and document every screen of a website, including pages behind login.",
   "type": "module",
   "bin": {
@@ -26,14 +26,15 @@
     "@clack/core": "0.5.0",
     "@clack/prompts": "0.11.0",
     "@modelcontextprotocol/sdk": "1.32.1",
+    "gifenc": "1.0.3",
     "jszip": "3.10.2",
     "picocolors": "1.1.1",
     "playwright-core": "1.56.1",
     "unpdf": "1.3.2",
+    "upng-js": "2.1.0",
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@anthropic-ai/mcpb": "2.1.2",
-    "upng-js": "2.1.0"
+    "@anthropic-ai/mcpb": "2.1.2"
   }
 }
